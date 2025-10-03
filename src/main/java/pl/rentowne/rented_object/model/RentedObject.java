@@ -1,11 +1,30 @@
 package pl.rentowne.rented_object.model;
 
-import jakarta.persistence.*;
-import lombok.*;
+import jakarta.persistence.CascadeType;
+import jakarta.persistence.Column;
+import jakarta.persistence.Entity;
+import jakarta.persistence.FetchType;
+import jakarta.persistence.GeneratedValue;
+import jakarta.persistence.GenerationType;
+import jakarta.persistence.Id;
+import jakarta.persistence.Index;
+import jakarta.persistence.JoinColumn;
+import jakarta.persistence.ManyToOne;
+import jakarta.persistence.OneToMany;
+import jakarta.persistence.OneToOne;
+import jakarta.persistence.SequenceGenerator;
+import jakarta.persistence.Table;
+import jakarta.persistence.UniqueConstraint;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.Setter;
 import pl.rentowne.apartment.model.Apartment;
 import pl.rentowne.common.model.BaseEntity;
 import pl.rentowne.meter.model.Meter;
 import pl.rentowne.settlement.model.Settlement;
+import pl.rentowne.tenant.model.Tenant;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
@@ -57,6 +76,9 @@ public class RentedObject extends BaseEntity {
 
     @OneToMany(fetch = FetchType.LAZY, mappedBy = "rentedObject", cascade = CascadeType.PERSIST)
     private List<Settlement> settlements;
+
+    @OneToOne(mappedBy = "rentedObject")
+    private Tenant tenant;
 
     public RentedObject(Long id) {
         this.id = id;

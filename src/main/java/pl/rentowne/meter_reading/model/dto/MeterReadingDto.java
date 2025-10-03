@@ -24,6 +24,7 @@ public class MeterReadingDto {
     private MeterDto meterDto;
     private BigDecimal previousReading;
     private LocalDateTime previousReadingDate;
+    private String meterType;
 
     @QueryProjection
     public MeterReadingDto(Long id, BigDecimal consumption) {

@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<databaseChangeLog
+        xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+        http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-latest.xsd">
+
+    <changeSet author="plubowicz" id="045-add_settlement_id_to_meter_reading">
+        <addColumn tableName="METER_READING">
+            <column name="SETTLEMENT_ID" type="bigint">
+                <constraints nullable="true"
+                             foreignKeyName="FK_METER_READING_ON_SETTLEMENT"
+                             references="SETTLEMENT(SETTLEMENT_ID)"/>
+            </column>
+        </addColumn>
+    </changeSet>
+
+    <changeSet author="plubowicz" id="045-add_comment_to_meter_reading_settlement_id">
+        <setColumnRemarks tableName="METER_READING" columnName="SETTLEMENT_ID" remarks="Referencja do tabeli rozliczeń - relacja wiele-do-jednego (wiele MeterReading -> jedno Settlement)" />
+    </changeSet>
+
+</databaseChangeLog>

@@ -35,6 +35,7 @@ public class DTLeaseAgreementDefinition implements DTDefinition {
     public ConstructorExpression getSelect() {
         return new QLeaseAgreementRowDto(
                 tenant.id,
+                tenant.firstname.concat(" ").concat(tenant.lastname),
                 apartment.apartmentName,
                 rentedObject.rentedObjectName,
                 leaseAgreement.compensationAmount,
@@ -57,6 +58,7 @@ public class DTLeaseAgreementDefinition implements DTDefinition {
     public List<DTColumnDefinition> getColumnDefinitions() {
         return Arrays.asList(
                 new DTColumnDefinition("tenantId", tenant.id, true),
+                new DTColumnDefinition("fullName", tenant.firstname.concat(" ").concat(tenant.lastname), true),
                 new DTColumnDefinition("apartment", apartment.apartmentName,
                         jpaQuery -> jpaQuery
                                 .join(tenant).on(leaseAgreement.id.eq(tenant.leaseAgreement().id))

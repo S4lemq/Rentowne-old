@@ -31,6 +31,7 @@ public class DTSettlement implements DTDefinition {
     @Override
     public ConstructorExpression getSelect() {
         return new QSettlementRowDto(
+                settlement.id,
                 settlement.settlementDate,
                 leaseAgreement.compensationAmount,
                 leaseAgreement.rentAmount,
@@ -50,6 +51,7 @@ public class DTSettlement implements DTDefinition {
     @Override
     public List<DTColumnDefinition> getColumnDefinitions() {
         return Arrays.asList(
+                new DTColumnDefinition("id", settlement.id, true),
                 new DTColumnDefinition("date", settlement.settlementDate),
                 new DTColumnDefinition("compensationAmount",
                         leaseAgreement.compensationAmount,

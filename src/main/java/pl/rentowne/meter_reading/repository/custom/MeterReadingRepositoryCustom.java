@@ -4,7 +4,6 @@ import pl.rentowne.meter.model.MeterType;
 import pl.rentowne.meter_reading.model.MeterReading;
 import pl.rentowne.meter_reading.model.dto.MeterReadingDto;
 
-import java.math.BigDecimal;
 import java.util.List;
 
 /**
@@ -35,10 +34,12 @@ public interface MeterReadingRepositoryCustom {
     MeterReading getMeterReadingByMeter(Long meterId);
 
     /**
-     * Aktualizuje flagę czy rozliczono na odczytach liczników
+     * Aktualizuje flagę czy rozliczono na odczytach liczników oraz ustawia id rozliczenia
+     *
      * @param meterReadingIds id odczytów liczników
+     * @param settlementId id rozliczenia
      */
-    void updateSettled(List<Long> meterReadingIds);
+    void updateSettled(List<Long> meterReadingIds, final Long settlementId);
 
     /**
      * Pobiera id licznika, odczyt oraz datę odczytu

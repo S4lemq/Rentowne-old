@@ -1,6 +1,7 @@
 package pl.rentowne.rented_object.repository;
 
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import pl.rentowne.rented_object.model.RentedObject;
@@ -15,4 +16,9 @@ public interface RentedObjectRepository extends JpaRepository<RentedObject, Long
 
     @Query("SELECT ro FROM RentedObject ro LEFT JOIN FETCH ro.meters WHERE ro.apartment.id = :apartmentId")
     List<RentedObject> findByApartmentIdWithMeters(@Param("apartmentId") Long apartmentId);
+
+    @Modifying
+    @Query("UPDATE RentedObject ro SET ro.lastSettlementDate = NULL, ro.lastSettlementTotalAmount = NULL WHERE ro.id = (SELECT s.rentedObject.id FROM Settlement s WHERE s.id = :settlementId)")
+    void clearLastSettlementData(@Param("settlementId") Long settlementId);
+
 }

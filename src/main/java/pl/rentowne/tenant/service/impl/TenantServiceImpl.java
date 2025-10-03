@@ -78,7 +78,7 @@ public class TenantServiceImpl implements TenantService {
                         if (initialReading.compareTo(currentReading) < 0) {
                             throw new RentowneBusinessException(RentowneErrorCode.BAD_METER_READING_VALUES_TENANT);
                         }
-                        DateUtils.compareDates(currentReadingDate, meterIdAndConsumption.getReadingDate(), true);
+                        DateUtils.compareDates(currentReadingDate, meterIdAndConsumption.getReadingDate(), true, meterType);
                     });
 
             BigDecimal consumption = Optional.ofNullable(meterIdAndConsumption.getCurrentReading())

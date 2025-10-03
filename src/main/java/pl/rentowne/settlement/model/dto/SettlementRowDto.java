@@ -11,6 +11,7 @@ import java.time.LocalDateTime;
 @Getter
 public class SettlementRowDto implements DTRow {
 
+    private Long id;
     private String date; // data rozliczenia
     private BigDecimal compensationAmount; // kwota odstępnego
     private BigDecimal rentAmount; // kwota czynszu
@@ -21,7 +22,8 @@ public class SettlementRowDto implements DTRow {
     private BigDecimal totalAmount; // kwota całkowita
 
     @QueryProjection
-    public SettlementRowDto(LocalDateTime date, BigDecimal compensationAmount, BigDecimal rentAmount, BigDecimal internetFee, BigDecimal gasDeposit, BigDecimal electricityAmount, BigDecimal waterAmount, BigDecimal totalAmount) {
+    public SettlementRowDto(Long id, LocalDateTime date, BigDecimal compensationAmount, BigDecimal rentAmount, BigDecimal internetFee, BigDecimal gasDeposit, BigDecimal electricityAmount, BigDecimal waterAmount, BigDecimal totalAmount) {
+        this.id = id;
         this.date = DateUtils.formatPolishDate(date);
         this.compensationAmount = compensationAmount;
         this.rentAmount = rentAmount;

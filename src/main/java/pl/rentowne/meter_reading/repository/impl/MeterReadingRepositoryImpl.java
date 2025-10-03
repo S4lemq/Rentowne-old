@@ -53,9 +53,10 @@ public class MeterReadingRepositoryImpl extends BaseRepositoryImpl<MeterReading,
     }
 
     @Override
-    public void updateSettled(List<Long> meterReadingIds) {
+    public void updateSettled(List<Long> meterReadingIds, final Long settlementId) {
         queryFactory.update(meterReading)
                 .set(meterReading.settled, true)
+                .set(meterReading.settlement().id, settlementId)
                 .where(meterReading.id.in(meterReadingIds))
                 .execute();
     }

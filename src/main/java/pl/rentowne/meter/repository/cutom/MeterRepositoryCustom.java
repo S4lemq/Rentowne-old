@@ -11,10 +11,10 @@ import java.util.List;
 public interface MeterRepositoryCustom {
 
     /**
-     * Pobiera ostatni stan i id licznika
+     * Pobiera stany i id licznika, które nie zostały rozliczone dla danego obiektu do wynajęcia i typu licznika
      * @param rentedObjectId id obiektu
      * @param meterType typ licznika
-     * @return ostatni stan i id licznika
+     * @return stan i id licznika
      */
     List<MeterReadingDto> getConsumptionAndIdByRentedObjectAndMeterType(Long rentedObjectId, MeterType meterType);
 

@@ -13,4 +13,10 @@ public interface SettlementService {
      * data rozliczenia
      */
     void calculate(Long rentedObjectId, CalculateRequestDto dto);
+
+    /**
+     * usuwa wyliczone rozliczenie
+     * @param id id rozliczenia
+     */
+    void deleteCalculate(Long id);
 }

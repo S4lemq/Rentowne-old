@@ -1,9 +1,25 @@
 package pl.rentowne.meter_reading.model;
 
-import jakarta.persistence.*;
-import lombok.*;
+import jakarta.persistence.Column;
+import jakarta.persistence.Entity;
+import jakarta.persistence.FetchType;
+import jakarta.persistence.GeneratedValue;
+import jakarta.persistence.GenerationType;
+import jakarta.persistence.Id;
+import jakarta.persistence.Index;
+import jakarta.persistence.JoinColumn;
+import jakarta.persistence.ManyToOne;
+import jakarta.persistence.SequenceGenerator;
+import jakarta.persistence.Table;
+import jakarta.persistence.UniqueConstraint;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.Setter;
 import pl.rentowne.common.model.BaseEntity;
 import pl.rentowne.meter.model.Meter;
+import pl.rentowne.settlement.model.Settlement;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
@@ -47,6 +63,10 @@ public class MeterReading extends BaseEntity {
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "METER_ID")
     private Meter meter;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "SETTLEMENT_ID")
+    private Settlement settlement;
 
     @Override
     public boolean equals(Object o) {

@@ -50,7 +50,7 @@ public class SettlementServiceImpl implements SettlementService {
         int rentedObjectsInApartment = apartmentService.getCountOfRentedObjectsInApartment(rentedObjectId);
         List<Long> allMeterReadingIds = new ArrayList<>();
         BigDecimal electricResult = BigDecimal.ZERO;
-        BigDecimal gasResult = BigDecimal.ZERO;
+        BigDecimal gasResult;
         BigDecimal waterResult = BigDecimal.ZERO;
 
 
@@ -61,14 +61,8 @@ public class SettlementServiceImpl implements SettlementService {
             waterResult = this.calculateWaterCost(providerWithProviderFields, rentedObjectId, waterResult, allMeterReadingIds, leaseAgreement);
         }
         gasResult = leaseAgreement.getGasDeposit() != null ? leaseAgreement.getGasDeposit() : BigDecimal.ZERO;
-//        gasResult = this.calculateGasCost(providerWithProviderFields, rentedObjectId, gasResult, allMeterReadingIds);
-//        administrativeResult = this.calculateAdministrativeFee(providerWithProviderFields);
 
-        if (!allMeterReadingIds.isEmpty()) {
-            meterReadingRepository.updateSettled(allMeterReadingIds);
-        }
-
-        BigDecimal totalSum = electricResult.add(waterResult).add(gasResult).add(leaseAgreement.getCompensationAmount()).add(leaseAgreement.getInternetFee()).add(leaseAgreement.getRentAmount());
+        BigDecimal totalSum = electricResult.add(waterResult).add(leaseAgreement.getCompensationAmount()).add(leaseAgreement.getInternetFee()).add(leaseAgreement.getRentAmount());
 
         log.info("Rozliczenie obiektu o id: {}", rentedObjectId);
         log.info("Rozliczano: wodę-{}, prąd-{}", dto.isWaterIncluded(), dto.isElectricityIncluded());
@@ -79,7 +73,6 @@ public class SettlementServiceImpl implements SettlementService {
         log.info("Kwota za internet: {}", leaseAgreement.getInternetFee());
         log.info("Kwota czynszu: {}", leaseAgreement.getRentAmount());
         log.info("Kwota całkowita: {}", totalSum);
-        log.info("W następujących odczytach liczników ustawiono odczyty na rozliczone: {}", allMeterReadingIds);
 
         Settlement settlement = Settlement.builder()
                 .electricityAmount(electricResult)
@@ -91,8 +84,21 @@ public class SettlementServiceImpl implements SettlementService {
                 .settlementStatus(SettlementStatus.TO_PAY)
                 .build();
 
-        settlementRepository.save(settlement);
+        Long settlementId = settlementRepository.saveAndFlush(settlement).getId();
+        if (!allMeterReadingIds.isEmpty()) {
+            meterReadingRepository.updateSettled(allMeterReadingIds, settlementId);
+        }
+        log.info("W następujących odczytach liczników ustawiono odczyty na rozliczone: {}", allMeterReadingIds);
+
         rentedObjectRepository.updateSettlement(rentedObjectId, totalSum, dto.getSettlementDate());
+    }
+
+    @Override
+    @Transactional
+    public void deleteCalculate(final Long settlementId) {
+        meterReadingRepository.updateSettledToFalseBySettlementId(settlementId);
+        rentedObjectRepository.clearLastSettlementData(settlementId);
+        settlementRepository.deleteById(settlementId);
     }
 
 
@@ -143,48 +149,6 @@ public class SettlementServiceImpl implements SettlementService {
         return BigDecimal.ZERO;
     }
 
-    public BigDecimal calculateGasCost(List<HousingProvider> providerWithProviderFields, Long rentedObjectId, BigDecimal gasResult, List<Long> allMeterReadingIds, final int rentedObjectsCount) {
-        Optional<HousingProvider> gasProviderOptional = findProvider(providerWithProviderFields, ProviderType.GAS);
-
-        if (gasProviderOptional.isPresent()) {
-            HousingProvider gasProvider = gasProviderOptional.get();
-            BigDecimal conversionRate = Optional.ofNullable(gasProvider.getConversionRate()).orElse(BigDecimal.ONE);
-            List<MeterReadingDto> meterReadingDtos = meterRepository.getConsumptionAndIdByRentedObjectAndMeterType(rentedObjectId, MeterType.GAS);
-
-            BigDecimal consumption = meterReadingDtos.stream()
-                    .map(MeterReadingDto::getConsumption)
-                    .reduce(BigDecimal.ZERO, BigDecimal::add);
-            List<Long> meterReadingIds = meterReadingDtos.stream()
-                    .map(MeterReadingDto::getId)
-                    .toList();
-            allMeterReadingIds.addAll(meterReadingIds);
-            // Używamy strumienia do przetworzenia providerFields, obliczania i sumowania wyników
-            BigDecimal totalGasResult = gasProvider.getProviderFields().stream()
-                    .map(field -> calculateForGasProviderField(field, consumption, conversionRate, rentedObjectsCount))
-                    .reduce(BigDecimal.ZERO, BigDecimal::add);
-
-            gasResult = gasResult.add(totalGasResult);
-
-            if (gasProvider.getTax() != null) {
-                gasResult = this.calculateVat(gasProvider.getTax(), gasResult);
-            }
-            return gasResult;
-        }
-        return BigDecimal.ZERO;
-    }
-
-    private BigDecimal calculateForGasProviderField(ProviderField field, BigDecimal consumption, BigDecimal conversionRate, final int rentedObjectsCount) {
-        BigDecimal result = BigDecimal.ZERO;
-        if (BillingMethod.MONTHLY.equals(field.getBillingMethod())) {
-            result = result.add(this.calculateByMonth(field.getPrice(), rentedObjectsCount));
-        } else if (BillingMethod.ACCORDING_TO_CONSUMPTION.equals(field.getBillingMethod())) {
-            BigDecimal resultWithDecimals = consumption.multiply(conversionRate).setScale(2, RoundingMode.HALF_UP);
-            BigDecimal integerResult = new BigDecimal(resultWithDecimals.toBigInteger());
-            result = result.add(integerResult.multiply(field.getPrice()).setScale(2, RoundingMode.HALF_UP));
-        }
-        return result;
-    }
-
     public BigDecimal calculateWaterCost(List<HousingProvider> providerWithProviderFields, Long rentedObjectId, BigDecimal waterResult, List<Long> allMeterReadingIds, LeaseAgreementDto leaseAgreement) {
         Optional<HousingProvider> waterHousingProviderOptional = findProvider(providerWithProviderFields, ProviderType.WATER);
 
@@ -211,22 +175,12 @@ public class SettlementServiceImpl implements SettlementService {
                 }
 
                 // Odjęcie wliczonych w cenę jednostek wody
-                BigDecimal includedWaterMeters = this.calculateByConsumption(field.getPrice(), leaseAgreement.getIncludedWaterMeters());
+                BigDecimal includedWaterMeters = this.calculateByConsumptionAndMonthCount(field.getPrice(), leaseAgreement.getIncludedWaterMeters(), meterReadingDtos.size());
                 waterResult = waterResult.subtract(includedWaterMeters);
             }
             return waterResult;
         }
         return BigDecimal.ZERO;
-    }
-
-    public BigDecimal calculateAdministrativeFee(List<HousingProvider> providerWithProviderFields) {
-        return providerWithProviderFields.stream()
-                .filter(dto -> ProviderType.ADMINISTRATIVE_FEE.equals(dto.getType()))
-                .findFirst()
-                .map(administrativeProvider -> administrativeProvider.getProviderFields().stream()
-                        .map(ProviderField::getPrice)
-                        .reduce(BigDecimal.ZERO, BigDecimal::add))
-                .orElse(BigDecimal.ZERO);
     }
 
     private BigDecimal calculateByMonth(final BigDecimal entityField, final int rentedObjectsCount) {
@@ -235,6 +189,10 @@ public class SettlementServiceImpl implements SettlementService {
 
     private BigDecimal calculateByConsumption(final BigDecimal entityField, BigDecimal consumptionAfterConversion) {
         return consumptionAfterConversion.multiply(entityField).setScale(2, RoundingMode.HALF_UP);
+    }
+
+    private BigDecimal calculateByConsumptionAndMonthCount(final BigDecimal entityField, BigDecimal consumptionAfterConversion, final int monthCount) {
+        return consumptionAfterConversion.multiply(entityField).multiply(BigDecimal.valueOf(monthCount)).setScale(2, RoundingMode.HALF_UP);
     }
 
     private BigDecimal calculateVat(final BigDecimal vat, BigDecimal netAmount) {

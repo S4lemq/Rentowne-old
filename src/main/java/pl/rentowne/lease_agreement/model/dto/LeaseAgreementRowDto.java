@@ -10,6 +10,7 @@ import java.time.LocalDateTime;
 @Getter
 public class LeaseAgreementRowDto implements DTRow {
     private Long tenantId;
+    private String fullName;
     private String apartment;
     private String rentedObject;
     private BigDecimal compensationAmount; //kwota odstępnego
@@ -22,8 +23,9 @@ public class LeaseAgreementRowDto implements DTRow {
     private BigDecimal deposit; //kaucja
 
     @QueryProjection
-    public LeaseAgreementRowDto(Long tenantId, String apartment, String rentedObject, BigDecimal compensationAmount, BigDecimal rentAmount, BigDecimal internetFee, BigDecimal gasDeposit, BigDecimal includedWaterMeters, LocalDateTime startContractDate, LocalDateTime endContractDate, BigDecimal deposit) {
+    public LeaseAgreementRowDto(Long tenantId, String fullName, String apartment, String rentedObject, BigDecimal compensationAmount, BigDecimal rentAmount, BigDecimal internetFee, BigDecimal gasDeposit, BigDecimal includedWaterMeters, LocalDateTime startContractDate, LocalDateTime endContractDate, BigDecimal deposit) {
         this.tenantId = tenantId;
+        this.fullName = fullName;
         this.apartment = apartment;
         this.rentedObject = rentedObject;
         this.compensationAmount = compensationAmount;

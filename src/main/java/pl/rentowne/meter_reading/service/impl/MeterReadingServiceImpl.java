@@ -5,8 +5,10 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import pl.rentowne.exception.RentowneBusinessException;
 import pl.rentowne.exception.RentowneErrorCode;
+import pl.rentowne.meter.model.MeterType;
 import pl.rentowne.meter_reading.model.MeterReading;
 import pl.rentowne.meter_reading.model.dto.MeterReadingDto;
+import pl.rentowne.meter_reading.model.dto.PrevMeterReadingDto;
 import pl.rentowne.meter_reading.repository.MeterReadingRepository;
 import pl.rentowne.meter_reading.service.MeterReadingService;
 import pl.rentowne.util.DateUtils;
@@ -24,7 +26,7 @@ public class MeterReadingServiceImpl implements MeterReadingService {
             if (dto.getCurrentReading().compareTo(dto.getPreviousReading()) <= 0) {
                 throw new RentowneBusinessException(RentowneErrorCode.BAD_METER_READING_VALUES);
             }
-            DateUtils.compareDates(dto.getReadingDate(), dto.getPreviousReadingDate(), false);
+            DateUtils.compareDates(dto.getReadingDate(), dto.getPreviousReadingDate(), false, MeterType.fromString(dto.getMeterType()));
         }
 
         meterReadingRepository.save(MeterReadingDto.asEntity(dto));
@@ -47,16 +49,9 @@ public class MeterReadingServiceImpl implements MeterReadingService {
     }
 
     @Override
-    public MeterReadingDto getMeterReadingByMeter(Long meterId) {
-        MeterReading meterReading = meterReadingRepository.getMeterReadingByMeter(meterId);
-        if (meterReading == null) return null;
-        return MeterReadingDto.builder()
-                .id(meterReading.getId())
-                .currentReading(meterReading.getCurrentReading())
-                .readingDate(meterReading.getReadingDate())
-                .build();
+    @Transactional(readOnly = true)
+    public PrevMeterReadingDto getMeterReadingByMeter(Long meterId) {
+        return meterReadingRepository.findPrevMeterReading(meterId).stream().findFirst().orElse(null);
     }
-
-
 
 }

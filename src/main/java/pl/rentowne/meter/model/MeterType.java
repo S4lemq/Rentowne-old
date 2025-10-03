@@ -5,5 +5,14 @@ public enum MeterType {
     WATER_WARM,
     GAS,
     ELECTRIC,
-    HEAT
+    HEAT;
+
+    public static MeterType fromString(String value) {
+        for (MeterType type : MeterType.values()) {
+            if (type.name().equalsIgnoreCase(value)) {
+                return type;
+            }
+        }
+        throw new IllegalArgumentException("Nieznany typ licznika: " + value);
+    }
 }

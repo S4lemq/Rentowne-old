@@ -2,6 +2,7 @@ package pl.rentowne.meter_reading.service;
 
 import pl.rentowne.exception.RentowneBusinessException;
 import pl.rentowne.meter_reading.model.dto.MeterReadingDto;
+import pl.rentowne.meter_reading.model.dto.PrevMeterReadingDto;
 
 public interface MeterReadingService {
     /**
@@ -24,5 +25,5 @@ public interface MeterReadingService {
      * @param meterId id licznika
      * @return odczyt licznika
      */
-    MeterReadingDto getMeterReadingByMeter(Long meterId);
+    PrevMeterReadingDto getMeterReadingByMeter(Long meterId);
 }
