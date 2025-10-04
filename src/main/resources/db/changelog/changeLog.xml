@@ -47,5 +47,6 @@
     <include file="/db/changelog/ddl-scripts/043-add_address_fk_to_user_account.xml"/>
     <include file="/db/changelog/ddl-scripts/044-add_preferred_language_col_to_user_account.xml"/>
     <include file="/db/changelog/ddl-scripts/045-add_settlement_id_to_meter_reading.xml"/>
+    <include file="/db/changelog/ddl-scripts/046-add_column_apartment_settled.xml"/>
 
 </databaseChangeLog>

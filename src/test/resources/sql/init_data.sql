@@ -28,9 +28,9 @@ INSERT INTO public.meter (meter_id, name, type, rented_object_id, insert_date, u
 (106, 'woda zimna', 'WATER_COLD', 2, '2024-03-02 13:10:14.585596', null, 'peter.lubowicz@gmail.com', null, '', null, null),
 (107, 'energia elektryczna', 'ELECTRIC', 2, '2024-03-02 13:10:42.263830', null, 'peter.lubowicz@gmail.com', null, '', null, null);
 
-INSERT INTO public.meter_reading (meter_reading_id, current_reading, reading_date, consumption, meter_id, insert_date, update_date, insert_operator, update_operator, settled, settlement_id) VALUES
-(1, 50.00000, '2024-02-01 00:00:00.000000', 50.00000, 105, '2024-02-27 22:53:49.852319', null, 'peter.lubowicz@gmail.com', null, false, null),
-(2, 43.00000, '2024-03-01 00:00:00.000000', 43.00000, 107, '2024-03-02 13:11:05.572152', null, 'peter.lubowicz@gmail.com', null, false, null);
+INSERT INTO public.meter_reading (meter_reading_id, current_reading, reading_date, consumption, meter_id, insert_date, update_date, insert_operator, update_operator, settled, apartment_settled, settlement_id) VALUES
+(1, 50.00000, '2024-02-01 00:00:00.000000', 50.00000, 105, '2024-02-27 22:53:49.852319', null, 'peter.lubowicz@gmail.com', null, false, false, null),
+(2, 43.00000, '2024-03-01 00:00:00.000000', 43.00000, 107, '2024-03-02 13:11:05.572152', null, 'peter.lubowicz@gmail.com', null, false, false,null);
 
 
 INSERT INTO public.housing_provider (housing_provider_id, name, tax, type, insert_date, update_date, insert_operator, update_operator, user_account_id, conversion_rate) VALUES

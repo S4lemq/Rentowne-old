@@ -60,6 +60,9 @@ public class MeterReading extends BaseEntity {
     @Column(name = "SETTLED", nullable = false)
     private boolean settled;
 
+    @Column(name = "APARTMENT_SETTLED", nullable = false)
+    private boolean apartmentSettled;
+
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "METER_ID")
     private Meter meter;
