@@ -27,6 +27,7 @@ import pl.rentowne.settlement.service.SettlementService;
 
 import java.math.BigDecimal;
 import java.math.RoundingMode;
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
@@ -150,14 +151,34 @@ public class SettlementServiceImpl implements SettlementService {
         }
     }
 
-
     @Override
     @Transactional
     public void deleteCalculate(final Long settlementId) {
+
+        // 1) Ustal mieszkanie i datę rozliczenia (identyfikator „cyklu”)
+        Long apartmentId = settlementRepository.getApartmentIdBySettlementId(settlementId);
+        LocalDateTime settlementDate = settlementRepository.getSettlementDateById(settlementId);
+
+        // 2) Zbierz wszystkie rozliczenia tego samego mieszkania i tej samej daty (cały cykl)
+        List<Long> cycleSettlementIds = settlementRepository.findSettlementIdsByApartmentAndDate(apartmentId, settlementDate);
+
+        // 3) Cofnij znacznik apartmentSettled dla wszystkich odczytów tego cyklu (ELEKTRYKA)
+        if (!cycleSettlementIds.isEmpty()) {
+            meterReadingRepository.unsetApartmentSettledBySettlementIdsAndType(cycleSettlementIds, MeterType.ELECTRIC);
+            log.debug("[DELETE][CYCLE-OPEN] aptId={} date={} cycleSettlements={} -> apartmentSettled=false",
+                    apartmentId, settlementDate, cycleSettlementIds);
+        }
+
+        // 4) Cofnij powiązania tylko dla USUWANEGO rozliczenia (settled=false, settlement_id=null)
         meterReadingRepository.updateSettledToFalseBySettlementId(settlementId);
+
+        // 5) Wyczyść 'lastSettlement*' dla obiektu tego rozliczenia
         rentedObjectRepository.clearLastSettlementData(settlementId);
+
+        // 6) Usuń samo rozliczenie
         settlementRepository.deleteById(settlementId);
     }
+
 
     private Optional<HousingProvider> findProvider(List<HousingProvider> providers, ProviderType type) {
         return providers.stream()

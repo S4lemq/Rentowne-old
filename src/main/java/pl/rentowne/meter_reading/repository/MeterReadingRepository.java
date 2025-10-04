@@ -75,4 +75,16 @@ public interface MeterReadingRepository extends JpaRepository<MeterReading, Long
     @Query("update MeterReading mr set mr.apartmentSettled = true where mr.id in :ids")
     int markApartmentSettled(@Param("ids") List<Long> ids);
 
+
+    // Cofnięcie apartmentSettled dla WSZYSTKICH odczytów w cyklu (po typie licznika – elektryka)
+    @Modifying
+    @Query("""
+           update MeterReading m 
+              set m.apartmentSettled = false
+            where m.settlement.id in :settlementIds
+              and m.meter.meterType = :type
+           """)
+    int unsetApartmentSettledBySettlementIdsAndType(@Param("settlementIds") List<Long> settlementIds,
+                                                    @Param("type") MeterType type);
+
 }
