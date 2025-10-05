@@ -16,7 +16,6 @@ public class PdfTextExtractor {
 
     public String extractText(MultipartFile file) {
         try {
-            // opakuj InputStream w Resource
             var resource = new InputStreamResource(file.getInputStream()) {
                 @Override public String getFilename() {
                     return file.getOriginalFilename();
@@ -25,11 +24,10 @@ public class PdfTextExtractor {
 
             var reader = new TikaDocumentReader(resource);
 
-            // zarówno reader.read() jak i reader.get() zwracają List<Document>
             List<Document> docs = reader.read();
 
             return docs.stream()
-                    .map(Document::getText)   // <-- getText() zamiast getContent()
+                    .map(Document::getText)
                     .filter(Objects::nonNull)
                     .collect(Collectors.joining("\n"));
 

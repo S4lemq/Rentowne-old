@@ -3,34 +3,57 @@ package pl.rentowne.invoice;
 import org.springframework.ai.chat.client.ChatClient;
 import org.springframework.ai.converter.BeanOutputConverter;
 import org.springframework.stereotype.Service;
+import pl.rentowne.housing_provider.model.ProviderType;
+import pl.rentowne.provider_field.model.BillingMethod;
 
+import java.math.BigDecimal;
 import java.util.List;
 
 @Service
 public class InvoiceParser {
+
     private final ChatClient chatClient;
 
     public InvoiceParser(ChatClient.Builder builder) {
         this.chatClient = builder.build();
     }
 
-    public List<InvoiceLine> parseElectricityInvoice(String pdfText) {
-        var converter = new BeanOutputConverter<>(InvoiceLine[].class);
-        String schema = converter.getFormat(); // to jest JSON/JSON Schema z klamrami
+    public record ParsedInvoice(
+            String providerName,
+            ProviderType providerType,
+            BigDecimal taxPercent,
+            List<InvoiceLine> items
+    ) {}
+
+    public record InvoiceLine(
+            String name,
+            BigDecimal price,
+            BillingMethod billingMethod
+    ) {}
+
+    public ParsedInvoice parseForAutofillElectricity(String pdfText) {
+        var converter = new BeanOutputConverter<>(ParsedInvoice.class);
+        String schema = converter.getFormat();
 
         String system = """
-            Jesteś parserem faktur za ENERGIĘ ELEKTRYCZNĄ.
-            Wyodrębnij pozycje {name, price, billingMethod}. Zwróć TYLKO JSON zgodny ze schematem.
-            Mapowanie: kWh -> ACCORDING_TO_CONSUMPTION, zł/mc -> MONTHLY. Cena = jednostkowa netto.
+            Jesteś parserem faktur za ENERGIĘ ELEKTRYCZNĄ w Polsce.
+            Zwróć jedynie JSON zgodny ze schematem.
+            ZASADY:
+            - providerType: ELECTRICITY
+            - providerName: wyciągnij z nagłówka/logo/stopki (np. ENEA, TAURON).
+            - items: tylko linie taryf/dystrybucji (np. Energia elektryczna czynna, Opłata zmienna sieciowa, Opłata OZE, Opłata abonamentowa,...).
+            - billingMethod: kWh -> ACCORDING_TO_CONSUMPTION, zł/mc -> MONTHLY.
+            - price: cena jednostkowa netto.
+            - taxPercent: jeśli znajdziesz stawkę VAT dla tych pozycji (np. 23), zwróć; inaczej null.
             """;
 
         String user = """
-            To jest treść faktury (PL):
-            ---------------------------
+            PDF (tekst):
+            -----------
             %s
-            ---------------------------
+            -----------
 
-            Zwróć JSON w formacie (schemat):
+            Zwróć JSON:
             %s
             """.formatted(pdfText, schema);
 
@@ -41,8 +64,7 @@ public class InvoiceParser {
                 .call()
                 .content();
 
-        InvoiceLine[] arr = converter.convert(content);
-        return arr == null ? List.of() : List.of(arr);
+        return converter.convert(content);
     }
 }
 
