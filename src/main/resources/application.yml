@@ -34,6 +34,13 @@ spring:
                     auth: true
                     starttls:
                         enable: true
+    ai:
+        openai:
+            api-key: ${OPENAI_API_KEY}
+            chat:
+                options:
+                    model: gpt-4o-mini
+                    temperature: 0.1
 
 application:
     security:
@@ -77,13 +84,10 @@ application:
                 - 5.252.202.255
                 - 5.252.202.254
 
-#logging:
-#    level:
-#        org.springframework.web: DEBUG
-#        org.springframework.security: DEBUG
-#        org.springframework.web.servlet.DispatcherServlet: TRACE
-#        org.springframework.web.client.RestTemplate: DEBUG
-#        org.springframework.http.converter.json: DEBUG
-#        org.springframework.web.filter.CommonsRequestLoggingFilter: DEBUG
+logging:
+    level:
+        com.example.invoicecompare: DEBUG
+    pattern:
+        console: "%d{yyyy-MM-dd HH:mm:ss.SSS} [%thread] %-5level %logger{36} - %msg%n"
 
 
