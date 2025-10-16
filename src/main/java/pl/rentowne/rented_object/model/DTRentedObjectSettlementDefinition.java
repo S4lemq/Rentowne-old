@@ -12,6 +12,7 @@ import pl.rentowne.data_table.dt_definition.DTColumnDefinition;
 import pl.rentowne.data_table.dt_definition.DTDefinition;
 import pl.rentowne.data_table.filter.DTFilter;
 import pl.rentowne.exception.RentowneBusinessException;
+import pl.rentowne.lease_agreement.model.QLeaseAgreement;
 import pl.rentowne.rented_object.model.dto.QRentedObjectSettlementRowDto;
 import pl.rentowne.tenant.model.QTenant;
 import pl.rentowne.user.service.UserService;
@@ -28,6 +29,7 @@ public class DTRentedObjectSettlementDefinition implements DTDefinition {
     private static final QApartment apartment = QApartment.apartment;
     private static final QRentedObject rentedObject = QRentedObject.rentedObject;
     private static final QTenant tenant = QTenant.tenant;
+    private static final QLeaseAgreement leaseAgreement = QLeaseAgreement.leaseAgreement;
 
     @Override
     public ConstructorExpression getSelect() {
@@ -38,7 +40,8 @@ public class DTRentedObjectSettlementDefinition implements DTDefinition {
                 tenant.firstname,
                 tenant.lastname,
                 rentedObject.lastSettlementDate,
-                rentedObject.lastSettlementTotalAmount
+                rentedObject.lastSettlementTotalAmount,
+                leaseAgreement.compensationAmount
         );
     }
 
@@ -62,7 +65,11 @@ public class DTRentedObjectSettlementDefinition implements DTDefinition {
                                 .leftJoin(tenant).on(rentedObject.id.eq(tenant.rentedObject().id))),
                 new DTColumnDefinition("tenantSurname", tenant.lastname),
                 new DTColumnDefinition("lastSettlementDate", rentedObject.lastSettlementDate, true),
-                new DTColumnDefinition("lastSettlementTotalAmount", rentedObject.lastSettlementTotalAmount, true)
+                new DTColumnDefinition("lastSettlementTotalAmount", rentedObject.lastSettlementTotalAmount, true),
+                new DTColumnDefinition("profit", leaseAgreement.compensationAmount,
+                        jpaQuery -> jpaQuery
+                                .leftJoin(tenant).on(rentedObject.id.eq(tenant.rentedObject().id))
+                                .leftJoin(leaseAgreement).on(tenant.leaseAgreement().id.eq(leaseAgreement.id)))
         );
     }
 

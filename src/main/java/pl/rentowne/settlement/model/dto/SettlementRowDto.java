@@ -20,9 +20,10 @@ public class SettlementRowDto implements DTRow {
     private BigDecimal electricityAmount; // kwota elektryczna z liczników
     private BigDecimal waterAmount; // kwota wody z liczników
     private BigDecimal totalAmount; // kwota całkowita
+    private BigDecimal rentAndUtilitiesAmount; //Czynsz i media – liczy kwota czynszu + internet + gaz + prąd + woda
 
     @QueryProjection
-    public SettlementRowDto(Long id, LocalDateTime date, BigDecimal compensationAmount, BigDecimal rentAmount, BigDecimal internetFee, BigDecimal gasDeposit, BigDecimal electricityAmount, BigDecimal waterAmount, BigDecimal totalAmount) {
+    public SettlementRowDto(Long id, LocalDateTime date, BigDecimal compensationAmount, BigDecimal rentAmount, BigDecimal internetFee, BigDecimal gasDeposit, BigDecimal electricityAmount, BigDecimal waterAmount, BigDecimal totalAmount, BigDecimal rentAndUtilitiesAmount) {
         this.id = id;
         this.date = DateUtils.formatPolishDate(date);
         this.compensationAmount = compensationAmount;
@@ -32,5 +33,19 @@ public class SettlementRowDto implements DTRow {
         this.electricityAmount = electricityAmount;
         this.waterAmount = waterAmount;
         this.totalAmount = totalAmount;
+        if (rentAndUtilitiesAmount != null) {
+            this.rentAndUtilitiesAmount = rentAndUtilitiesAmount;
+        } else {
+            this.rentAndUtilitiesAmount = sumNonNull(this.rentAmount, this.internetFee, this.gasDeposit, this.electricityAmount, this.waterAmount);
+        }
+    }
+
+    private static BigDecimal sumNonNull(BigDecimal... values) {
+        BigDecimal sum = BigDecimal.ZERO;
+        if (values == null) return sum;
+        for (BigDecimal v : values) {
+            if (v != null) sum = sum.add(v);
+        }
+        return sum;
     }
 }

@@ -3,6 +3,7 @@ package pl.rentowne.settlement;
 import com.querydsl.core.types.ConstructorExpression;
 import com.querydsl.core.types.OrderSpecifier;
 import com.querydsl.core.types.dsl.EntityPathBase;
+import com.querydsl.core.types.dsl.Expressions;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
@@ -15,12 +16,14 @@ import pl.rentowne.settlement.model.QSettlement;
 import pl.rentowne.settlement.model.dto.QSettlementRowDto;
 import pl.rentowne.tenant.model.QTenant;
 
+import java.math.BigDecimal;
 import java.util.Arrays;
 import java.util.List;
 
 @RequiredArgsConstructor
 @Slf4j
 @Component("SETTLEMENT")
+@SuppressWarnings({"rawtypes", "unchecked"})
 public class DTSettlement implements DTDefinition {
 
     private static final QTenant tenant = QTenant.tenant;
@@ -39,7 +42,8 @@ public class DTSettlement implements DTDefinition {
                 leaseAgreement.gasDeposit,
                 settlement.electricityAmount,
                 settlement.waterAmount,
-                settlement.totalAmount
+                settlement.totalAmount,
+                Expressions.nullExpression(BigDecimal.class)
         );
     }
 
@@ -64,6 +68,8 @@ public class DTSettlement implements DTDefinition {
                 new DTColumnDefinition("gasDeposit", leaseAgreement.gasDeposit),
                 new DTColumnDefinition("electricityAmount", settlement.electricityAmount),
                 new DTColumnDefinition("waterAmount", settlement.waterAmount),
+                new DTColumnDefinition("rentAndUtilitiesAmount",
+                        Expressions.nullExpression(BigDecimal.class)),
                 new DTColumnDefinition("totalAmount", settlement.totalAmount)
         );
     }
