@@ -1,4 +1,4 @@
-package pl.rentowne.invoice;
+package pl.rentowne.invoice_parser;
 
 import org.springframework.ai.chat.client.ChatClient;
 import org.springframework.ai.converter.BeanOutputConverter;

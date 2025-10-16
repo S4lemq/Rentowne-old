@@ -1,0 +1,57 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<databaseChangeLog
+        xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+        http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-latest.xsd">
+
+    <changeSet author="plubowicz" id="047-add_invoice_sequence_and_table">
+        <sql>
+            CREATE SEQUENCE INVOICE_SEQ START WITH 1 INCREMENT BY 1;
+
+            CREATE TABLE INVOICE (
+                INVOICE_ID BIGINT DEFAULT NEXTVAL('INVOICE_SEQ') NOT NULL,
+                HOUSING_PROVIDER_ID BIGINT,
+                INVOICE_NUMBER VARCHAR(100) NOT NULL,
+                RENTED_OBJECT_ID BIGINT,
+                MONTH DATE,
+                DATE_FROM DATE,
+                DATE_TO DATE,
+                AMOUNT NUMERIC(10,2),
+                PAY_DAY DATE,
+                CONSUMPTION NUMERIC(10,2),
+                METER_VALUE NUMERIC(10,2),
+                PAID BOOLEAN NOT NULL,
+                PAY_DAY_MONTH DATE,
+                INSERT_DATE TIMESTAMP NOT NULL,
+                UPDATE_DATE TIMESTAMP,
+                INSERT_OPERATOR VARCHAR(60) NOT NULL,
+                UPDATE_OPERATOR VARCHAR(60),
+                CONSTRAINT PK_INVOICE PRIMARY KEY (INVOICE_ID),
+                CONSTRAINT FK_INVOICE_ON_HOUSING_PROVIDER FOREIGN KEY (HOUSING_PROVIDER_ID) REFERENCES HOUSING_PROVIDER(HOUSING_PROVIDER_ID),
+                CONSTRAINT FK_INVOICE_ON_RENTED_OBJECT FOREIGN KEY (RENTED_OBJECT_ID) REFERENCES RENTED_OBJECT(RENTED_OBJECT_ID)
+            );
+
+            COMMENT ON TABLE INVOICE IS 'Tabela faktur';
+            COMMENT ON COLUMN INVOICE.INVOICE_ID IS 'Klucz główny';
+            COMMENT ON COLUMN INVOICE.HOUSING_PROVIDER_ID IS 'Referencja do dostawcy świadczeń';
+            COMMENT ON COLUMN INVOICE.INVOICE_NUMBER IS 'Numer faktury';
+            COMMENT ON COLUMN INVOICE.RENTED_OBJECT_ID IS 'Referencja do wynajmowanego obiektu';
+            COMMENT ON COLUMN INVOICE.MONTH IS 'Miesiąc';
+            COMMENT ON COLUMN INVOICE.DATE_FROM IS 'Data od';
+            COMMENT ON COLUMN INVOICE.DATE_TO IS 'Data do';
+            COMMENT ON COLUMN INVOICE.AMOUNT IS 'Kwota';
+            COMMENT ON COLUMN INVOICE.PAY_DAY IS 'Termin płatności';
+            COMMENT ON COLUMN INVOICE.CONSUMPTION IS 'Zużycie';
+            COMMENT ON COLUMN INVOICE.METER_VALUE IS 'Stan licznika';
+            COMMENT ON COLUMN INVOICE.PAID IS 'Zapłacono';
+            COMMENT ON COLUMN INVOICE.PAY_DAY_MONTH IS 'Miesiąc rozliczenia';
+            COMMENT ON COLUMN INVOICE.INSERT_DATE IS 'Data wprowadzenia wiersza';
+            COMMENT ON COLUMN INVOICE.UPDATE_DATE IS 'Data aktualizacji wiersza';
+            COMMENT ON COLUMN INVOICE.INSERT_OPERATOR IS 'Operator wprowadzający wiersz';
+            COMMENT ON COLUMN INVOICE.UPDATE_OPERATOR IS 'Operator aktualizujący wiersz';
+        </sql>
+    </changeSet>
+
+</databaseChangeLog>
+

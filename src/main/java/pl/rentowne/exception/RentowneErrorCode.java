@@ -29,7 +29,8 @@ public enum RentowneErrorCode implements Serializable {
     BAD_OLD_PASSWORD(),
     NO_SETTLEMENTS(),
     EMPTY_REQUIRED_ADDRESS_FIELDS,
-    EMPTY_REQUIRED_PAYMENT_CARD_FIELDS;
+    EMPTY_REQUIRED_PAYMENT_CARD_FIELDS,
+    INVOICE_NOT_FOUND();
 
     private Set<String> translateKeys;
 

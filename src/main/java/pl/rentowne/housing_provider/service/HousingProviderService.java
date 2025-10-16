@@ -1,7 +1,10 @@
 package pl.rentowne.housing_provider.service;
 
 import pl.rentowne.exception.RentowneBusinessException;
+import pl.rentowne.housing_provider.model.dto.HousingProviderBasicDto;
 import pl.rentowne.housing_provider.model.dto.HousingProviderDto;
+
+import java.util.List;
 
 public interface HousingProviderService {
     /**
@@ -24,4 +27,10 @@ public interface HousingProviderService {
      * @param dto dto dostawcy
      */
     void updateHousingProvider(HousingProviderDto dto);
+
+    /**
+     * Zwraca wszystkich dostawców dla zalogowanego użytkownika
+     * @return lista dostawców (id, name, type)
+     */
+    List<HousingProviderBasicDto> getHousingProvidersForLoggedUser();
 }

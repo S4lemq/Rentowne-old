@@ -5,6 +5,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import pl.rentowne.exception.RentowneBusinessException;
 import pl.rentowne.housing_provider.model.HousingProvider;
+import pl.rentowne.housing_provider.model.dto.HousingProviderBasicDto;
 import pl.rentowne.housing_provider.model.dto.HousingProviderDto;
 import pl.rentowne.housing_provider.repository.HousingProviderRepository;
 import pl.rentowne.housing_provider.service.HousingProviderService;
@@ -56,6 +57,22 @@ public class HousingProviderServiceImpl implements HousingProviderService {
         }
 
         housingProviderRepository.save(entity);
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public List<HousingProviderBasicDto> getHousingProvidersForLoggedUser() {
+        Long loggedUserId = userService.getLoggedUser().getId();
+
+        List<HousingProvider> providers = housingProviderRepository.findByUserId(loggedUserId);
+
+        return providers.stream()
+                .map(provider -> HousingProviderBasicDto.builder()
+                        .id(provider.getId())
+                        .name(provider.getName())
+                        .type(provider.getType())
+                        .build())
+                .collect(Collectors.toList());
     }
 
     private void updateProviderFields(List<ProviderFieldDto> fieldsDto, HousingProvider housingProvider) {

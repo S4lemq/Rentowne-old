@@ -1,4 +1,4 @@
-package pl.rentowne.invoice;
+package pl.rentowne.invoice_parser;
 
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;

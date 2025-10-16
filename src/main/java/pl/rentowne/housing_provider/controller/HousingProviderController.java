@@ -6,11 +6,19 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.*;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RestController;
 import pl.rentowne.common.controler.AbstractController;
 import pl.rentowne.exception.RentowneBusinessException;
+import pl.rentowne.housing_provider.model.dto.HousingProviderBasicDto;
 import pl.rentowne.housing_provider.model.dto.HousingProviderDto;
 import pl.rentowne.housing_provider.service.HousingProviderService;
+
+import java.util.List;
 
 @RestController
 @RequiredArgsConstructor
@@ -63,6 +71,21 @@ public class HousingProviderController extends AbstractController {
     public ResponseEntity<Void> updateHousingProvider(@RequestBody HousingProviderDto dto) {
         housingProviderService.updateHousingProvider(dto);
         return ResponseEntity.ok().build();
+    }
+
+    @Operation(
+            summary = "Pobiera wszystkich dostawców dla zalogowanego użytkownika",
+            description = "Metoda służy do pobrania listy wszystkich dostawców przypisanych do zalogowanego użytkownika",
+            responses = {
+                    @ApiResponse(responseCode = "200", description = "Lista dostawców została pobrana pomyślnie"),
+                    @ApiResponse(responseCode = "400", description = "Niepoprawne dane wejściowe"),
+                    @ApiResponse(responseCode = "404", description = "Nie znaleziono danych"),
+                    @ApiResponse(responseCode = "500", description = "Wewnętrzny błąd serwera")
+            }
+    )
+    @GetMapping("/api/housing-service-provider/user")
+    public ResponseEntity<List<HousingProviderBasicDto>> getHousingProvidersForLoggedUser() {
+        return new ResponseEntity<>(housingProviderService.getHousingProvidersForLoggedUser(), HttpStatus.OK);
     }
 
 }

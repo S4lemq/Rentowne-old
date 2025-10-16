@@ -27,4 +27,7 @@ public interface HousingProviderRepository extends JpaRepository<HousingProvider
 
     @EntityGraph(attributePaths = {"providerFields"})
     Optional<HousingProvider> findById(Long id);
+
+    @Query("SELECT hp FROM HousingProvider hp WHERE hp.user.id = :userId")
+    List<HousingProvider> findByUserId(@Param("userId") Long userId);
 }
