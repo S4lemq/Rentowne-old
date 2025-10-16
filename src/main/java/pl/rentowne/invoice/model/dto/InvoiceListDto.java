@@ -22,8 +22,7 @@ public class InvoiceListDto {
     private BigDecimal consumption;
     private BigDecimal unitPrice;
     private BigDecimal meterValue;
-    private boolean paid;
+    private LocalDate paymentDate;
     private LocalDate payDayMonth;
     private ProviderType category;
 }
-

@@ -80,8 +80,8 @@ public class Invoice extends BaseEntity {
     @Column(name = "METER_VALUE", precision = 10, scale = 2)
     private BigDecimal meterValue;
 
-    @Column(name = "PAID", nullable = false)
-    private boolean paid;
+    @Column(name = "PAYMENT_DATE")
+    private LocalDate paymentDate;
 
     @Column(name = "PAY_DAY_MONTH")
     private LocalDate payDayMonth;

@@ -78,7 +78,7 @@ public class InvoiceServiceImpl implements InvoiceService {
         existingInvoice.setPayDay(dto.getPayDay());
         existingInvoice.setConsumption(dto.getConsumption());
         existingInvoice.setMeterValue(dto.getMeterValue());
-        existingInvoice.setPaid(dto.isPaid());
+        existingInvoice.setPaymentDate(dto.getPaymentDate());
         existingInvoice.setPayDayMonth(dto.getPayDayMonth());
 
         invoiceRepository.save(existingInvoice);

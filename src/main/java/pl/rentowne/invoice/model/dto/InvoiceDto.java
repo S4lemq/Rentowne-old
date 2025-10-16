@@ -22,6 +22,6 @@ public class InvoiceDto {
     private LocalDate payDay;
     private BigDecimal consumption;
     private BigDecimal meterValue;
-    private boolean paid;
+    private LocalDate paymentDate;
     private LocalDate payDayMonth;
 }

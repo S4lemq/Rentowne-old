@@ -32,7 +32,7 @@ public class InvoiceMapper {
                 .payDay(dto.getPayDay())
                 .consumption(dto.getConsumption())
                 .meterValue(dto.getMeterValue())
-                .paid(dto.isPaid())
+                .paymentDate(dto.getPaymentDate())
                 .payDayMonth(dto.getPayDayMonth())
                 .build();
     }
@@ -57,7 +57,7 @@ public class InvoiceMapper {
                 .payDay(entity.getPayDay())
                 .consumption(entity.getConsumption())
                 .meterValue(entity.getMeterValue())
-                .paid(entity.isPaid())
+                .paymentDate(entity.getPaymentDate())
                 .payDayMonth(entity.getPayDayMonth())
                 .build();
     }
@@ -86,7 +86,7 @@ public class InvoiceMapper {
                 .consumption(entity.getConsumption())
                 .unitPrice(unitPrice)
                 .meterValue(entity.getMeterValue())
-                .paid(entity.isPaid())
+                .paymentDate(entity.getPaymentDate())
                 .payDayMonth(entity.getPayDayMonth())
                 .category(entity.getHousingProvider() != null
                         ? entity.getHousingProvider().getType()

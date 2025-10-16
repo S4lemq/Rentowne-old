@@ -7,8 +7,10 @@
 
     <changeSet author="plubowicz" id="047-add_invoice_sequence_and_table">
         <sql>
+            -- Tworzenie sekwencji dla tabeli INVOICE
             CREATE SEQUENCE INVOICE_SEQ START WITH 1 INCREMENT BY 1;
 
+            -- Tworzenie tabeli INVOICE
             CREATE TABLE INVOICE (
                 INVOICE_ID BIGINT DEFAULT NEXTVAL('INVOICE_SEQ') NOT NULL,
                 HOUSING_PROVIDER_ID BIGINT,
@@ -21,7 +23,7 @@
                 PAY_DAY DATE,
                 CONSUMPTION NUMERIC(10,2),
                 METER_VALUE NUMERIC(10,2),
-                PAID BOOLEAN NOT NULL,
+                PAYMENT_DATE DATE,
                 PAY_DAY_MONTH DATE,
                 INSERT_DATE TIMESTAMP NOT NULL,
                 UPDATE_DATE TIMESTAMP,
@@ -32,6 +34,7 @@
                 CONSTRAINT FK_INVOICE_ON_RENTED_OBJECT FOREIGN KEY (RENTED_OBJECT_ID) REFERENCES RENTED_OBJECT(RENTED_OBJECT_ID)
             );
 
+            -- Dodanie komentarzy do tabeli i kolumn
             COMMENT ON TABLE INVOICE IS 'Tabela faktur';
             COMMENT ON COLUMN INVOICE.INVOICE_ID IS 'Klucz główny';
             COMMENT ON COLUMN INVOICE.HOUSING_PROVIDER_ID IS 'Referencja do dostawcy świadczeń';
@@ -44,7 +47,7 @@
             COMMENT ON COLUMN INVOICE.PAY_DAY IS 'Termin płatności';
             COMMENT ON COLUMN INVOICE.CONSUMPTION IS 'Zużycie';
             COMMENT ON COLUMN INVOICE.METER_VALUE IS 'Stan licznika';
-            COMMENT ON COLUMN INVOICE.PAID IS 'Zapłacono';
+            COMMENT ON COLUMN INVOICE.PAYMENT_DATE IS 'Data przelewu/zapłaty faktury';
             COMMENT ON COLUMN INVOICE.PAY_DAY_MONTH IS 'Miesiąc rozliczenia';
             COMMENT ON COLUMN INVOICE.INSERT_DATE IS 'Data wprowadzenia wiersza';
             COMMENT ON COLUMN INVOICE.UPDATE_DATE IS 'Data aktualizacji wiersza';
@@ -54,4 +57,3 @@
     </changeSet>
 
 </databaseChangeLog>
-
