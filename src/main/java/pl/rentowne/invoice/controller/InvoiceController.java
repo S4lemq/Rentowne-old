@@ -15,9 +15,12 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
+import pl.rentowne.invoice.model.InvoiceFilterType;
 import pl.rentowne.invoice.model.dto.InvoiceDto;
 import pl.rentowne.invoice.model.dto.InvoiceListDto;
+import pl.rentowne.invoice.model.dto.InvoiceSummaryDto;
 import pl.rentowne.invoice.service.InvoiceService;
 
 @RestController
@@ -99,7 +102,22 @@ public class InvoiceController {
     )
     @GetMapping("/api/invoices")
     public ResponseEntity<Page<InvoiceListDto>> getInvoices(
-            @PageableDefault(size = 20, sort = "id") Pageable pageable) {
-        return new ResponseEntity<>(invoiceService.getInvoices(pageable), HttpStatus.OK);
+            @PageableDefault(size = 20, sort = "id") Pageable pageable,
+            @RequestParam(required = false) String filter) {
+        InvoiceFilterType filterType = InvoiceFilterType.fromString(filter);
+        return new ResponseEntity<>(invoiceService.getInvoices(pageable, filterType), HttpStatus.OK);
+    }
+
+    @Operation(
+            summary = "Pobiera podsumowanie faktur",
+            description = "Metoda służy do pobrania podsumowania zawierającego sumy płatności w różnych kategoriach",
+            responses = {
+                    @ApiResponse(responseCode = "200", description = "Podsumowanie zostało pobrane pomyślnie"),
+                    @ApiResponse(responseCode = "500", description = "Wewnętrzny błąd serwera")
+            }
+    )
+    @GetMapping("/api/invoices/summary")
+    public ResponseEntity<InvoiceSummaryDto> getInvoiceSummary() {
+        return ResponseEntity.ok(invoiceService.getInvoiceSummary());
     }
 }

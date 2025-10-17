@@ -10,11 +10,15 @@ import pl.rentowne.exception.RentowneErrorCode;
 import pl.rentowne.housing_provider.model.HousingProvider;
 import pl.rentowne.invoice.mapper.InvoiceMapper;
 import pl.rentowne.invoice.model.Invoice;
+import pl.rentowne.invoice.model.InvoiceFilterType;
 import pl.rentowne.invoice.model.dto.InvoiceDto;
 import pl.rentowne.invoice.model.dto.InvoiceListDto;
+import pl.rentowne.invoice.model.dto.InvoiceSummaryDto;
 import pl.rentowne.invoice.repository.InvoiceRepository;
 import pl.rentowne.invoice.service.InvoiceService;
 import pl.rentowne.rented_object.model.RentedObject;
+
+import java.time.LocalDate;
 
 @Service
 @RequiredArgsConstructor
@@ -98,7 +102,44 @@ public class InvoiceServiceImpl implements InvoiceService {
     @Override
     @Transactional(readOnly = true)
     public Page<InvoiceListDto> getInvoices(Pageable pageable) {
-        Page<Invoice> invoicesPage = invoiceRepository.findAllWithRelations(pageable);
+        return getInvoices(pageable, null);
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public Page<InvoiceListDto> getInvoices(Pageable pageable, InvoiceFilterType filterType) {
+        Page<Invoice> invoicesPage;
+
+        if (filterType == null) {
+            invoicesPage = invoiceRepository.findAllWithRelations(pageable);
+        } else {
+            LocalDate currentDate = LocalDate.now();
+            int currentYear = currentDate.getYear();
+            int currentMonth = currentDate.getMonthValue();
+
+            invoicesPage = switch (filterType) {
+                case PAID_THIS_MONTH -> invoiceRepository.findPaidInMonth(currentYear, currentMonth, pageable);
+                case UPCOMING_PAYMENTS -> invoiceRepository.findUpcomingPayments(currentDate, pageable);
+                case OVERDUE_PAYMENTS -> invoiceRepository.findOverduePayments(currentDate, pageable);
+                case TO_SETTLE_THIS_MONTH -> invoiceRepository.findToSettleInMonth(currentYear, currentMonth, pageable);
+            };
+        }
+
         return invoicesPage.map(invoiceMapper::toListDto);
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public InvoiceSummaryDto getInvoiceSummary() {
+        LocalDate currentDate = LocalDate.now();
+        int currentYear = currentDate.getYear();
+        int currentMonth = currentDate.getMonthValue();
+
+        return InvoiceSummaryDto.builder()
+                .paidThisMonth(invoiceRepository.sumPaidInMonth(currentYear, currentMonth))
+                .upcomingPayments(invoiceRepository.sumUpcomingPayments(currentDate))
+                .overduePayments(invoiceRepository.sumOverduePayments(currentDate))
+                .toSettleThisMonth(invoiceRepository.sumToSettleInMonth(currentYear, currentMonth))
+                .build();
     }
 }
