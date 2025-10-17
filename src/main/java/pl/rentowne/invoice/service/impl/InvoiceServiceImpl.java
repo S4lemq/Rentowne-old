@@ -5,6 +5,7 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import pl.rentowne.apartment.model.Apartment;
 import pl.rentowne.exception.RentowneBusinessException;
 import pl.rentowne.exception.RentowneErrorCode;
 import pl.rentowne.housing_provider.model.HousingProvider;
@@ -16,7 +17,6 @@ import pl.rentowne.invoice.model.dto.InvoiceListDto;
 import pl.rentowne.invoice.model.dto.InvoiceSummaryDto;
 import pl.rentowne.invoice.repository.InvoiceRepository;
 import pl.rentowne.invoice.service.InvoiceService;
-import pl.rentowne.rented_object.model.RentedObject;
 
 import java.time.LocalDate;
 
@@ -64,14 +64,14 @@ public class InvoiceServiceImpl implements InvoiceService {
             existingInvoice.setHousingProvider(null);
         }
 
-        if (dto.getRentedObjectId() != null) {
-            existingInvoice.setRentedObject(
-                    RentedObject.builder()
-                            .id(dto.getRentedObjectId())
+        if (dto.getApartmentId() != null) {
+            existingInvoice.setApartment(
+                    Apartment.builder()
+                            .id(dto.getApartmentId())
                             .build()
             );
         } else {
-            existingInvoice.setRentedObject(null);
+            existingInvoice.setApartment(null);
         }
 
         existingInvoice.setInvoiceNumber(dto.getInvoiceNumber());

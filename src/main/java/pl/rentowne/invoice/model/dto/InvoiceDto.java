@@ -14,7 +14,7 @@ public class InvoiceDto {
     private Long housingProviderId;
     private ProviderType providerType;
     private String invoiceNumber;
-    private Long rentedObjectId;
+    private Long apartmentId;
     private LocalDate month;
     private LocalDate dateFrom;
     private LocalDate dateTo;

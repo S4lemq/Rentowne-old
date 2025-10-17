@@ -17,9 +17,9 @@ import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
+import pl.rentowne.apartment.model.Apartment;
 import pl.rentowne.common.model.BaseEntity;
 import pl.rentowne.housing_provider.model.HousingProvider;
-import pl.rentowne.rented_object.model.RentedObject;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
@@ -56,8 +56,8 @@ public class Invoice extends BaseEntity {
     private String invoiceNumber;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "RENTED_OBJECT_ID")
-    private RentedObject rentedObject;
+    @JoinColumn(name = "APARTMENT_ID")
+    private Apartment apartment;
 
     @Column(name = "MONTH")
     private LocalDate month;

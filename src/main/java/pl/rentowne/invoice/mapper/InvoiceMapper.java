@@ -2,11 +2,11 @@ package pl.rentowne.invoice.mapper;
 
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
+import pl.rentowne.apartment.model.Apartment;
 import pl.rentowne.housing_provider.model.HousingProvider;
 import pl.rentowne.invoice.model.Invoice;
 import pl.rentowne.invoice.model.dto.InvoiceDto;
 import pl.rentowne.invoice.model.dto.InvoiceListDto;
-import pl.rentowne.rented_object.model.RentedObject;
 
 import java.math.BigDecimal;
 import java.math.RoundingMode;
@@ -22,8 +22,8 @@ public class InvoiceMapper {
                         ? HousingProvider.builder().id(dto.getHousingProviderId()).build()
                         : null)
                 .invoiceNumber(dto.getInvoiceNumber())
-                .rentedObject(dto.getRentedObjectId() != null
-                        ? RentedObject.builder().id(dto.getRentedObjectId()).build()
+                .apartment(dto.getApartmentId() != null
+                        ? Apartment.builder().id(dto.getApartmentId()).build()
                         : null)
                 .month(dto.getMonth())
                 .dateFrom(dto.getDateFrom())
@@ -47,8 +47,8 @@ public class InvoiceMapper {
                         ? entity.getHousingProvider().getType()
                         : null)
                 .invoiceNumber(entity.getInvoiceNumber())
-                .rentedObjectId(entity.getRentedObject() != null
-                        ? entity.getRentedObject().getId()
+                .apartmentId(entity.getApartment() != null
+                        ? entity.getApartment().getId()
                         : null)
                 .month(entity.getMonth())
                 .dateFrom(entity.getDateFrom())
@@ -75,8 +75,8 @@ public class InvoiceMapper {
                         ? entity.getHousingProvider().getName()
                         : null)
                 .invoiceNumber(entity.getInvoiceNumber())
-                .localName(entity.getRentedObject() != null
-                        ? entity.getRentedObject().getRentedObjectName()
+                .localName(entity.getApartment() != null
+                        ? entity.getApartment().getApartmentName()
                         : null)
                 .month(entity.getMonth())
                 .dateFrom(entity.getDateFrom())

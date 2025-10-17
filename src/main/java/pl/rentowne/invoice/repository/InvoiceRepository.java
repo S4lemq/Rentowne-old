@@ -18,7 +18,7 @@ public interface InvoiceRepository extends JpaRepository<Invoice, Long> {
     @Query("""
             select i from Invoice i
             left join fetch i.housingProvider hp
-            left join fetch i.rentedObject ro
+            left join fetch i.apartment a
             """)
     Page<Invoice> findAllWithRelations(Pageable pageable);
 
@@ -28,7 +28,7 @@ public interface InvoiceRepository extends JpaRepository<Invoice, Long> {
     @Query("""
             select i from Invoice i
             left join fetch i.housingProvider hp
-            left join fetch i.rentedObject ro
+            left join fetch i.apartment a
             where year(i.paymentDate) = :year
             and month(i.paymentDate) = :month
             """)
@@ -40,7 +40,7 @@ public interface InvoiceRepository extends JpaRepository<Invoice, Long> {
     @Query("""
             select i from Invoice i
             left join fetch i.housingProvider hp
-            left join fetch i.rentedObject ro
+            left join fetch i.apartment a
             where :currentDate <= i.payDay
             and i.paymentDate is null
             """)
@@ -52,7 +52,7 @@ public interface InvoiceRepository extends JpaRepository<Invoice, Long> {
     @Query("""
             select i from Invoice i
             left join fetch i.housingProvider hp
-            left join fetch i.rentedObject ro
+            left join fetch i.apartment a
             where :currentDate > i.payDay
             and i.paymentDate is null
             """)
@@ -64,7 +64,7 @@ public interface InvoiceRepository extends JpaRepository<Invoice, Long> {
     @Query("""
             select i from Invoice i
             left join fetch i.housingProvider hp
-            left join fetch i.rentedObject ro
+            left join fetch i.apartment a
             where year(i.payDayMonth) = :year
             and month(i.payDayMonth) = :month
             """)
