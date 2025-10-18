@@ -93,6 +93,7 @@ public class InvoiceMapper {
                 .category(entity.getHousingProvider() != null
                         ? entity.getHousingProvider().getType()
                         : null)
+                .hasFile(entity.getPdfFileName() != null && !entity.getPdfFileName().trim().isEmpty())
                 .build();
     }
 }

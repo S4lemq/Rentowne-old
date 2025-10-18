@@ -25,4 +25,5 @@ public class InvoiceListDto {
     private LocalDate paymentDate;
     private LocalDate payDayMonth;
     private ProviderType category;
+    private boolean hasFile;
 }
