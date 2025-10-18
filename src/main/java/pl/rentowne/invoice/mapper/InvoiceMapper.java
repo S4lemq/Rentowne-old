@@ -34,6 +34,7 @@ public class InvoiceMapper {
                 .meterValue(dto.getMeterValue())
                 .paymentDate(dto.getPaymentDate())
                 .payDayMonth(dto.getPayDayMonth())
+                .pdfFileName(dto.getPdfFileName())
                 .build();
     }
 
@@ -59,6 +60,7 @@ public class InvoiceMapper {
                 .meterValue(entity.getMeterValue())
                 .paymentDate(entity.getPaymentDate())
                 .payDayMonth(entity.getPayDayMonth())
+                .pdfFileName(entity.getPdfFileName())
                 .build();
     }
 

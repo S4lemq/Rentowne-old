@@ -24,4 +24,5 @@ public class InvoiceDto {
     private BigDecimal meterValue;
     private LocalDate paymentDate;
     private LocalDate payDayMonth;
+    private String pdfFileName;
 }

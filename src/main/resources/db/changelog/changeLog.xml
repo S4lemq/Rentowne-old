@@ -49,5 +49,6 @@
     <include file="/db/changelog/ddl-scripts/045-add_settlement_id_to_meter_reading.xml"/>
     <include file="/db/changelog/ddl-scripts/046-add_column_apartment_settled.xml"/>
     <include file="/db/changelog/ddl-scripts/047-add_invoice_table.xml"/>
+    <include file="/db/changelog/ddl-scripts/048-add_pdf_file_name_column_to_invoice.xml"/>
 
 </databaseChangeLog>

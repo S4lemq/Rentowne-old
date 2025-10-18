@@ -9,6 +9,8 @@ import pl.rentowne.invoice.model.dto.InvoiceFilterSummaryDto;
 import pl.rentowne.invoice.model.dto.InvoiceListDto;
 import pl.rentowne.invoice.model.dto.InvoiceSummaryDto;
 
+import java.io.InputStream;
+
 /**
  * Serwis obsługi faktur
  */
@@ -43,6 +45,16 @@ public interface InvoiceService {
      * @param id id faktury do usunięcia
      */
     void deleteInvoice(Long id);
+
+    /**
+     * Wgrywa plik PDF i automatycznie przypisuje go do faktury
+     *
+     * @param invoiceId id faktury
+     * @param filename oryginalna nazwa pliku
+     * @param inputStream strumień danych pliku
+     * @return nazwa zapisanego pliku
+     */
+    String uploadAndAttachPdf(Long invoiceId, String filename, InputStream inputStream);
 
     /**
      * Pobiera paginowaną listę faktur

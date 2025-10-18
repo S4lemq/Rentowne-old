@@ -30,7 +30,10 @@ public enum RentowneErrorCode implements Serializable {
     NO_SETTLEMENTS(),
     EMPTY_REQUIRED_ADDRESS_FIELDS,
     EMPTY_REQUIRED_PAYMENT_CARD_FIELDS,
-    INVOICE_NOT_FOUND();
+    INVOICE_NOT_FOUND(),
+    FILE_UPLOAD_ERROR(),
+    INVALID_FILE_TYPE(),
+    FILE_NOT_FOUND();
 
     private Set<String> translateKeys;
 

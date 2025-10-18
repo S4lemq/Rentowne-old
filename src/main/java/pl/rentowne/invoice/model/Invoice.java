@@ -86,6 +86,9 @@ public class Invoice extends BaseEntity {
     @Column(name = "PAY_DAY_MONTH")
     private LocalDate payDayMonth;
 
+    @Column(name = "PDF_FILE_NAME", length = 255)
+    private String pdfFileName;
+
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;

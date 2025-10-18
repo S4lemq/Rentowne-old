@@ -18,8 +18,10 @@ import pl.rentowne.invoice.model.dto.InvoiceFilterSummaryDto;
 import pl.rentowne.invoice.model.dto.InvoiceListDto;
 import pl.rentowne.invoice.model.dto.InvoiceSummaryDto;
 import pl.rentowne.invoice.repository.InvoiceRepository;
+import pl.rentowne.invoice.service.InvoicePdfService;
 import pl.rentowne.invoice.service.InvoiceService;
 
+import java.io.InputStream;
 import java.time.LocalDate;
 
 @Service
@@ -28,6 +30,7 @@ public class InvoiceServiceImpl implements InvoiceService {
 
     private final InvoiceRepository invoiceRepository;
     private final InvoiceMapper invoiceMapper;
+    private final InvoicePdfService invoicePdfService;
 
     @Override
     @Transactional
@@ -86,6 +89,7 @@ public class InvoiceServiceImpl implements InvoiceService {
         existingInvoice.setMeterValue(dto.getMeterValue());
         existingInvoice.setPaymentDate(dto.getPaymentDate());
         existingInvoice.setPayDayMonth(dto.getPayDayMonth());
+        existingInvoice.setPdfFileName(dto.getPdfFileName());
 
         invoiceRepository.save(existingInvoice);
     }
@@ -94,11 +98,45 @@ public class InvoiceServiceImpl implements InvoiceService {
     @Transactional
     public void deleteInvoice(Long id) {
 
-        if (!invoiceRepository.existsById(id)) {
-            throw new RentowneBusinessException(RentowneErrorCode.INVOICE_NOT_FOUND);
+        Invoice invoice = invoiceRepository.findById(id)
+                .orElseThrow(() -> new RentowneBusinessException(RentowneErrorCode.INVOICE_NOT_FOUND));
+
+        // Usuń plik PDF jeśli istnieje
+        if (invoice.getPdfFileName() != null && !invoice.getPdfFileName().isEmpty()) {
+            try {
+                invoicePdfService.deleteInvoicePdf(invoice.getPdfFileName());
+            } catch (Exception e) {
+                // Logowanie błędu, ale nie przerywamy usuwania faktury
+            }
         }
 
         invoiceRepository.deleteById(id);
+    }
+
+    @Override
+    @Transactional
+    public String uploadAndAttachPdf(Long invoiceId, String filename, InputStream inputStream) {
+        // Pobierz fakturę
+        Invoice invoice = invoiceRepository.findById(invoiceId)
+                .orElseThrow(() -> new RentowneBusinessException(RentowneErrorCode.INVOICE_NOT_FOUND));
+
+        // Usuń stary plik PDF jeśli istnieje
+        if (invoice.getPdfFileName() != null && !invoice.getPdfFileName().isEmpty()) {
+            try {
+                invoicePdfService.deleteInvoicePdf(invoice.getPdfFileName());
+            } catch (Exception e) {
+                // Logowanie błędu, ale kontynuujemy
+            }
+        }
+
+        // Wgraj nowy plik
+        String savedFileName = invoicePdfService.uploadInvoicePdf(filename, inputStream);
+
+        // Zaktualizuj fakturę z nową nazwą pliku
+        invoice.setPdfFileName(savedFileName);
+        invoiceRepository.save(invoice);
+
+        return savedFileName;
     }
 
     @Override

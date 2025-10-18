@@ -4,10 +4,13 @@ import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
+import org.springframework.core.io.Resource;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.web.PageableDefault;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -17,13 +20,21 @@ import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.multipart.MultipartFile;
+import pl.rentowne.exception.RentowneBusinessException;
+import pl.rentowne.exception.RentowneErrorCode;
 import pl.rentowne.invoice.model.InvoiceFilterType;
 import pl.rentowne.invoice.model.dto.InvoiceDto;
 import pl.rentowne.invoice.model.dto.InvoiceFilterDto;
 import pl.rentowne.invoice.model.dto.InvoiceFilterSummaryDto;
 import pl.rentowne.invoice.model.dto.InvoiceListDto;
 import pl.rentowne.invoice.model.dto.InvoiceSummaryDto;
+import pl.rentowne.invoice.service.InvoicePdfService;
 import pl.rentowne.invoice.service.InvoiceService;
+import pl.rentowne.user.model.dto.UploadResponse;
+
+import java.io.IOException;
+import java.io.InputStream;
 
 @RestController
 @RequiredArgsConstructor
@@ -31,6 +42,7 @@ import pl.rentowne.invoice.service.InvoiceService;
 public class InvoiceController {
 
     private final InvoiceService invoiceService;
+    private final InvoicePdfService invoicePdfService;
 
     @Operation(
             summary = "Dodaje nową fakturę",
@@ -135,5 +147,77 @@ public class InvoiceController {
     @GetMapping("/api/invoices/filter-summary")
     public ResponseEntity<InvoiceFilterSummaryDto> getInvoiceFilterSummary(InvoiceFilterDto invoiceFilterDto) {
         return ResponseEntity.ok(invoiceService.getInvoiceSummaryByFilters(invoiceFilterDto));
+    }
+
+    @Operation(
+            summary = "Wgrywa plik PDF faktury i przypisuje go do faktury",
+            description = "Metoda służy do wgrywania pliku PDF faktury. Plik jest automatycznie przypisywany do faktury o podanym ID.",
+            responses = {
+                    @ApiResponse(responseCode = "200", description = "Plik PDF został wgrany i przypisany do faktury pomyślnie"),
+                    @ApiResponse(responseCode = "400", description = "Niepoprawny plik lub brak faktury"),
+                    @ApiResponse(responseCode = "404", description = "Nie znaleziono faktury"),
+                    @ApiResponse(responseCode = "500", description = "Wewnętrzny błąd serwera")
+            }
+    )
+    @PostMapping("/api/invoices/upload-pdf")
+    public ResponseEntity<UploadResponse> uploadInvoicePdf(
+            @RequestParam("file") MultipartFile file,
+            @RequestParam("invoiceId") Long invoiceId) {
+        if (file.isEmpty()) {
+            throw new RentowneBusinessException(RentowneErrorCode.FILE_UPLOAD_ERROR);
+        }
+
+        // Sprawdź czy to PDF
+        String contentType = file.getContentType();
+        if (contentType == null || !contentType.equals("application/pdf")) {
+            throw new RentowneBusinessException(RentowneErrorCode.INVALID_FILE_TYPE);
+        }
+
+        try (InputStream inputStream = file.getInputStream()) {
+            String savedFileName = invoiceService.uploadAndAttachPdf(invoiceId, file.getOriginalFilename(), inputStream);
+            return ResponseEntity.ok(new UploadResponse(savedFileName));
+        } catch (IOException e) {
+            throw new RuntimeException("Błąd podczas wgrywania pliku PDF faktury", e);
+        }
+    }
+
+    @Operation(
+            summary = "Pobiera plik PDF faktury",
+            description = "Metoda służy do pobrania pliku PDF faktury po nazwie pliku",
+            responses = {
+                    @ApiResponse(responseCode = "200", description = "Plik PDF został pobrany pomyślnie"),
+                    @ApiResponse(responseCode = "404", description = "Nie znaleziono pliku"),
+                    @ApiResponse(responseCode = "500", description = "Wewnętrzny błąd serwera")
+            }
+    )
+    @GetMapping("/api/invoices/pdf/download/{filename}")
+    public ResponseEntity<Resource> getInvoicePdf(
+            @PathVariable String filename) {
+        Resource file = invoicePdfService.getInvoicePdf(filename);
+
+        if (!file.exists()) {
+            throw new RentowneBusinessException(RentowneErrorCode.FILE_NOT_FOUND);
+        }
+
+        return ResponseEntity.ok()
+                .header(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_PDF_VALUE)
+                .header(HttpHeaders.CONTENT_DISPOSITION, "inline; filename=\"" + filename + "\"")
+                .header(HttpHeaders.CACHE_CONTROL, "public, max-age=31536000")
+                .body(file);
+    }
+
+    @Operation(
+            summary = "Usuwa plik PDF faktury",
+            description = "Metoda służy do usuwania pliku PDF faktury",
+            responses = {
+                    @ApiResponse(responseCode = "200", description = "Plik PDF został usunięty pomyślnie"),
+                    @ApiResponse(responseCode = "404", description = "Nie znaleziono pliku"),
+                    @ApiResponse(responseCode = "500", description = "Wewnętrzny błąd serwera")
+            }
+    )
+    @DeleteMapping("/api/invoices/pdf/{filename}")
+    public ResponseEntity<Void> deleteInvoicePdf(@PathVariable String filename) {
+        invoicePdfService.deleteInvoicePdf(filename);
+        return ResponseEntity.ok().build();
     }
 }

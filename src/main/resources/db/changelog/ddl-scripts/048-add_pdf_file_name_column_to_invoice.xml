@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<databaseChangeLog
+        xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+        http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-latest.xsd">
+    <changeSet author="piotr" id="048-add_pdf_file_name_column">
+        <addColumn tableName="INVOICE">
+            <column name="PDF_FILE_NAME" type="varchar(255)"/>
+        </addColumn>
+    </changeSet>
+
+    <changeSet author="piotr" id="048-add_comment_to_pdf_file_name_column">
+        <setColumnRemarks tableName="INVOICE" columnName="PDF_FILE_NAME" remarks="Nazwa pliku PDF faktury" />
+    </changeSet>
+
+</databaseChangeLog>
+

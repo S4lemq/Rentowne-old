@@ -50,6 +50,7 @@ application:
             refresh-token:
                 expiration: 604800000 # 7 days
     uploadDir: "./data/apartmentImages/"
+    invoicePdfDir: "./data/invoicePdfs/"
     email:
         sender: pusty
     serviceAddress: frontendAddress
@@ -89,5 +90,3 @@ logging:
         com.example.invoicecompare: DEBUG
     pattern:
         console: "%d{yyyy-MM-dd HH:mm:ss.SSS} [%thread] %-5level %logger{36} - %msg%n"
-
-
