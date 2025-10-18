@@ -50,5 +50,6 @@
     <include file="/db/changelog/ddl-scripts/046-add_column_apartment_settled.xml"/>
     <include file="/db/changelog/ddl-scripts/047-add_invoice_table.xml"/>
     <include file="/db/changelog/ddl-scripts/048-add_pdf_file_name_column_to_invoice.xml"/>
+    <include file="/db/changelog/ddl-scripts/049-add_recurring_payment_to_housing_provider.xml"/>
 
 </databaseChangeLog>

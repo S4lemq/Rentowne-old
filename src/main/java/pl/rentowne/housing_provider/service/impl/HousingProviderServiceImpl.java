@@ -50,6 +50,7 @@ public class HousingProviderServiceImpl implements HousingProviderService {
         entity.setType(dto.getType());
         entity.setTax(dto.getTax());
         entity.setConversionRate(dto.getConversionRate());
+        entity.setRecurringPayment(dto.isRecurringPayment());
 
         // Aktualizacja pól ProviderField, jeśli są dostępne
         if (dto.getProviderFieldDtos() != null) {
@@ -71,6 +72,7 @@ public class HousingProviderServiceImpl implements HousingProviderService {
                         .id(provider.getId())
                         .name(provider.getName())
                         .type(provider.getType())
+                        .recurringPayment(provider.isRecurringPayment())
                         .build())
                 .collect(Collectors.toList());
     }
@@ -126,6 +128,7 @@ public class HousingProviderServiceImpl implements HousingProviderService {
                 .type(dto.getType())
                 .tax(dto.getTax())
                 .conversionRate(dto.getConversionRate())
+                .recurringPayment(dto.isRecurringPayment())
                 .user(new User(loggedUserId))
                 .build();
 
@@ -150,6 +153,7 @@ public class HousingProviderServiceImpl implements HousingProviderService {
                 .type(entity.getType())
                 .tax(entity.getTax())
                 .conversionRate(entity.getConversionRate())
+                .recurringPayment(entity.isRecurringPayment())
                 .providerFieldDtos(
                         entity.getProviderFields().stream().map(
                                 field -> ProviderFieldDto.builder()

@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<databaseChangeLog
+        xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+        http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-latest.xsd">
+
+    <changeSet author="plubowicz" id="049-add_recurring_payment_to_housing_provider">
+        <addColumn tableName="HOUSING_PROVIDER">
+            <column name="RECURRING_PAYMENT" type="boolean" defaultValueBoolean="false">
+                <constraints nullable="false"/>
+            </column>
+        </addColumn>
+    </changeSet>
+
+    <changeSet author="plubowicz" id="049-add_comments_to_recurring_payment">
+        <setColumnRemarks tableName="HOUSING_PROVIDER" columnName="RECURRING_PAYMENT" remarks="Czy płatność jest cykliczna"/>
+    </changeSet>
+
+</databaseChangeLog>

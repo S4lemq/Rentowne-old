@@ -10,5 +10,5 @@ public class HousingProviderBasicDto {
     private Long id;
     private String name;
     private ProviderType type;
+    private boolean recurringPayment;
 }
-

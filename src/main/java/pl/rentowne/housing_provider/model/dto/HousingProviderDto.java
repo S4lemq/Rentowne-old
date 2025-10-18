@@ -17,6 +17,5 @@ public class HousingProviderDto {
     private BigDecimal tax;
     private BigDecimal conversionRate;
     private List<ProviderFieldDto> providerFieldDtos;
+    private boolean recurringPayment;
 }
-
-
