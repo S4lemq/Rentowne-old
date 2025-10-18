@@ -14,6 +14,7 @@ import pl.rentowne.invoice.model.Invoice;
 import pl.rentowne.invoice.model.InvoiceFilterType;
 import pl.rentowne.invoice.model.dto.InvoiceDto;
 import pl.rentowne.invoice.model.dto.InvoiceFilterDto;
+import pl.rentowne.invoice.model.dto.InvoiceFilterSummaryDto;
 import pl.rentowne.invoice.model.dto.InvoiceListDto;
 import pl.rentowne.invoice.model.dto.InvoiceSummaryDto;
 import pl.rentowne.invoice.repository.InvoiceRepository;
@@ -135,6 +136,15 @@ public class InvoiceServiceImpl implements InvoiceService {
                 .upcomingPayments(invoiceRepository.sumUpcomingPayments(currentDate))
                 .overduePayments(invoiceRepository.sumOverduePayments(currentDate))
                 .toSettleThisMonth(invoiceRepository.sumToSettleInMonth(currentYear, currentMonth))
+                .build();
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public InvoiceFilterSummaryDto getInvoiceSummaryByFilters(InvoiceFilterDto invoiceFilterDto) {
+        return InvoiceFilterSummaryDto.builder()
+                .totalAmount(invoiceRepository.sumAmountByFilters(invoiceFilterDto))
+                .totalConsumption(invoiceRepository.sumConsumptionByFilters(invoiceFilterDto))
                 .build();
     }
 }

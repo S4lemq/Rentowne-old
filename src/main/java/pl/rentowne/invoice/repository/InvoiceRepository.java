@@ -134,4 +134,38 @@ public interface InvoiceRepository extends JpaRepository<Invoice, Long> {
             and month(i.payDayMonth) = :month
             """)
     BigDecimal sumToSettleInMonth(@Param("year") int year, @Param("month") int month);
+
+    /**
+     * Suma wszystkich amount na podstawie filtrów
+     */
+    @Query("""
+            select coalesce(sum(i.amount), 0)
+            from Invoice i
+            left join i.housingProvider hp
+            left join i.apartment a
+            where (:#{#invoiceFilterDto.housingProviderId} is null or hp.id = :#{#invoiceFilterDto.housingProviderId})
+              and (:#{#invoiceFilterDto.apartmentId} is null or a.id = :#{#invoiceFilterDto.apartmentId})
+              and (:#{#invoiceFilterDto.month} is null or cast(i.month as string) = :#{#invoiceFilterDto.month})
+              and (:#{#invoiceFilterDto.payDay} is null or cast(i.payDay as string) = :#{#invoiceFilterDto.payDay})
+              and (:#{#invoiceFilterDto.payDayMonth} is null or cast(i.payDayMonth as string) = :#{#invoiceFilterDto.payDayMonth})
+              and (:#{#invoiceFilterDto.category} is null or hp.type = :#{#invoiceFilterDto.category})
+            """)
+    BigDecimal sumAmountByFilters(@Param("invoiceFilterDto") InvoiceFilterDto dto);
+
+    /**
+     * Suma wszystkich consumption na podstawie filtrów
+     */
+    @Query("""
+            select coalesce(sum(i.consumption), 0)
+            from Invoice i
+            left join i.housingProvider hp
+            left join i.apartment a
+            where (:#{#invoiceFilterDto.housingProviderId} is null or hp.id = :#{#invoiceFilterDto.housingProviderId})
+              and (:#{#invoiceFilterDto.apartmentId} is null or a.id = :#{#invoiceFilterDto.apartmentId})
+              and (:#{#invoiceFilterDto.month} is null or cast(i.month as string) = :#{#invoiceFilterDto.month})
+              and (:#{#invoiceFilterDto.payDay} is null or cast(i.payDay as string) = :#{#invoiceFilterDto.payDay})
+              and (:#{#invoiceFilterDto.payDayMonth} is null or cast(i.payDayMonth as string) = :#{#invoiceFilterDto.payDayMonth})
+              and (:#{#invoiceFilterDto.category} is null or hp.type = :#{#invoiceFilterDto.category})
+            """)
+    BigDecimal sumConsumptionByFilters(@Param("invoiceFilterDto") InvoiceFilterDto dto);
 }

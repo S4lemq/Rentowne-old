@@ -20,6 +20,7 @@ import org.springframework.web.bind.annotation.RestController;
 import pl.rentowne.invoice.model.InvoiceFilterType;
 import pl.rentowne.invoice.model.dto.InvoiceDto;
 import pl.rentowne.invoice.model.dto.InvoiceFilterDto;
+import pl.rentowne.invoice.model.dto.InvoiceFilterSummaryDto;
 import pl.rentowne.invoice.model.dto.InvoiceListDto;
 import pl.rentowne.invoice.model.dto.InvoiceSummaryDto;
 import pl.rentowne.invoice.service.InvoiceService;
@@ -121,5 +122,18 @@ public class InvoiceController {
     @GetMapping("/api/invoices/summary")
     public ResponseEntity<InvoiceSummaryDto> getInvoiceSummary() {
         return ResponseEntity.ok(invoiceService.getInvoiceSummary());
+    }
+
+    @Operation(
+            summary = "Pobiera sumy amount i consumption na podstawie filtrów",
+            description = "Metoda służy do pobrania sum amount i consumption dla faktur pasujących do podanych filtrów",
+            responses = {
+                    @ApiResponse(responseCode = "200", description = "Sumy zostały pobrane pomyślnie"),
+                    @ApiResponse(responseCode = "500", description = "Wewnętrzny błąd serwera")
+            }
+    )
+    @GetMapping("/api/invoices/filter-summary")
+    public ResponseEntity<InvoiceFilterSummaryDto> getInvoiceFilterSummary(InvoiceFilterDto invoiceFilterDto) {
+        return ResponseEntity.ok(invoiceService.getInvoiceSummaryByFilters(invoiceFilterDto));
     }
 }

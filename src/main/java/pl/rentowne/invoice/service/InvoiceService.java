@@ -5,6 +5,7 @@ import org.springframework.data.domain.Pageable;
 import pl.rentowne.invoice.model.InvoiceFilterType;
 import pl.rentowne.invoice.model.dto.InvoiceDto;
 import pl.rentowne.invoice.model.dto.InvoiceFilterDto;
+import pl.rentowne.invoice.model.dto.InvoiceFilterSummaryDto;
 import pl.rentowne.invoice.model.dto.InvoiceListDto;
 import pl.rentowne.invoice.model.dto.InvoiceSummaryDto;
 
@@ -59,4 +60,12 @@ public interface InvoiceService {
      * @return podsumowanie zawierające sumy płatności
      */
     InvoiceSummaryDto getInvoiceSummary();
+
+    /**
+     * Pobiera sumy amount i consumption na podstawie filtrów
+     *
+     * @param invoiceFilterDto filtry do zastosowania
+     * @return podsumowanie zawierające sumy amount i consumption
+     */
+    InvoiceFilterSummaryDto getInvoiceSummaryByFilters(InvoiceFilterDto invoiceFilterDto);
 }
