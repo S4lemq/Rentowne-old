@@ -6,6 +6,7 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import pl.rentowne.invoice.model.Invoice;
+import pl.rentowne.invoice.model.dto.InvoiceFilterDto;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
@@ -15,12 +16,32 @@ import java.time.LocalDate;
  */
 public interface InvoiceRepository extends JpaRepository<Invoice, Long> {
 
-    @Query("""
-            select i from Invoice i
-            left join fetch i.housingProvider hp
-            left join fetch i.apartment a
-            """)
-    Page<Invoice> findAllWithRelations(Pageable pageable);
+    @Query(
+            value = """
+        select i from Invoice i
+        left join fetch i.housingProvider hp
+        left join fetch i.apartment a
+        where (:#{#invoiceFilterDto.housingProviderId} is null or hp.id = :#{#invoiceFilterDto.housingProviderId})
+          and (:#{#invoiceFilterDto.apartmentId} is null or a.id = :#{#invoiceFilterDto.apartmentId})
+          and (:#{#invoiceFilterDto.month} is null or cast(i.month as string) = :#{#invoiceFilterDto.month})
+          and (:#{#invoiceFilterDto.payDay} is null or cast(i.payDay as string) = :#{#invoiceFilterDto.payDay})
+          and (:#{#invoiceFilterDto.payDayMonth} is null or cast(i.payDayMonth as string) = :#{#invoiceFilterDto.payDayMonth})
+          and (:#{#invoiceFilterDto.category} is null or hp.type = :#{#invoiceFilterDto.category})
+        """,
+            countQuery = """
+            select count(distinct i) from Invoice i
+        left join i.housingProvider hp
+        left join i.apartment a
+        where (:#{#invoiceFilterDto.housingProviderId} is null or hp.id = :#{#invoiceFilterDto.housingProviderId})
+          and (:#{#invoiceFilterDto.apartmentId} is null or a.id = :#{#invoiceFilterDto.apartmentId})
+          and (:#{#invoiceFilterDto.month} is null or cast(i.month as string) = :#{#invoiceFilterDto.month})
+          and (:#{#invoiceFilterDto.payDay} is null or cast(i.payDay as string) = :#{#invoiceFilterDto.payDay})
+          and (:#{#invoiceFilterDto.payDayMonth} is null or cast(i.payDayMonth as string) = :#{#invoiceFilterDto.payDayMonth})
+          and (:#{#invoiceFilterDto.category} is null or hp.type = :#{#invoiceFilterDto.category})
+    """
+    )
+    Page<Invoice> findAllWithRelations(Pageable pageable, @Param("invoiceFilterDto") InvoiceFilterDto dto);
+
 
     /**
      * Faktury zapłacone w danym miesiącu (według paymentDate)

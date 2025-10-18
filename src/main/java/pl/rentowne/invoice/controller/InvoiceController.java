@@ -19,6 +19,7 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import pl.rentowne.invoice.model.InvoiceFilterType;
 import pl.rentowne.invoice.model.dto.InvoiceDto;
+import pl.rentowne.invoice.model.dto.InvoiceFilterDto;
 import pl.rentowne.invoice.model.dto.InvoiceListDto;
 import pl.rentowne.invoice.model.dto.InvoiceSummaryDto;
 import pl.rentowne.invoice.service.InvoiceService;
@@ -103,9 +104,10 @@ public class InvoiceController {
     @GetMapping("/api/invoices")
     public ResponseEntity<Page<InvoiceListDto>> getInvoices(
             @PageableDefault(size = 20, sort = "id") Pageable pageable,
-            @RequestParam(required = false) String filter) {
+            @RequestParam(required = false) String filter,
+            InvoiceFilterDto invoiceFilterDto) {
         InvoiceFilterType filterType = InvoiceFilterType.fromString(filter);
-        return new ResponseEntity<>(invoiceService.getInvoices(pageable, filterType), HttpStatus.OK);
+        return new ResponseEntity<>(invoiceService.getInvoices(pageable, filterType, invoiceFilterDto), HttpStatus.OK);
     }
 
     @Operation(

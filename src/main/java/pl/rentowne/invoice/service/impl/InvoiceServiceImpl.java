@@ -13,6 +13,7 @@ import pl.rentowne.invoice.mapper.InvoiceMapper;
 import pl.rentowne.invoice.model.Invoice;
 import pl.rentowne.invoice.model.InvoiceFilterType;
 import pl.rentowne.invoice.model.dto.InvoiceDto;
+import pl.rentowne.invoice.model.dto.InvoiceFilterDto;
 import pl.rentowne.invoice.model.dto.InvoiceListDto;
 import pl.rentowne.invoice.model.dto.InvoiceSummaryDto;
 import pl.rentowne.invoice.repository.InvoiceRepository;
@@ -101,17 +102,11 @@ public class InvoiceServiceImpl implements InvoiceService {
 
     @Override
     @Transactional(readOnly = true)
-    public Page<InvoiceListDto> getInvoices(Pageable pageable) {
-        return getInvoices(pageable, null);
-    }
-
-    @Override
-    @Transactional(readOnly = true)
-    public Page<InvoiceListDto> getInvoices(Pageable pageable, InvoiceFilterType filterType) {
+    public Page<InvoiceListDto> getInvoices(Pageable pageable, InvoiceFilterType filterType, final InvoiceFilterDto invoiceFilterDto) {
         Page<Invoice> invoicesPage;
 
         if (filterType == null) {
-            invoicesPage = invoiceRepository.findAllWithRelations(pageable);
+            invoicesPage = invoiceRepository.findAllWithRelations(pageable, invoiceFilterDto);
         } else {
             LocalDate currentDate = LocalDate.now();
             int currentYear = currentDate.getYear();
