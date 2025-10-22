@@ -1,3 +1,32 @@
+-- Czyszczenie danych przed każdym testem
+DELETE FROM invoice;
+DELETE FROM tenant;
+DELETE FROM lease_agreement;
+DELETE FROM apartment_housing_provider;
+DELETE FROM provider_field;
+DELETE FROM housing_provider;
+DELETE FROM meter_reading;
+DELETE FROM meter;
+DELETE FROM rented_object;
+DELETE FROM apartment;
+DELETE FROM user_account;
+DELETE FROM address;
+
+-- Resetowanie sekwencji
+ALTER SEQUENCE address_seq RESTART WITH 1;
+ALTER SEQUENCE user_account_seq RESTART WITH 1;
+ALTER SEQUENCE apartment_seq RESTART WITH 1;
+ALTER SEQUENCE rented_object_seq RESTART WITH 1;
+ALTER SEQUENCE meter_seq RESTART WITH 1;
+ALTER SEQUENCE meter_reading_seq RESTART WITH 1;
+ALTER SEQUENCE housing_provider_seq RESTART WITH 1;
+ALTER SEQUENCE provider_field_seq RESTART WITH 1;
+ALTER SEQUENCE apartment_housing_provider_seq RESTART WITH 1;
+ALTER SEQUENCE lease_agreement_seq RESTART WITH 1;
+ALTER SEQUENCE tenant_seq RESTART WITH 1;
+ALTER SEQUENCE invoice_seq RESTART WITH 1;
+
+
 INSERT INTO public.address (address_id, street_name, building_number, apartment_number, zip_code, city_name, voivode_ship, insert_date, update_date, insert_operator, update_operator) VALUES
 (1, 'Zwierzyniecka', '14/16', '18', '60-813', 'Poznań', 'Wielkopolskie', '2024-02-18 23:38:15.781204', null, 'peter.lubowicz@gmail.com', null),
 (2, 'Kujawska', '2', '23', '84-835', 'Żory', 'Wielkopolskie', '2024-02-27 22:40:15.092124', null, 'peter.lubowicz@gmail.com', null),
@@ -12,12 +41,16 @@ INSERT INTO public.user_account (user_account_id, first_name, last_name, email, 
 
 
 INSERT INTO public.apartment (apartment_id, apartment_name, leases_number, area, is_rented, user_account_id, insert_date, update_date, insert_operator, update_operator, address_id, image, pinned) VALUES
-(1, 'Zwierzyniecka 18', 2, 62.00, false, 1, '2024-02-18 23:38:15.781204', '2024-03-24 19:58:42.275878', 'peter.lubowicz@gmail.com', 'peter.lubowicz@gmail.com', 1, '18-5.JPG', false);
+(1, 'Zwierzyniecka 18', 2, 62.00, false, 1, '2024-02-18 23:38:15.781204', '2024-03-24 19:58:42.275878', 'peter.lubowicz@gmail.com', 'peter.lubowicz@gmail.com', 1, '18-5.JPG', false),
+(2, 'Zwierzyniecka 4', 2, 59.00, false, 1, '2024-02-18 23:36:45.054192', '2024-03-24 19:41:19.214510', 'peter.lubowicz@gmail.com', 'peter.lubowicz@gmail.com', 2, 'atall-5.jpg', false);
 
 
 INSERT INTO public.rented_object (rented_object_id, rented_object_name, is_rented, apartment_id, insert_date, update_date, insert_operator, update_operator, last_settlement_date, last_settlement_total_amount) VALUES
 (1, 'M18A', true, 1, '2024-02-18 23:38:15.784203', null, 'peter.lubowicz@gmail.com', null, null, null),
-(2, 'M18B', true, 1, '2024-02-18 23:38:15.783204', null, 'peter.lubowicz@gmail.com', null, null, null);
+(2, 'M18B', true, 1, '2024-02-18 23:38:15.783204', null, 'peter.lubowicz@gmail.com', null, null, null),
+(3, 'M4A', true, 2, '2024-02-18 23:36:45.123670', null, 'peter.lubowicz@gmail.com', null, '2025-10-04 00:00:00.000000', 3906.97),
+(4, 'M4B', true, 2, '2024-02-18 23:36:45.124669', null, 'peter.lubowicz@gmail.com', null, null, null);
+
 
 --M18A--
 INSERT INTO public.meter (meter_id, name, type, rented_object_id, insert_date, update_date, insert_operator, update_operator, meter_number, initial_meter_reading, installation_date) VALUES
@@ -33,12 +66,14 @@ INSERT INTO public.meter_reading (meter_reading_id, current_reading, reading_dat
 (2, 43.00000, '2024-03-01 00:00:00.000000', 43.00000, 107, '2024-03-02 13:11:05.572152', null, 'peter.lubowicz@gmail.com', null, false, false,null);
 
 
-INSERT INTO public.housing_provider (housing_provider_id, name, tax, type, insert_date, update_date, insert_operator, update_operator, user_account_id, conversion_rate) VALUES
-(21, 'Orange', null, 'INTERNET', '2024-02-08 20:38:22.372424', null, 'peter.lubowicz@gmail.com', null, 1, null),
-(23, 'Enea', 23.00, 'ELECTRICITY', '2024-02-08 20:44:07.679831', null, 'peter.lubowicz@gmail.com', null, 1, null),
-(24, 'PGNiG', 23.00, 'GAS', '2024-02-08 20:46:13.399076', '2024-02-09 22:33:09.751144', 'peter.lubowicz@gmail.com', 'peter.lubowicz@gmail.com', 1, 11.44200),
-(25, 'Sobótka woda', null, 'WATER', '2024-02-11 18:30:05.170915', null, 'peter.lubowicz@gmail.com', null, 1, null),
-(26, 'Vectra', null, 'INTERNET', '2024-02-16 16:23:59.887456', null, 'peter.lubowicz@gmail.com', null, 1, null);
+INSERT INTO public.housing_provider (housing_provider_id, name, tax, type, insert_date, update_date, insert_operator, update_operator, user_account_id, conversion_rate, recurring_payment) VALUES
+(21, 'Orange', null, 'INTERNET', '2024-02-08 20:38:22.372424', null, 'peter.lubowicz@gmail.com', null, 1, null, true),
+(23, 'Enea', 23.00, 'ELECTRICITY', '2024-02-08 20:44:07.679831', null, 'peter.lubowicz@gmail.com', null, 1, null, false),
+(24, 'PGNiG', 23.00, 'GAS', '2024-02-08 20:46:13.399076', '2024-02-09 22:33:09.751144', 'peter.lubowicz@gmail.com', 'peter.lubowicz@gmail.com', 1, 11.44200, false),
+(25, 'Sobótka woda', null, 'WATER', '2024-02-11 18:30:05.170915', null, 'peter.lubowicz@gmail.com', null, 1, null, true),
+(26, 'Vectra', null, 'INTERNET', '2024-02-16 16:23:59.887456', null, 'peter.lubowicz@gmail.com', null, 1, null, false),
+(27, 'Czynsz administracyjny', null, 'ADMINISTRATIVE_FEE', '2024-02-20 10:00:00.000000', null, 'peter.lubowicz@gmail.com', null, 1, null, true),
+(28, 'Play Internet', null, 'INTERNET', '2024-02-21 11:00:00.000000', null, 'peter.lubowicz@gmail.com', null, 1, null, true);
 
 
 --ORANGE INTERNET--
@@ -66,12 +101,25 @@ VALUES (1, '', 125.00000, 'MONTHLY', 21, '2024-02-08 20:38:22.376428', null, 'pe
        (66, '', 14.83000, 'MONTHLY', 25, '2024-02-11 18:30:05.174953', null, 'peter.lubowicz@gmail.com', null),
 
 --VECTRA INTERNET--
-       (67, '', 130.00000, 'MONTHLY', 26, '2024-02-16 16:23:59.890504', null, 'peter.lubowicz@gmail.com', null);
+       (67, '', 130.00000, 'MONTHLY', 26, '2024-02-16 16:23:59.890504', null, 'peter.lubowicz@gmail.com', null),
+
+--CZYNSZ ADMINISTRACYJNY--
+       (68, 'Czynsz', 450.00000, 'MONTHLY', 27, '2024-02-20 10:00:00.000000', null, 'peter.lubowicz@gmail.com', null),
+       (69, 'Fundusz remontowy', 150.00000, 'MONTHLY', 27, '2024-02-20 10:00:00.000000', null, 'peter.lubowicz@gmail.com', null),
+
+--PLAY INTERNET--
+       (70, '', 99.00000, 'MONTHLY', 28, '2024-02-21 11:00:00.000000', null, 'peter.lubowicz@gmail.com', null);
 
 INSERT INTO public.apartment_housing_provider (apartment_housing_provider_id, apartment_id, housing_provider_id) VALUES
 (1, 1, 21), --Zwierzyniecka 18 - Orange
 (2, 1, 23), --Zwierzyniecka 18 - Enea
-(3, 1, 25); --Zwierzyniecka 18 - Sobótka woda
+(3, 1, 25), --Zwierzyniecka 18 - Sobótka woda
+(4, 2, 21), --Zwierzyniecka 4 - Orange
+(5, 2, 23), --Zwierzyniecka 4 - Enea
+(6, 2, 25), --Zwierzyniecka 4 - Sobótka woda
+(7, 1, 27), --Zwierzyniecka 18 - Czynsz administracyjny
+(8, 2, 27), --Zwierzyniecka 4 - Czynsz administracyjny
+(9, 1, 28); --Zwierzyniecka 18 - Play Internet (tylko dla mieszkania 1)
 
 
 INSERT INTO public.lease_agreement (lease_agreement_id, start_contract_date, end_contract_date, deposit, deposit_paid, payment_due_day_of_month, rent_amount, compensation_amount, internet_fee, gas_deposit, included_water_meters, initial_energy_meter_reading, initial_water_meter_reading, initial_gas_meter_reading, deposit_return_date, returned_deposit_amount, is_contract_active, insert_date, update_date, insert_operator, update_operator, contract_signing_date) VALUES
@@ -83,3 +131,15 @@ INSERT INTO public.tenant (tenant_id, first_name, last_name, account_number, pho
 (112, 'Marta', 'Duda', '', '', 2, 102, '2024-03-02 23:31:25.839833', null, 'peter.lubowicz@gmail.com', null, 'marta.duda@gmail.com', 1),
 (113, 'Tymon', 'Czajka', '', '', 3, 103, '2024-03-03 00:48:15.176091', null, 'peter.lubowicz@gmail.com', null, 'tymon.czajka@gmail.com', 2);
 
+
+-- Faktury testowe dla różnych scenariuszy
+INSERT INTO public.invoice (invoice_id, invoice_number, month, date_from, date_to, amount, pay_day, pay_day_month, housing_provider_id, apartment_id, insert_date, update_date, insert_operator, update_operator) VALUES
+-- Faktura ze starszym payDayMonth (grudzień 2024) - powinna wygenerować nową dla stycznia 2025
+(1, 'FV/202412/21/1', '2024-12-01', '2024-12-01', '2024-12-31', 125.00, '2024-12-15', '2024-12-01', 21, 1, '2024-12-01 10:00:00', null, 'peter.lubowicz@gmail.com', null),
+-- Faktura z bieżącym payDayMonth (styczeń 2025) - NIE powinna generować nowej
+(2, 'FV/202501/25/2', '2025-01-01', '2025-01-01', '2025-01-31', 14.83, '2025-01-15', '2025-01-01', 25, 2, '2025-01-01 10:00:00', null, 'peter.lubowicz@gmail.com', null),
+-- Faktura dla Sobótka woda dla mieszkania 1 ze starszym payDayMonth
+(3, 'FV/202412/25/1', '2024-12-01', '2024-12-01', '2024-12-31', 14.83, '2024-12-15', '2024-12-01', 25, 1, '2024-12-01 10:00:00', null, 'peter.lubowicz@gmail.com', null);
+
+-- Ustawienie/restart sekwencji `invoice_seq` tak, aby następna wartość była większa niż maksymalne invoice_id
+SELECT setval('public.invoice_seq', (SELECT COALESCE(MAX(invoice_id), 0) FROM public.invoice) + 1, false);

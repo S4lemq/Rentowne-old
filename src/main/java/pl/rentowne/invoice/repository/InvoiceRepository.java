@@ -10,6 +10,7 @@ import pl.rentowne.invoice.model.dto.InvoiceFilterDto;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
+import java.util.Optional;
 
 /**
  * Repozytorium faktur
@@ -168,4 +169,34 @@ public interface InvoiceRepository extends JpaRepository<Invoice, Long> {
               and (:#{#invoiceFilterDto.category} is null or hp.type = :#{#invoiceFilterDto.category})
             """)
     BigDecimal sumConsumptionByFilters(@Param("invoiceFilterDto") InvoiceFilterDto dto);
+
+    /**
+     * Sprawdza czy istnieje faktura dla danego mieszkania i dostawcy z payDayMonth >= podanej daty
+     */
+    @Query("""
+            select count(i) > 0 from Invoice i
+            where i.apartment.id = :apartmentId
+            and i.housingProvider.id = :housingProviderId
+            and i.payDayMonth >= :currentMonth
+            """)
+    boolean existsByApartmentAndProviderForCurrentMonth(
+            @Param("apartmentId") Long apartmentId,
+            @Param("housingProviderId") Long housingProviderId,
+            @Param("currentMonth") LocalDate currentMonth
+    );
+
+    /**
+     * Pobiera ostatnią fakturę dla danego mieszkania i dostawcy
+     */
+    @Query("""
+            select i from Invoice i
+            where i.apartment.id = :apartmentId
+            and i.housingProvider.id = :housingProviderId
+            order by i.payDayMonth desc
+            limit 1
+            """)
+    Optional<Invoice> findLatestByApartmentAndProvider(
+            @Param("apartmentId") Long apartmentId,
+            @Param("housingProviderId") Long housingProviderId
+    );
 }

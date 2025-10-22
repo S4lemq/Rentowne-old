@@ -29,12 +29,15 @@ import pl.rentowne.invoice.model.dto.InvoiceFilterDto;
 import pl.rentowne.invoice.model.dto.InvoiceFilterSummaryDto;
 import pl.rentowne.invoice.model.dto.InvoiceListDto;
 import pl.rentowne.invoice.model.dto.InvoiceSummaryDto;
+import pl.rentowne.invoice.model.dto.RecurringInvoiceDto;
 import pl.rentowne.invoice.service.InvoicePdfService;
 import pl.rentowne.invoice.service.InvoiceService;
+import pl.rentowne.invoice.service.RecurringInvoiceService;
 import pl.rentowne.user.model.dto.UploadResponse;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.util.List;
 
 @RestController
 @RequiredArgsConstructor
@@ -43,6 +46,7 @@ public class InvoiceController {
 
     private final InvoiceService invoiceService;
     private final InvoicePdfService invoicePdfService;
+    private final RecurringInvoiceService recurringInvoiceService;
 
     @Operation(
             summary = "Dodaje nową fakturę",
@@ -219,5 +223,20 @@ public class InvoiceController {
     public ResponseEntity<Void> deleteInvoicePdf(@PathVariable String filename) {
         invoicePdfService.deleteInvoicePdf(filename);
         return ResponseEntity.ok().build();
+    }
+
+    @Operation(
+            summary = "Generuje faktury cykliczne",
+            description = "Metoda służy do automatycznego generowania faktur dla dostawców z flagą recurringPayment = true. " +
+                    "Generuje faktury dla mieszkań przypisanych do dostawców, jeśli nie istnieje już faktura dla bieżącego miesiąca.",
+            responses = {
+                    @ApiResponse(responseCode = "200", description = "Faktury zostały wygenerowane pomyślnie"),
+                    @ApiResponse(responseCode = "500", description = "Wewnętrzny błąd serwera")
+            }
+    )
+    @PostMapping("/api/invoices/generate-recurring")
+    public ResponseEntity<List<RecurringInvoiceDto>> generateRecurringInvoices() {
+        List<RecurringInvoiceDto> generatedInvoices = recurringInvoiceService.generateRecurringInvoices();
+        return ResponseEntity.ok(generatedInvoices);
     }
 }

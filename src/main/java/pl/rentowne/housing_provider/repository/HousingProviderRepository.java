@@ -30,4 +30,11 @@ public interface HousingProviderRepository extends JpaRepository<HousingProvider
 
     @Query("SELECT hp FROM HousingProvider hp WHERE hp.user.id = :userId")
     List<HousingProvider> findByUserId(@Param("userId") Long userId);
+
+    @EntityGraph(attributePaths = {"providerFields", "apartments"})
+    @Query("""
+            select hp from HousingProvider hp
+            where hp.recurringPayment = true
+            """)
+    List<HousingProvider> findProvidersWithRecurringPaymentAndRelations();
 }
