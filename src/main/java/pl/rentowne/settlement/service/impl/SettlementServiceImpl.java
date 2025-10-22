@@ -2,6 +2,8 @@ package pl.rentowne.settlement.service.impl;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import pl.rentowne.apartment.service.ApartmentService;
@@ -19,8 +21,10 @@ import pl.rentowne.provider_field.model.ProviderField;
 import pl.rentowne.rented_object.model.RentedObject;
 import pl.rentowne.rented_object.model.dto.CalculateRequestDto;
 import pl.rentowne.rented_object.repository.RentedObjectRepository;
+import pl.rentowne.settlement.mapper.SettlementMapper;
 import pl.rentowne.settlement.model.Settlement;
 import pl.rentowne.settlement.model.SettlementStatus;
+import pl.rentowne.settlement.model.dto.SettlementListDto;
 import pl.rentowne.settlement.repository.SettlementRepository;
 import pl.rentowne.settlement.service.SettlementReportService;
 import pl.rentowne.settlement.service.SettlementService;
@@ -49,6 +53,7 @@ public class SettlementServiceImpl implements SettlementService {
     private final RentedObjectRepository rentedObjectRepository;
     private final ApartmentService apartmentService;
     private final SettlementReportService reportService;
+    private final SettlementMapper settlementMapper;
 
     @Transactional
     @Override
@@ -111,6 +116,10 @@ public class SettlementServiceImpl implements SettlementService {
                     .waterAmount(waterResult)
                     .gasAmount(gasResult)
                     .totalAmount(totalSum)
+                    .compensationAmount(leaseAgreement.getCompensationAmount())
+                    .rentAmount(leaseAgreement.getRentAmount())
+                    .internetFee(leaseAgreement.getInternetFee())
+                    .gasDeposit(leaseAgreement.getGasDeposit())
                     .settlementDate(dto.getSettlementDate())
                     .rentedObject(RentedObject.builder().id(rentedObjectId).build())
                     .settlementStatus(SettlementStatus.TO_PAY)
@@ -395,5 +404,11 @@ public class SettlementServiceImpl implements SettlementService {
                                          Long apartmentId,
                                          List<Long> apartmentSnapshotIds) { }
 
+    @Override
+    @Transactional(readOnly = true)
+    public Page<SettlementListDto> getSettlements(Pageable pageable, Long rentedObjectId) {
+        Page<Settlement> settlementsPage = settlementRepository.findAllByRentedObjectId(pageable, rentedObjectId);
+        return settlementsPage.map(settlementMapper::toListDto);
+    }
 
 }

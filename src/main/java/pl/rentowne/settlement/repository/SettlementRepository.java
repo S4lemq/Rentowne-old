@@ -1,5 +1,7 @@
 package pl.rentowne.settlement.repository;
 
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
@@ -28,4 +30,16 @@ public interface SettlementRepository extends JpaRepository<Settlement, Long>, S
            """)
     List<Long> findSettlementIdsByApartmentAndDate(@Param("apartmentId") Long apartmentId,
                                                    @Param("settlementDate") LocalDateTime settlementDate);
+
+    @Query(
+        value = """
+            select s from Settlement s
+            where s.rentedObject.id = :rentedObjectId
+        """,
+            countQuery = """
+            select count(s) from Settlement s
+        where s.rentedObject.id = :rentedObjectId
+    """
+    )
+    Page<Settlement> findAllByRentedObjectId(Pageable pageable, @Param("rentedObjectId") Long rentedObjectId);
 }

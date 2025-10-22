@@ -61,6 +61,18 @@ public class Settlement extends BaseEntity {
     @Column(name = "TOTAL_AMOUNT")
     private BigDecimal totalAmount;
 
+    @Column(name = "COMPENSATION_AMOUNT", nullable = false)
+    private BigDecimal compensationAmount; //kwota odstępnego
+
+    @Column(name = "RENT_AMOUNT", nullable = false)
+    private BigDecimal rentAmount; //kwota czynszu
+
+    @Column(name = "INTERNET_FEE", nullable = false)
+    private BigDecimal internetFee; //kwota za internet
+
+    @Column(name = "GAS_DEPOSIT")
+    private BigDecimal gasDeposit; //opłata za gaz
+
     @Column(name = "SETTLEMENT_DATE")
     private LocalDateTime settlementDate;
 
