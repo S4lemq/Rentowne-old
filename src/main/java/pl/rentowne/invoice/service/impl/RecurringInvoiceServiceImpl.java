@@ -19,6 +19,7 @@ import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 
 @Slf4j
 @Service
@@ -36,8 +37,13 @@ public class RecurringInvoiceServiceImpl implements RecurringInvoiceService {
         List<RecurringInvoiceDto> generatedInvoices = new ArrayList<>();
         LocalDate currentMonth = clock.currentMonthFirstDay();
 
-        // Pobierz wszystkich dostawców z recurringPayment = true wraz z mieszkaniami i polami
-        List<HousingProvider> providers = housingProviderRepository.findProvidersWithRecurringPaymentAndRelations();
+        // Pobierz wszystkich dostawców z recurringPayment = true wraz z polami
+        Set<HousingProvider> providers = housingProviderRepository.findProvidersWithRecurringPaymentAndProviderFields();
+
+        // Doładuj mieszkania dla tych dostawców w osobnym zapytaniu
+        if (!providers.isEmpty()) {
+            providers = housingProviderRepository.fetchApartmentsForProviders(providers);
+        }
 
         log.info("Znaleziono {} dostawców z płatnościami cyklicznymi", providers.size());
 

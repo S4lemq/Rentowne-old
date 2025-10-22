@@ -9,6 +9,7 @@ import pl.rentowne.housing_provider.repository.custom.HousingProviderRepositoryC
 
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 
 /**
  * Repozytorium dostawców świadczeń
@@ -31,10 +32,17 @@ public interface HousingProviderRepository extends JpaRepository<HousingProvider
     @Query("SELECT hp FROM HousingProvider hp WHERE hp.user.id = :userId")
     List<HousingProvider> findByUserId(@Param("userId") Long userId);
 
-    @EntityGraph(attributePaths = {"providerFields", "apartments"})
     @Query("""
-            select hp from HousingProvider hp
+            select distinct hp from HousingProvider hp
+            left join fetch hp.providerFields
             where hp.recurringPayment = true
             """)
-    List<HousingProvider> findProvidersWithRecurringPaymentAndRelations();
+    Set<HousingProvider> findProvidersWithRecurringPaymentAndProviderFields();
+
+    @Query("""
+            select distinct hp from HousingProvider hp
+            left join fetch hp.apartments
+            where hp in :providers
+            """)
+    Set<HousingProvider> fetchApartmentsForProviders(@Param("providers") Set<HousingProvider> providers);
 }
