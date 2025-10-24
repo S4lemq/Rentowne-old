@@ -1,4 +1,5 @@
 -- Czyszczenie danych przed każdym testem
+DELETE FROM settlement;
 DELETE FROM invoice;
 DELETE FROM tenant;
 DELETE FROM lease_agreement;
@@ -13,6 +14,7 @@ DELETE FROM user_account;
 DELETE FROM address;
 
 -- Resetowanie sekwencji
+ALTER SEQUENCE settlement_seq RESTART WITH 1;
 ALTER SEQUENCE address_seq RESTART WITH 1;
 ALTER SEQUENCE user_account_seq RESTART WITH 1;
 ALTER SEQUENCE apartment_seq RESTART WITH 1;
@@ -143,3 +145,23 @@ INSERT INTO public.invoice (invoice_id, invoice_number, month, date_from, date_t
 
 -- Ustawienie/restart sekwencji `invoice_seq` tak, aby następna wartość była większa niż maksymalne invoice_id
 SELECT setval('public.invoice_seq', (SELECT COALESCE(MAX(invoice_id), 0) FROM public.invoice) + 1, false);
+
+
+-- Dane testowe dla Settlement
+DELETE FROM settlement;
+ALTER SEQUENCE settlement_seq RESTART WITH 1;
+
+INSERT INTO public.settlement (settlement_id, electricity_amount, water_amount, gas_amount, total_amount, compensation_amount, rent_amount, internet_fee, gas_deposit, settlement_date, hash, rented_object_id, status, insert_date, update_date, insert_operator, update_operator) VALUES
+-- Rozliczenia dla grudnia 2024
+(1, 150.00, 50.00, 80.00, 3500.00, 2000.00, 1100.00, 120.00, 0.00, '2024-12-15 10:00:00', 'hash001', 1, 'PAID', '2024-12-15 10:00:00', null, 'peter.lubowicz@gmail.com', null),
+(2, 120.00, 40.00, 60.00, 2800.00, 1500.00, 800.00, 280.00, 0.00, '2024-12-20 10:00:00', 'hash002', 2, 'PAID', '2024-12-20 10:00:00', null, 'peter.lubowicz@gmail.com', null),
+
+-- Rozliczenia dla stycznia 2025
+(3, 180.00, 60.00, 90.00, 3800.00, 2200.00, 1100.00, 170.00, 0.00, '2025-01-15 10:00:00', 'hash003', 1, 'PAID', '2025-01-15 10:00:00', null, 'peter.lubowicz@gmail.com', null),
+(4, 140.00, 45.00, 70.00, 3000.00, 1600.00, 800.00, 345.00, 0.00, '2025-01-20 10:00:00', 'hash004', 2, 'PAID', '2025-01-20 10:00:00', null, 'peter.lubowicz@gmail.com', null),
+
+-- Rozliczenia dla lutego 2025
+(5, 200.00, 70.00, 100.00, 4000.00, 2400.00, 1100.00, 130.00, 0.00, '2025-02-15 10:00:00', 'hash005', 1, 'PAID', '2025-02-15 10:00:00', null, 'peter.lubowicz@gmail.com', null);
+
+-- Ustawienie sekwencji settlement
+SELECT setval('public.settlement_seq', (SELECT COALESCE(MAX(settlement_id), 0) FROM public.settlement) + 1, false);

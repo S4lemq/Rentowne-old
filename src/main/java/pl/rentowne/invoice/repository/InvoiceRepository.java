@@ -199,4 +199,15 @@ public interface InvoiceRepository extends JpaRepository<Invoice, Long> {
             @Param("apartmentId") Long apartmentId,
             @Param("housingProviderId") Long housingProviderId
     );
+
+    /**
+     * Suma amount z faktur dla danego miesiąca według payDayMonth
+     */
+    @Query("""
+            select coalesce(sum(i.amount), 0)
+            from Invoice i
+            where year(i.payDayMonth) = :year
+            and month(i.payDayMonth) = :month
+            """)
+    BigDecimal sumAmountByPayDayMonth(@Param("year") int year, @Param("month") int month);
 }

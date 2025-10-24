@@ -8,6 +8,7 @@ import org.springframework.data.repository.query.Param;
 import pl.rentowne.settlement.model.Settlement;
 import pl.rentowne.settlement.repository.custom.SettlementRepositoryCustom;
 
+import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.List;
 
@@ -42,4 +43,36 @@ public interface SettlementRepository extends JpaRepository<Settlement, Long>, S
     """
     )
     Page<Settlement> findAllByRentedObjectId(Pageable pageable, @Param("rentedObjectId") Long rentedObjectId);
+
+    /**
+     * Suma totalAmount z Settlement dla danego miesiąca według settlementDate
+     */
+    @Query("""
+            select coalesce(sum(s.totalAmount), 0)
+            from Settlement s
+            where year(s.settlementDate) = :year
+            and month(s.settlementDate) = :month
+            """)
+    BigDecimal sumTotalAmountByMonth(@Param("year") int year, @Param("month") int month);
+
+    /**
+     * Suma compensationAmount z Settlement dla danego miesiąca według settlementDate
+     */
+    @Query("""
+            select coalesce(sum(s.compensationAmount), 0)
+            from Settlement s
+            where year(s.settlementDate) = :year
+            and month(s.settlementDate) = :month
+            """)
+    BigDecimal sumCompensationAmountByMonth(@Param("year") int year, @Param("month") int month);
+
+    /**
+     * Pobiera listę unikalnych miesięcy z settlementDate
+     */
+    @Query("""
+            select distinct function('DATE_TRUNC', 'month', s.settlementDate)
+            from Settlement s
+            order by function('DATE_TRUNC', 'month', s.settlementDate) asc
+            """)
+    List<LocalDateTime> findDistinctMonths();
 }
