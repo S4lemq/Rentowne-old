@@ -4,6 +4,7 @@ import com.querydsl.core.types.ConstructorExpression;
 import com.querydsl.core.types.OrderSpecifier;
 import com.querydsl.core.types.Predicate;
 import com.querydsl.core.types.dsl.EntityPathBase;
+import com.querydsl.jpa.JPAExpressions;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
@@ -12,8 +13,8 @@ import pl.rentowne.data_table.dt_definition.DTColumnDefinition;
 import pl.rentowne.data_table.dt_definition.DTDefinition;
 import pl.rentowne.data_table.filter.DTFilter;
 import pl.rentowne.exception.RentowneBusinessException;
-import pl.rentowne.lease_agreement.model.QLeaseAgreement;
 import pl.rentowne.rented_object.model.dto.QRentedObjectSettlementRowDto;
+import pl.rentowne.settlement.model.QSettlement;
 import pl.rentowne.tenant.model.QTenant;
 import pl.rentowne.user.service.UserService;
 
@@ -29,7 +30,8 @@ public class DTRentedObjectSettlementDefinition implements DTDefinition {
     private static final QApartment apartment = QApartment.apartment;
     private static final QRentedObject rentedObject = QRentedObject.rentedObject;
     private static final QTenant tenant = QTenant.tenant;
-    private static final QLeaseAgreement leaseAgreement = QLeaseAgreement.leaseAgreement;
+    private static final QSettlement settlement = QSettlement.settlement;
+    private static final QSettlement settlementSub = new QSettlement("settlementSub");
 
     @Override
     public ConstructorExpression getSelect() {
@@ -41,7 +43,7 @@ public class DTRentedObjectSettlementDefinition implements DTDefinition {
                 tenant.lastname,
                 rentedObject.lastSettlementDate,
                 rentedObject.lastSettlementTotalAmount,
-                leaseAgreement.compensationAmount
+                settlement.compensationAmount
         );
     }
 
@@ -66,10 +68,16 @@ public class DTRentedObjectSettlementDefinition implements DTDefinition {
                 new DTColumnDefinition("tenantSurname", tenant.lastname),
                 new DTColumnDefinition("lastSettlementDate", rentedObject.lastSettlementDate, true),
                 new DTColumnDefinition("lastSettlementTotalAmount", rentedObject.lastSettlementTotalAmount, true),
-                new DTColumnDefinition("profit", leaseAgreement.compensationAmount,
+                new DTColumnDefinition("profit", settlement.compensationAmount,
                         jpaQuery -> jpaQuery
-                                .leftJoin(tenant).on(rentedObject.id.eq(tenant.rentedObject().id))
-                                .leftJoin(leaseAgreement).on(tenant.leaseAgreement().id.eq(leaseAgreement.id)))
+                                .leftJoin(settlement).on(
+                                        rentedObject.id.eq(settlement.rentedObject().id)
+                                                .and(settlement.settlementDate.eq(
+                                                        JPAExpressions.select(settlementSub.settlementDate.max())
+                                                                .from(settlementSub)
+                                                                .where(settlementSub.rentedObject().id.eq(rentedObject.id))
+                                                ))
+                                ))
         );
     }
 
