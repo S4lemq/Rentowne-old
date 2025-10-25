@@ -31,4 +31,12 @@ public interface LeaseAgreementService {
      * @return informacje o sumie faktur, sumie zaliczek i saldzie
      */
     GasCheckResponseDto checkGasBalance(Long leaseAgreementId, GasCheckRequestDto request);
+
+    /**
+     * Oblicza podgląd zwrotu kaucji bez zapisywania danych
+     * @param leaseAgreementId id umowy najmu
+     * @param request dane obciążeń (kwoty)
+     * @return komunikat o kwocie zwrotu kaucji
+     */
+    String previewDepositReturn(Long leaseAgreementId, TerminateLeaseRequestDto request);
 }

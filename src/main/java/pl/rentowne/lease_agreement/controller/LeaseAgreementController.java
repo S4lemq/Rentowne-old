@@ -54,4 +54,15 @@ public class LeaseAgreementController extends AbstractController {
         return ResponseEntity.ok(response);
     }
 
+    /**
+     * Oblicza podgląd zwrotu kaucji bez zapisywania danych
+     */
+    @PostMapping("/api/lease-agreements/{leaseAgreementId}/deposit-return-preview")
+    public ResponseEntity<String> previewDepositReturn(
+            @PathVariable Long leaseAgreementId,
+            @RequestBody TerminateLeaseRequestDto request) {
+        String message = leaseAgreementService.previewDepositReturn(leaseAgreementId, request);
+        return ResponseEntity.ok(message);
+    }
+
 }

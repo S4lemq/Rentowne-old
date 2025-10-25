@@ -181,6 +181,49 @@ public class LeaseAgreementServiceImpl implements LeaseAgreementService {
                 .build();
     }
 
+    @Override
+    @Transactional(readOnly = true)
+    public String previewDepositReturn(Long leaseAgreementId, TerminateLeaseRequestDto request) {
+        // Pobierz umowę najmu
+        LeaseAgreement leaseAgreement = leaseAgreementRepository.findById(leaseAgreementId)
+                .orElseThrow(() -> new IllegalArgumentException("Nie znaleziono umowy o id: " + leaseAgreementId));
+
+        Long rentedObjectId = leaseAgreement.getTenant().getRentedObject().getId();
+
+        // Oblicz koszty mediów (bez zapisu)
+        UtilityCostsDto utilityCosts = settlementService.calculateUtilityCostsOnly(rentedObjectId);
+
+        BigDecimal electricityAmount = utilityCosts.getElectricityAmount();
+        BigDecimal waterAmount = utilityCosts.getWaterAmount();
+
+        // Pobierz kwoty obciążeń z requestu
+        BigDecimal chargeAmount = request.getChargeAmount() != null ? request.getChargeAmount() : BigDecimal.ZERO;
+        BigDecimal gasChargeAmount = request.getGasChargeAmount() != null ? request.getGasChargeAmount() : BigDecimal.ZERO;
+
+        // Oblicz kwotę zwrotu kaucji
+        BigDecimal depositReturnAmount = leaseAgreement.getDepositPaid()
+                .subtract(waterAmount)
+                .subtract(electricityAmount)
+                .subtract(chargeAmount)
+                .subtract(gasChargeAmount);
+
+        // Sformatuj komunikat w zależności od tego czy kwota jest dodatnia czy ujemna
+        String message;
+        if (depositReturnAmount.compareTo(BigDecimal.ZERO) > 0) {
+            message = String.format("+ %s zł (Musisz zwrócić tę kwotę najemcy)", formatAmount(depositReturnAmount));
+        } else if (depositReturnAmount.compareTo(BigDecimal.ZERO) < 0) {
+            message = String.format("- %s zł (Najemca musi dopłacić)", formatAmount(depositReturnAmount.abs()));
+        } else {
+            message = "0 zł (Rozliczenie wychodzi na zero)";
+        }
+
+        log.info("Podgląd zwrotu kaucji dla umowy {}: wpłacona={}, woda={}, prąd={}, obciążenie={}, gaz={}, zwrot={}",
+                leaseAgreementId, leaseAgreement.getDepositPaid(), waterAmount, electricityAmount,
+                chargeAmount, gasChargeAmount, depositReturnAmount);
+
+        return message;
+    }
+
     /**
      * Formatuje kwotę do wyświetlenia (usuwa niepotrzebne zera po przecinku)
      */
