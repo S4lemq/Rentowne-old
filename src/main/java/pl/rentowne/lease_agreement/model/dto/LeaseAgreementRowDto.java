@@ -21,10 +21,13 @@ public class LeaseAgreementRowDto implements DTRow {
     private LocalDateTime startContractDate; //od kiedy najem
     private LocalDateTime endContractDate; //do kiedy najem
     private BigDecimal deposit; //kaucja
+    private BigDecimal depositPaid; //wpłacona kaucja
+    private BigDecimal returnedDepositAmount; //zwrócona kaucja
+    private boolean isContractActive; //czy umowa jest aktywna
     private Long leaseAgreementId;
 
     @QueryProjection
-    public LeaseAgreementRowDto(Long tenantId, String fullName, String apartment, String rentedObject, BigDecimal compensationAmount, BigDecimal rentAmount, BigDecimal internetFee, BigDecimal gasDeposit, BigDecimal includedWaterMeters, LocalDateTime startContractDate, LocalDateTime endContractDate, BigDecimal deposit, Long leaseAgreementId) {
+    public LeaseAgreementRowDto(Long tenantId, String fullName, String apartment, String rentedObject, BigDecimal compensationAmount, BigDecimal rentAmount, BigDecimal internetFee, BigDecimal gasDeposit, BigDecimal includedWaterMeters, LocalDateTime startContractDate, LocalDateTime endContractDate, BigDecimal deposit, BigDecimal depositPaid, BigDecimal returnedDepositAmount, boolean isContractActive, Long leaseAgreementId) {
         this.tenantId = tenantId;
         this.fullName = fullName;
         this.apartment = apartment;
@@ -37,6 +40,9 @@ public class LeaseAgreementRowDto implements DTRow {
         this.startContractDate = startContractDate;
         this.endContractDate = endContractDate;
         this.deposit = deposit;
+        this.depositPaid = depositPaid;
+        this.returnedDepositAmount = returnedDepositAmount;
+        this.isContractActive = isContractActive;
         this.leaseAgreementId = leaseAgreementId;
     }
 }

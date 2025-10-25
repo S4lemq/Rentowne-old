@@ -10,7 +10,9 @@ import org.springframework.stereotype.Component;
 import pl.rentowne.apartment.model.QApartment;
 import pl.rentowne.data_table.dt_definition.DTColumnDefinition;
 import pl.rentowne.data_table.dt_definition.DTDefinition;
+import pl.rentowne.data_table.enums.DTFilterType;
 import pl.rentowne.data_table.filter.DTFilter;
+import pl.rentowne.data_table.filter.DTFilterColumnDefinition;
 import pl.rentowne.exception.RentowneBusinessException;
 import pl.rentowne.lease_agreement.model.dto.QLeaseAgreementRowDto;
 import pl.rentowne.rented_object.model.QRentedObject;
@@ -46,6 +48,9 @@ public class DTLeaseAgreementDefinition implements DTDefinition {
                 leaseAgreement.startContractDate,
                 leaseAgreement.endContractDate,
                 leaseAgreement.deposit,
+                leaseAgreement.depositPaid,
+                leaseAgreement.returnedDepositAmount,
+                leaseAgreement.isContractActive,
                 leaseAgreement.id
         );
     }
@@ -74,6 +79,9 @@ public class DTLeaseAgreementDefinition implements DTDefinition {
                 new DTColumnDefinition("leaseAgreement", leaseAgreement.startContractDate, true),
                 new DTColumnDefinition("leaseAgreement", leaseAgreement.endContractDate, true),
                 new DTColumnDefinition("leaseAgreement", leaseAgreement.deposit, true),
+                new DTColumnDefinition("depositPaid", leaseAgreement.depositPaid, true),
+                new DTColumnDefinition("returnedDepositAmount", leaseAgreement.returnedDepositAmount, true),
+                new DTColumnDefinition("isContractActive", leaseAgreement.isContractActive, true),
                 new DTColumnDefinition("leaseAgreementId", leaseAgreement.id, true)
         );
     }
@@ -87,6 +95,13 @@ public class DTLeaseAgreementDefinition implements DTDefinition {
             log.error("user not logged in, cannot download the apartment table");
         }
         return apartment.user().id.eq(id);
+    }
+
+    @Override
+    public List<DTFilterColumnDefinition> getUserDefinedFilterColumns() {
+        return List.of(
+                new DTFilterColumnDefinition("isContractActive", leaseAgreement.isContractActive, DTFilterType.BOOLEAN)
+        );
     }
 
     @Override
