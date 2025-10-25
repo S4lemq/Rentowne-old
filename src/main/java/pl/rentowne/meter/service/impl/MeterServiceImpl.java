@@ -1,16 +1,20 @@
 package pl.rentowne.meter.service.impl;
 
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import pl.rentowne.exception.RentowneBusinessException;
 import pl.rentowne.exception.RentowneErrorCode;
 import pl.rentowne.meter.model.Meter;
 import pl.rentowne.meter.model.dto.MeterDto;
+import pl.rentowne.meter.model.dto.MeterListDto;
 import pl.rentowne.meter.repository.MeterRepository;
 import pl.rentowne.meter.service.MeterService;
 import pl.rentowne.rented_object.model.RentedObject;
 import pl.rentowne.rented_object.model.dto.RentedObjectDto;
+import pl.rentowne.user.service.UserService;
 
 import java.util.List;
 
@@ -19,6 +23,7 @@ import java.util.List;
 public class MeterServiceImpl implements MeterService {
 
     private final MeterRepository meterRepository;
+    private final UserService userService;
 
     @Override
     @Transactional
@@ -70,6 +75,13 @@ public class MeterServiceImpl implements MeterService {
         if (ids.isEmpty()) {
             throw new RentowneBusinessException(RentowneErrorCode.RENTED_OBJECT_DOES_NOT_HAVE_METERS);
         }
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public Page<MeterListDto> getMetersList(Pageable pageable, Long apartmentId, String searchText) {
+        Long userAccountId = userService.getLoggedUser().getId();
+        return meterRepository.getMetersList(pageable, userAccountId, apartmentId, searchText);
     }
 
     private Meter convertToEntity(MeterDto dto, RentedObject rentedObjectReference) {
