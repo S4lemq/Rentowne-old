@@ -45,7 +45,8 @@ public class DTLeaseAgreementDefinition implements DTDefinition {
                 leaseAgreement.includedWaterMeters,
                 leaseAgreement.startContractDate,
                 leaseAgreement.endContractDate,
-                leaseAgreement.deposit
+                leaseAgreement.deposit,
+                leaseAgreement.id
         );
     }
 
@@ -72,7 +73,8 @@ public class DTLeaseAgreementDefinition implements DTDefinition {
                 new DTColumnDefinition("leaseAgreement", leaseAgreement.includedWaterMeters, true),
                 new DTColumnDefinition("leaseAgreement", leaseAgreement.startContractDate, true),
                 new DTColumnDefinition("leaseAgreement", leaseAgreement.endContractDate, true),
-                new DTColumnDefinition("leaseAgreement", leaseAgreement.deposit, true)
+                new DTColumnDefinition("leaseAgreement", leaseAgreement.deposit, true),
+                new DTColumnDefinition("leaseAgreementId", leaseAgreement.id, true)
         );
     }
 

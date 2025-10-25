@@ -25,6 +25,7 @@ import pl.rentowne.settlement.mapper.SettlementMapper;
 import pl.rentowne.settlement.model.Settlement;
 import pl.rentowne.settlement.model.SettlementStatus;
 import pl.rentowne.settlement.model.dto.SettlementListDto;
+import pl.rentowne.settlement.model.dto.UtilityCostsDto;
 import pl.rentowne.settlement.repository.SettlementRepository;
 import pl.rentowne.settlement.service.SettlementReportService;
 import pl.rentowne.settlement.service.SettlementService;
@@ -409,6 +410,50 @@ public class SettlementServiceImpl implements SettlementService {
     public Page<SettlementListDto> getSettlements(Pageable pageable, Long rentedObjectId) {
         Page<Settlement> settlementsPage = settlementRepository.findAllByRentedObjectId(pageable, rentedObjectId);
         return settlementsPage.map(settlementMapper::toListDto);
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public UtilityCostsDto calculateUtilityCostsOnly(Long rentedObjectId) {
+        List<HousingProvider> providerWithProviderFields =
+                housingProviderRepository.findHousingProviderWithProviderFieldsByRentedObjectId(rentedObjectId);
+        LeaseAgreementDto leaseAgreement = leaseAgreementRepository.getData(rentedObjectId);
+
+        List<Long> tempMeterReadingIds = new ArrayList<>();
+
+        // Oblicz prąd
+        BigDecimal electricityAmount = BigDecimal.ZERO;
+        BigDecimal electricityConsumption = BigDecimal.ZERO;
+        ElectricityCalcResult elecCtx = this.calculateElectricityCost(
+                providerWithProviderFields, rentedObjectId, tempMeterReadingIds);
+        if (elecCtx != null) {
+            electricityAmount = elecCtx.amount();
+            // Pobierz zużycie prądu
+            List<MeterReadingDto> electricityReadings =
+                    meterRepository.getConsumptionAndIdByRentedObjectAndMeterType(rentedObjectId, MeterType.ELECTRIC);
+            electricityConsumption = electricityReadings.stream()
+                    .map(MeterReadingDto::getConsumption)
+                    .reduce(BigDecimal.ZERO, BigDecimal::add);
+        }
+
+        // Oblicz wodę
+        tempMeterReadingIds.clear();
+        BigDecimal waterAmount = this.calculateWaterCost(
+                providerWithProviderFields, rentedObjectId, BigDecimal.ZERO, tempMeterReadingIds, leaseAgreement);
+
+        // Pobierz zużycie wody
+        List<MeterReadingDto> waterReadings =
+                meterRepository.getConsumptionAndIdByRentedObjectAndMeterType(rentedObjectId, MeterType.WATER_COLD);
+        BigDecimal waterConsumption = waterReadings.stream()
+                .map(MeterReadingDto::getConsumption)
+                .reduce(BigDecimal.ZERO, BigDecimal::add);
+
+        return UtilityCostsDto.builder()
+                .waterConsumption(waterConsumption)
+                .waterAmount(waterAmount)
+                .electricityConsumption(electricityConsumption)
+                .electricityAmount(electricityAmount)
+                .build();
     }
 
 }

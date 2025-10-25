@@ -1,7 +1,21 @@
 package pl.rentowne.lease_agreement.model;
 
-import jakarta.persistence.*;
-import lombok.*;
+import jakarta.persistence.Column;
+import jakarta.persistence.Entity;
+import jakarta.persistence.FetchType;
+import jakarta.persistence.GeneratedValue;
+import jakarta.persistence.GenerationType;
+import jakarta.persistence.Id;
+import jakarta.persistence.Index;
+import jakarta.persistence.OneToOne;
+import jakarta.persistence.SequenceGenerator;
+import jakarta.persistence.Table;
+import jakarta.persistence.UniqueConstraint;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.Setter;
 import pl.rentowne.common.model.BaseEntity;
 import pl.rentowne.tenant.model.Tenant;
 
@@ -82,6 +96,15 @@ public class LeaseAgreement extends BaseEntity {
 
     @Column(name = "CONTRACT_SIGNING_DATE", nullable = false)
     private LocalDateTime contractSigningDate; //data podpisania umowy
+
+    @Column(name = "CHARGE_DESCRIPTION")
+    private String chargeDescription; //opis obciążenia przy zakończeniu umowy
+
+    @Column(name = "CHARGE_AMOUNT")
+    private BigDecimal chargeAmount; //kwota obciążenia przy zakończeniu umowy
+
+    @Column(name = "GAS_CHARGE_AMOUNT")
+    private BigDecimal gasChargeAmount; //kwota obciążenia za gaz przy zakończeniu umowy
 
     @OneToOne(fetch = FetchType.EAGER, mappedBy = "leaseAgreement")
     private Tenant tenant;

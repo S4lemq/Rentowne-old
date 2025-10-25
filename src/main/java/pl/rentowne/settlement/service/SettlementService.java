@@ -4,6 +4,7 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import pl.rentowne.rented_object.model.dto.CalculateRequestDto;
 import pl.rentowne.settlement.model.dto.SettlementListDto;
+import pl.rentowne.settlement.model.dto.UtilityCostsDto;
 
 public interface SettlementService {
 
@@ -31,4 +32,11 @@ public interface SettlementService {
      * @return strona z listą rozliczeń
      */
     Page<SettlementListDto> getSettlements(Pageable pageable, Long rentedObjectId);
+
+    /**
+     * Oblicza koszty za media (prąd, woda) bez zapisu w bazie
+     * @param rentedObjectId id obiektu do wynajęcia
+     * @return koszty i zużycie mediów
+     */
+    UtilityCostsDto calculateUtilityCostsOnly(Long rentedObjectId);
 }

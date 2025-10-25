@@ -87,4 +87,16 @@ public interface MeterReadingRepository extends JpaRepository<MeterReading, Long
     int unsetApartmentSettledBySettlementIdsAndType(@Param("settlementIds") List<Long> settlementIds,
                                                     @Param("type") MeterType type);
 
+    // Pobiera ID nierozliczonych odczytów dla danego obiektu i typu licznika
+    @Query("""
+           select mr.id
+           from MeterReading mr
+           join mr.meter m
+           where m.rentedObject.id = :rentedObjectId
+             and m.meterType = :type
+             and mr.settled = false
+           """)
+    List<Long> findUnsettledReadingIdsByRentedObjectAndType(@Param("rentedObjectId") Long rentedObjectId,
+                                                             @Param("type") MeterType type);
+
 }
