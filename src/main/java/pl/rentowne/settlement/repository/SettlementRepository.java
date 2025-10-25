@@ -75,4 +75,50 @@ public interface SettlementRepository extends JpaRepository<Settlement, Long>, S
             order by function('DATE_TRUNC', 'month', s.settlementDate) asc
             """)
     List<LocalDateTime> findDistinctMonths();
+
+    /**
+     * Suma compensationAmount z Settlement dla danego mieszkania i miesiąca
+     * Sumuje po wszystkich RentedObjects należących do danego Apartment
+     */
+    @Query("""
+            select coalesce(sum(s.compensationAmount), 0)
+            from Settlement s
+            where s.rentedObject.apartment.id = :apartmentId
+            and year(s.settlementDate) = :year
+            and month(s.settlementDate) = :month
+            """)
+    BigDecimal sumCompensationAmountByApartmentAndMonth(
+            @Param("apartmentId") Long apartmentId,
+            @Param("year") int year,
+            @Param("month") int month
+    );
+
+    /**
+     * Suma totalAmount z Settlement dla danego mieszkania i miesiąca
+     * Sumuje po wszystkich RentedObjects należących do danego Apartment
+     */
+    @Query("""
+            select coalesce(sum(s.totalAmount), 0)
+            from Settlement s
+            where s.rentedObject.apartment.id = :apartmentId
+            and year(s.settlementDate) = :year
+            and month(s.settlementDate) = :month
+            """)
+    BigDecimal sumTotalAmountByApartmentAndMonth(
+            @Param("apartmentId") Long apartmentId,
+            @Param("year") int year,
+            @Param("month") int month
+    );
+
+    /**
+     * Pobiera wszystkie unikalne ID mieszkań, które mają rozliczenia w danym miesiącu
+     */
+    @Query("""
+            select distinct s.rentedObject.apartment.id
+            from Settlement s
+            where year(s.settlementDate) = :year
+            and month(s.settlementDate) = :month
+            and s.rentedObject.apartment is not null
+            """)
+    List<Long> findDistinctApartmentIdsByMonth(@Param("year") int year, @Param("month") int month);
 }

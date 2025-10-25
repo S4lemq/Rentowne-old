@@ -5,11 +5,13 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
+import pl.rentowne.housing_provider.model.ProviderType;
 import pl.rentowne.invoice.model.Invoice;
 import pl.rentowne.invoice.model.dto.InvoiceFilterDto;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
+import java.util.List;
 import java.util.Optional;
 
 /**
@@ -201,7 +203,7 @@ public interface InvoiceRepository extends JpaRepository<Invoice, Long> {
     );
 
     /**
-     * Suma amount z faktur dla danego miesiąca według payDayMonth
+     * Suma amount z Invoice dla danego miesiąca według payDayMonth (używane w raportach finansowych)
      */
     @Query("""
             select coalesce(sum(i.amount), 0)
@@ -210,4 +212,34 @@ public interface InvoiceRepository extends JpaRepository<Invoice, Long> {
             and month(i.payDayMonth) = :month
             """)
     BigDecimal sumAmountByPayDayMonth(@Param("year") int year, @Param("month") int month);
+
+    /**
+     * Suma amount z Invoice dla danego mieszkania, miesiąca i typu dostawcy
+     */
+    @Query("""
+            select coalesce(sum(i.amount), 0)
+            from Invoice i
+            where i.apartment.id = :apartmentId
+            and year(i.payDayMonth) = :year
+            and month(i.payDayMonth) = :month
+            and i.housingProvider.type = :providerType
+            """)
+    BigDecimal sumAmountByApartmentMonthAndType(
+            @Param("apartmentId") Long apartmentId,
+            @Param("year") int year,
+            @Param("month") int month,
+            @Param("providerType") ProviderType providerType
+    );
+
+    /**
+     * Pobiera wszystkie unikalne ID mieszkań, które mają faktury w danym miesiącu
+     */
+    @Query("""
+            select distinct i.apartment.id
+            from Invoice i
+            where year(i.payDayMonth) = :year
+            and month(i.payDayMonth) = :month
+            and i.apartment is not null
+            """)
+    List<Long> findDistinctApartmentIdsByMonth(@Param("year") int year, @Param("month") int month);
 }
