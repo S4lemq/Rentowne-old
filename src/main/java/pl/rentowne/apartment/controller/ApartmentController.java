@@ -8,7 +8,14 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.*;
+import org.springframework.web.bind.annotation.DeleteMapping;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.RestController;
 import pl.rentowne.apartment.model.dto.ApartmentDto;
 import pl.rentowne.apartment.model.dto.ApartmentHousingProviderRequest;
 import pl.rentowne.apartment.service.ApartmentService;
@@ -110,6 +117,20 @@ public class ApartmentController extends AbstractController {
             @RequestParam(name = "apartmentId", required = false) Long apartmentId
     ) throws RentowneBusinessException {
         return ResponseEntity.ok(apartmentService.getAllApartmentsByLoggedUserAndApartment(apartmentId));
+    }
+
+    @Operation(
+            summary = "Pobiera wszystkie mieszkania zalogowanego użytkownika",
+            description = "Metoda zwracająca wszystkie mieszkania należące do zalogowanego użytkownika",
+            responses = {
+                    @ApiResponse(responseCode = "200", description = "Sukces", content = @Content(mediaType = "application/json")),
+                    @ApiResponse(responseCode = "400", description = "Niepoprawne dane wejściowe"),
+                    @ApiResponse(responseCode = "500", description = "Wewnętrzny błąd serwera")
+            }
+    )
+    @GetMapping(value = "/api/apartments/my-apartments")
+    public ResponseEntity<List<ApartmentDto>> getMyApartments() throws RentowneBusinessException {
+        return ResponseEntity.ok(apartmentService.getAllApartmentsByLoggedUser());
     }
 
     @Operation(

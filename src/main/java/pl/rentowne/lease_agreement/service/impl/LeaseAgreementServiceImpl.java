@@ -4,7 +4,11 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import pl.rentowne.housing_provider.model.ProviderType;
+import pl.rentowne.invoice.repository.InvoiceRepository;
 import pl.rentowne.lease_agreement.model.LeaseAgreement;
+import pl.rentowne.lease_agreement.model.dto.GasCheckRequestDto;
+import pl.rentowne.lease_agreement.model.dto.GasCheckResponseDto;
 import pl.rentowne.lease_agreement.model.dto.LeaseTerminationInfoDto;
 import pl.rentowne.lease_agreement.model.dto.TerminateLeaseRequestDto;
 import pl.rentowne.lease_agreement.repository.LeaseAgreementRepository;
@@ -32,6 +36,7 @@ public class LeaseAgreementServiceImpl implements LeaseAgreementService {
     private final SettlementService settlementService;
     private final SettlementRepository settlementRepository;
     private final MeterReadingRepository meterReadingRepository;
+    private final InvoiceRepository invoiceRepository;
 
     @Override
     @Transactional(readOnly = true)
@@ -123,5 +128,66 @@ public class LeaseAgreementServiceImpl implements LeaseAgreementService {
         leaseAgreementRepository.save(leaseAgreement);
 
         log.info("Zakończono umowę o id: {}. Zwrócona kaucja: {}", leaseAgreementId, returnedDeposit);
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public GasCheckResponseDto checkGasBalance(Long leaseAgreementId, GasCheckRequestDto request) {
+        // Pobierz umowę najmu
+        LeaseAgreement leaseAgreement = leaseAgreementRepository.findById(leaseAgreementId)
+                .orElseThrow(() -> new IllegalArgumentException("Nie znaleziono umowy o id: " + leaseAgreementId));
+
+        // Pobierz mieszkanie z umowy
+        Long apartmentId = leaseAgreement.getTenant().getRentedObject().getApartment().getId();
+        Long rentedObjectId = leaseAgreement.getTenant().getRentedObject().getId();
+
+        // Pobierz sumę z faktur za gaz w danym okresie
+        BigDecimal invoicesTotal = invoiceRepository.sumGasAmountByApartmentAndDateRange(
+                apartmentId,
+                ProviderType.GAS,
+                request.getDateFrom(),
+                request.getDateTo()
+        );
+
+        // Konwertuj daty na LocalDateTime (początek pierwszego dnia i koniec ostatniego dnia)
+        LocalDateTime dateTimeFrom = request.getDateFrom().atStartOfDay();
+        LocalDateTime dateTimeTo = request.getDateTo().atTime(23, 59, 59);
+
+        // Pobierz sumę zaliczek za gaz z Settlement w danym okresie
+        BigDecimal depositsTotal = settlementRepository.sumGasDepositByRentedObjectAndDateRange(
+                rentedObjectId,
+                dateTimeFrom,
+                dateTimeTo
+        );
+
+        // Oblicz saldo: zaliczki - faktury
+        BigDecimal balance = depositsTotal.subtract(invoicesTotal);
+
+        // Sformatuj string salda w formacie: "kwota zaliczki – kwota faktur = +/-saldo"
+        String balanceString = String.format("%s zł – %s zł = %s%s zł",
+                formatAmount(depositsTotal),
+                formatAmount(invoicesTotal),
+                balance.compareTo(BigDecimal.ZERO) >= 0 ? "+" : "",
+                formatAmount(balance)
+        );
+
+        log.info("Sprawdzono rozliczenie gazu dla umowy {}: faktury={}, zaliczki={}, saldo={}",
+                leaseAgreementId, invoicesTotal, depositsTotal, balance);
+
+        return GasCheckResponseDto.builder()
+                .invoicesTotal(invoicesTotal)
+                .depositsTotal(depositsTotal)
+                .balance(balanceString)
+                .build();
+    }
+
+    /**
+     * Formatuje kwotę do wyświetlenia (usuwa niepotrzebne zera po przecinku)
+     */
+    private String formatAmount(BigDecimal amount) {
+        if (amount == null) {
+            return "0";
+        }
+        return amount.stripTrailingZeros().toPlainString();
     }
 }

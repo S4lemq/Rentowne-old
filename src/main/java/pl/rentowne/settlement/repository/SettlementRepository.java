@@ -121,4 +121,20 @@ public interface SettlementRepository extends JpaRepository<Settlement, Long>, S
             and s.rentedObject.apartment is not null
             """)
     List<Long> findDistinctApartmentIdsByMonth(@Param("year") int year, @Param("month") int month);
+
+    /**
+     * Suma gasDeposit z Settlement dla danego RentedObject w zakresie dat (według settlementDate)
+     */
+    @Query("""
+            select coalesce(sum(s.gasDeposit), 0)
+            from Settlement s
+            where s.rentedObject.id = :rentedObjectId
+            and s.settlementDate >= :dateFrom
+            and s.settlementDate <= :dateTo
+            """)
+    BigDecimal sumGasDepositByRentedObjectAndDateRange(
+            @Param("rentedObjectId") Long rentedObjectId,
+            @Param("dateFrom") LocalDateTime dateFrom,
+            @Param("dateTo") LocalDateTime dateTo
+    );
 }

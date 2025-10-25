@@ -25,4 +25,14 @@ public interface ApartmentRepository extends JpaRepository<Apartment, Long>, Apa
             order by a.apartmentName
             """)
     List<Apartment> findByIdIn(@Param("apartmentIds") List<Long> apartmentIds);
+
+    /**
+     * Pobiera wszystkie mieszkania zalogowanego użytkownika
+     */
+    @Query("""
+            select a from Apartment a
+            where a.user.id = :userId
+            order by a.apartmentName
+            """)
+    List<Apartment> findAllByUserId(@Param("userId") Long userId);
 }

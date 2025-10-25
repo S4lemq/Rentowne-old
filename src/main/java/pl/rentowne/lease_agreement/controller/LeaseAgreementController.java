@@ -9,6 +9,8 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RestController;
 import pl.rentowne.common.controler.AbstractController;
+import pl.rentowne.lease_agreement.model.dto.GasCheckRequestDto;
+import pl.rentowne.lease_agreement.model.dto.GasCheckResponseDto;
 import pl.rentowne.lease_agreement.model.dto.LeaseTerminationInfoDto;
 import pl.rentowne.lease_agreement.model.dto.TerminateLeaseRequestDto;
 import pl.rentowne.lease_agreement.service.LeaseAgreementService;
@@ -39,6 +41,17 @@ public class LeaseAgreementController extends AbstractController {
             @RequestBody TerminateLeaseRequestDto request) {
         leaseAgreementService.terminateLease(leaseAgreementId, request);
         return ResponseEntity.ok().build();
+    }
+
+    /**
+     * Sprawdza rozliczenie gazu dla umowy w określonym zakresie dat
+     */
+    @PostMapping("/api/lease-agreements/{leaseAgreementId}/gas-check")
+    public ResponseEntity<GasCheckResponseDto> checkGasBalance(
+            @PathVariable Long leaseAgreementId,
+            @RequestBody GasCheckRequestDto request) {
+        GasCheckResponseDto response = leaseAgreementService.checkGasBalance(leaseAgreementId, request);
+        return ResponseEntity.ok(response);
     }
 
 }

@@ -89,4 +89,11 @@ public interface ApartmentService {
      * @param id id mieszkania
      */
     void pinApartment(boolean isPinned, long id);
+
+    /**
+     * Pobiera wszystkie mieszkania zalogowanego użytkownika
+     * @return lista mieszkań
+     * @throws RentowneBusinessException wyjątek biznesowy
+     */
+    List<ApartmentDto> getAllApartmentsByLoggedUser() throws RentowneBusinessException;
 }

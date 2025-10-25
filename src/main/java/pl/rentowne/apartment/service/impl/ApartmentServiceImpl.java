@@ -149,6 +149,15 @@ public class ApartmentServiceImpl implements ApartmentService {
         return counter.size();
     }
 
+    @Override
+    public List<ApartmentDto> getAllApartmentsByLoggedUser() throws RentowneBusinessException {
+        Long loggedUser = userService.getLoggedUser().getId();
+        List<Apartment> apartments = apartmentRepository.findAllByUserId(loggedUser);
+        return apartments.stream()
+                .map(ApartmentDto::asBasicDto)
+                .toList();
+    }
+
     private Apartment mapApartment(ApartmentDto apartmentDto, Long apartmentId) throws RentowneBusinessException {
         Long loggedUserId = userService.getLoggedUser().getId();
 

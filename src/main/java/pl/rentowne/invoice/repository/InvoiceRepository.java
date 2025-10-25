@@ -242,4 +242,22 @@ public interface InvoiceRepository extends JpaRepository<Invoice, Long> {
             and i.apartment is not null
             """)
     List<Long> findDistinctApartmentIdsByMonth(@Param("year") int year, @Param("month") int month);
+
+    /**
+     * Suma amount z Invoice dla gazu w danym mieszkaniu i okresie (month)
+     */
+    @Query("""
+            select coalesce(sum(i.amount), 0)
+            from Invoice i
+            where i.apartment.id = :apartmentId
+            and i.housingProvider.type = :providerType
+            and i.month >= :dateFrom
+            and i.month <= :dateTo
+            """)
+    BigDecimal sumGasAmountByApartmentAndDateRange(
+            @Param("apartmentId") Long apartmentId,
+            @Param("providerType") ProviderType providerType,
+            @Param("dateFrom") LocalDate dateFrom,
+            @Param("dateTo") LocalDate dateTo
+    );
 }
