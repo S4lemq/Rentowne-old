@@ -33,6 +33,9 @@ public class LeaseAgreementDto {
     private BigDecimal returnedDepositAmount; //kwota zwróconej kaucji
     private LocalDateTime contractSigningDate; //Data podpisania umowy
     private boolean contractActive; //czy aktywna umowa
+    private String chargeDescription; //opis obciążenia przy zakończeniu umowy
+    private BigDecimal chargeAmount; //kwota obciążenia przy zakończeniu umowy
+    private BigDecimal gasChargeAmount; //kwota obciążenia za gaz przy zakończeniu umowy
 
     @QueryProjection
     public LeaseAgreementDto(BigDecimal rentAmount, BigDecimal compensationAmount, BigDecimal internetFee, BigDecimal includedWaterMeters, BigDecimal gasDeposit) {
@@ -63,6 +66,9 @@ public class LeaseAgreementDto {
                 .returnedDepositAmount(dto.returnedDepositAmount)
                 .isContractActive(dto.contractActive)
                 .contractSigningDate(dto.contractSigningDate)
+                .chargeDescription(dto.chargeDescription)
+                .chargeAmount(dto.chargeAmount)
+                .gasChargeAmount(dto.gasChargeAmount)
                 .build();
     }
 
@@ -86,6 +92,9 @@ public class LeaseAgreementDto {
                 .returnedDepositAmount(entity.getReturnedDepositAmount())
                 .contractActive(entity.isContractActive())
                 .contractSigningDate(entity.getContractSigningDate())
+                .chargeDescription(entity.getChargeDescription())
+                .chargeAmount(entity.getChargeAmount())
+                .gasChargeAmount(entity.getGasChargeAmount())
                 .build();
     }
 
