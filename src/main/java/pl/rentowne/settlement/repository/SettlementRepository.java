@@ -31,18 +31,21 @@ public interface SettlementRepository extends JpaRepository<Settlement, Long>, S
            """)
     List<Long> findSettlementIdsByApartmentAndDate(@Param("apartmentId") Long apartmentId,
                                                    @Param("settlementDate") LocalDateTime settlementDate);
-
     @Query(
         value = """
             select s from Settlement s
             where s.rentedObject.id = :rentedObjectId
+            and s.tenant.id = :tenantId
         """,
             countQuery = """
             select count(s) from Settlement s
-        where s.rentedObject.id = :rentedObjectId
+            where s.rentedObject.id = :rentedObjectId
+            and s.tenant.id = :tenantId
     """
     )
-    Page<Settlement> findAllByRentedObjectId(Pageable pageable, @Param("rentedObjectId") Long rentedObjectId);
+    Page<Settlement> findAllByRentedObjectIdAndTenantId(Pageable pageable,
+                                                        @Param("rentedObjectId") Long rentedObjectId,
+                                                        @Param("tenantId") Long tenantId);
 
     /**
      * Suma totalAmount z Settlement dla danego miesiąca według settlementDate

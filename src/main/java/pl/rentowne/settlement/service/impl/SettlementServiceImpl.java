@@ -443,13 +443,6 @@ public class SettlementServiceImpl implements SettlementService {
 
     @Override
     @Transactional(readOnly = true)
-    public Page<SettlementListDto> getSettlements(Pageable pageable, Long rentedObjectId) {
-        Page<Settlement> settlementsPage = settlementRepository.findAllByRentedObjectId(pageable, rentedObjectId);
-        return settlementsPage.map(settlementMapper::toListDto);
-    }
-
-    @Override
-    @Transactional(readOnly = true)
     public UtilityCostsDto calculateUtilityCostsOnly(Long rentedObjectId) {
         List<HousingProvider> providerWithProviderFields =
                 housingProviderRepository.findHousingProviderWithProviderFieldsByRentedObjectId(rentedObjectId);
@@ -492,4 +485,10 @@ public class SettlementServiceImpl implements SettlementService {
                 .build();
     }
 
+    @Override
+    @Transactional(readOnly = true)
+    public Page<SettlementListDto> getSettlements(Pageable pageable, Long rentedObjectId, Long tenantId) {
+        Page<Settlement> settlementsPage = settlementRepository.findAllByRentedObjectIdAndTenantId(pageable, rentedObjectId, tenantId);
+        return settlementsPage.map(settlementMapper::toListDto);
+    }
 }

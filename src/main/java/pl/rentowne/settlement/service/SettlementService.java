@@ -25,13 +25,14 @@ public interface SettlementService {
     void deleteCalculate(Long id);
 
     /**
-     * Pobiera paginowaną listę rozliczeń dla danego obiektu do wynajęcia
+     * Pobiera paginowaną listę rozliczeń dla danego obiektu do wynajęcia i najemcy
      *
      * @param pageable parametry paginacji i sortowania
      * @param rentedObjectId id obiektu do wynajęcia
+     * @param tenantId id najemcy
      * @return strona z listą rozliczeń
      */
-    Page<SettlementListDto> getSettlements(Pageable pageable, Long rentedObjectId);
+    Page<SettlementListDto> getSettlements(Pageable pageable, Long rentedObjectId, Long tenantId);
 
     /**
      * Oblicza koszty za media (prąd, woda) bez zapisu w bazie

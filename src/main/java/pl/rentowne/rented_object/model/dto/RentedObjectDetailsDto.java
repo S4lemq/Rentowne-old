@@ -9,6 +9,7 @@ public record RentedObjectDetailsDto(
         Long id,
         String objectName, // obiekt
         String tenantFullName, // imię i nazwisko
+        Long tenantId, // id najemcy
         String lastSettlementDate, // data ostatniego rozliczenia
         BigDecimal totalAmount, // kwota całkowita
         BigDecimal compensationAmount, // kwota odstępnego

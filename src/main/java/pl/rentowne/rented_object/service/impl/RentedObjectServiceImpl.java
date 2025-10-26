@@ -90,6 +90,14 @@ public class RentedObjectServiceImpl implements RentedObjectService {
         BigDecimal waterAmount = latestSettlement != null ? latestSettlement.getWaterAmount() : null;
         BigDecimal compensationAmount = latestSettlement != null ? latestSettlement.getCompensationAmount() : null;
 
+        // Oblicz totalAmount jako sumę wszystkich składników
+        BigDecimal totalAmount = BigDecimal.ZERO;
+        if (electricityAmount != null) totalAmount = totalAmount.add(electricityAmount);
+        if (waterAmount != null) totalAmount = totalAmount.add(waterAmount);
+        if (compensationAmount != null) totalAmount = totalAmount.add(compensationAmount);
+        if (internetFee != null) totalAmount = totalAmount.add(internetFee);
+        if (rentAmount != null) totalAmount = totalAmount.add(rentAmount);
+
         // Suma = czynsz + internet + gaz + prąd + woda
         BigDecimal sum = BigDecimal.ZERO;
         if (rentAmount != null) sum = sum.add(rentAmount);
@@ -117,8 +125,9 @@ public class RentedObjectServiceImpl implements RentedObjectService {
                 rentedObject.getId(),
                 rentedObject.getRentedObjectName(),
                 tenantFullName,
+                tenantId,
                 formatPolishDate(rentedObject.getLastSettlementDate()),
-                rentedObject.getLastSettlementTotalAmount(),
+                totalAmount.compareTo(BigDecimal.ZERO) > 0 ? totalAmount : null,
                 compensationAmount,
                 sum.compareTo(BigDecimal.ZERO) > 0 ? sum : null,
                 rentAmount,

@@ -34,7 +34,7 @@ public class SettlementController {
 
     @Operation(
             summary = "Pobiera paginowaną listę rozliczeń",
-            description = "Metoda służy do pobrania listy rozliczeń dla danego obiektu do wynajęcia z możliwością paginacji i sortowania po wszystkich kolumnach. Domyślne sortowanie: settlementDate DESC",
+            description = "Metoda służy do pobrania listy rozliczeń dla danego obiektu do wynajęcia i najemcy z możliwością paginacji i sortowania po wszystkich kolumnach. Domyślne sortowanie: settlementDate DESC",
             responses = {
                     @ApiResponse(responseCode = "200", description = "Lista rozliczeń została pobrana pomyślnie", content = @Content(mediaType = "application/json")),
                     @ApiResponse(responseCode = "400", description = "Niepoprawne dane wejściowe"),
@@ -44,7 +44,8 @@ public class SettlementController {
     @GetMapping("/api/settlements")
     public ResponseEntity<Page<SettlementListDto>> getSettlements(
             @PageableDefault(size = 20, sort = "settlementDate", direction = Sort.Direction.DESC) Pageable pageable,
-            @RequestParam Long rentedObjectId) {
-        return new ResponseEntity<>(settlementService.getSettlements(pageable, rentedObjectId), HttpStatus.OK);
+            @RequestParam Long rentedObjectId,
+            @RequestParam Long tenantId) {
+        return new ResponseEntity<>(settlementService.getSettlements(pageable, rentedObjectId, tenantId), HttpStatus.OK);
     }
 }
