@@ -6,7 +6,6 @@ import pl.rentowne.meter.model.MeterType;
 
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
-import java.time.temporal.ChronoUnit;
 import java.util.Locale;
 import java.util.Map;
 
@@ -38,31 +37,10 @@ public class DateUtils {
             if (readingDate.isBefore(previousReadingDate) || readingDate.isEqual(previousReadingDate)) {
                 throw new RentowneBusinessException(RentowneErrorCode.BAD_METER_READING_DATE);
             }
-            long monthsBetween = ChronoUnit.MONTHS.between(
-                    previousReadingDate.withDayOfMonth(1),
-                    readingDate.withDayOfMonth(1));
-            if (monthsBetween < 1) {
-                throw new RentowneBusinessException(RentowneErrorCode.BAD_METER_READING_DATE);
-            }
             return;
         }
 
         if (readingDate.isBefore(previousReadingDate) || readingDate.isEqual(previousReadingDate)) {
-            if (isTenant) {
-                throw new RentowneBusinessException(RentowneErrorCode.BAD_METER_READING_DATE_TENANT);
-            } else {
-                throw new RentowneBusinessException(RentowneErrorCode.BAD_METER_READING_DATE);
-            }
-        }
-
-        long monthsBetween = ChronoUnit.MONTHS.between(
-                previousReadingDate.withDayOfMonth(1),
-                readingDate.withDayOfMonth(1));
-        long yearsBetween = ChronoUnit.YEARS.between(
-                previousReadingDate.withDayOfMonth(1),
-                readingDate.withDayOfMonth(1));
-
-        if (monthsBetween != 1 || yearsBetween > 0) {
             if (isTenant) {
                 throw new RentowneBusinessException(RentowneErrorCode.BAD_METER_READING_DATE_TENANT);
             } else {
