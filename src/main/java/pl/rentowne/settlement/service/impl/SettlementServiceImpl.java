@@ -33,6 +33,7 @@ import pl.rentowne.settlement.service.SettlementService;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.time.LocalDateTime;
+import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
@@ -307,6 +308,7 @@ public class SettlementServiceImpl implements SettlementService {
      * Oblicza liczbę miesięcy między dwoma ostatnimi odczytami.
      * Odczyty są posortowane według daty malejąco (od najnowszego do najstarszego).
      * Jeśli jest mniej niż 2 odczyty, zwraca 1.
+     * Przykład: dla odczytu z 1 stycznia i 31 sierpnia zwraca 8 (styczeń-sierpień włącznie).
      */
     private int calculateMonthsBetweenReadings(List<MeterReadingDto> readings) {
         if (readings == null || readings.size() < 2) {
@@ -317,11 +319,14 @@ public class SettlementServiceImpl implements SettlementService {
         LocalDateTime newestDate = readings.get(0).getReadingDate();
         LocalDateTime previousDate = readings.get(1).getReadingDate();
 
-        // Oblicz różnicę w miesiącach (od poprzedniego do najnowszego)
-        int yearsDiff = newestDate.getYear() - previousDate.getYear();
-        int monthsDiff = newestDate.getMonthValue() - previousDate.getMonthValue();
+        // Oblicz pełne miesiące między datami i dodaj 1, aby policzyć oba miesiące włącznie
+        long monthsBetween = ChronoUnit.MONTHS.between(
+            previousDate.toLocalDate().withDayOfMonth(1),
+            newestDate.toLocalDate().withDayOfMonth(1)
+        );
 
-        return yearsDiff * 12 + monthsDiff;
+        // Dodajemy 1, bo liczymy oba miesiące włącznie (np. styczeń do sierpnia = 8 miesięcy)
+        return (int) monthsBetween + 1;
     }
 
     private BigDecimal calculateByConsumption(final BigDecimal entityField, BigDecimal consumptionAfterConversion) {
