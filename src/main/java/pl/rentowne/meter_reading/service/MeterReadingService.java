@@ -26,4 +26,11 @@ public interface MeterReadingService {
      * @return odczyt licznika
      */
     PrevMeterReadingDto getMeterReadingByMeter(Long meterId);
+
+    /**
+     * Usuwa odczyt licznika po id
+     * @param id id odczytu licznika
+     * @throws RentowneBusinessException wyjątek biznesowy
+     */
+    void deleteMeterReading(Long id) throws RentowneBusinessException;
 }

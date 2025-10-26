@@ -7,6 +7,7 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -71,5 +72,22 @@ public class MeterReadingController extends AbstractController {
     @GetMapping("/api/meter/{meterId}/meter-reading/{id}")
     public ResponseEntity<MeterReadingDto> getCurrentAndPreviousReading(@PathVariable Long meterId, @PathVariable Long id) {
         return ResponseEntity.ok(meterReadingService.getCurrentAndPreviousReading(meterId, id));
+    }
+
+    @Operation(
+            summary = "Usuwa odczyt licznika",
+            description = "Metoda służy do usunięcia odczytu licznika po id",
+            responses = {
+                    @ApiResponse(responseCode = "204", description = "Odczyt licznika usunięto pomyślnie"),
+                    @ApiResponse(responseCode = "400", description = "Niepoprawne dane wejściowe"),
+                    @ApiResponse(responseCode = "404", description = "Nie znaleziono odczytu licznika"),
+                    @ApiResponse(responseCode = "409", description = "Odczyt licznika jest już rozliczony"),
+                    @ApiResponse(responseCode = "500", description = "Wewnętrzny błąd serwera")
+            }
+    )
+    @DeleteMapping("/api/meter-reading/{id}")
+    public ResponseEntity<Void> deleteMeterReading(@PathVariable Long id) throws RentowneBusinessException {
+        meterReadingService.deleteMeterReading(id);
+        return new ResponseEntity<>(HttpStatus.NO_CONTENT);
     }
 }

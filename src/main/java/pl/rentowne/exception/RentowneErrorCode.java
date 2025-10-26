@@ -33,7 +33,9 @@ public enum RentowneErrorCode implements Serializable {
     INVOICE_NOT_FOUND(),
     FILE_UPLOAD_ERROR(),
     INVALID_FILE_TYPE(),
-    FILE_NOT_FOUND();
+    FILE_NOT_FOUND(),
+    METER_READING_NOT_FOUND(),
+    METER_READING_ALREADY_SETTLED();
 
     private Set<String> translateKeys;
 

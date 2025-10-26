@@ -54,4 +54,21 @@ public class MeterReadingServiceImpl implements MeterReadingService {
         return meterReadingRepository.findPrevMeterReading(meterId).stream().findFirst().orElse(null);
     }
 
+    @Transactional
+    @Override
+    public void deleteMeterReading(Long id) throws RentowneBusinessException {
+        if (!meterReadingRepository.existsById(id)) {
+            throw new RentowneBusinessException(RentowneErrorCode.METER_READING_NOT_FOUND);
+        }
+
+        MeterReading meterReading = meterReadingRepository.findById(id)
+                .orElseThrow(() -> new RentowneBusinessException(RentowneErrorCode.METER_READING_NOT_FOUND));
+
+        if (meterReading.isSettled()) {
+            throw new RentowneBusinessException(RentowneErrorCode.METER_READING_ALREADY_SETTLED);
+        }
+
+        meterReadingRepository.deleteById(id);
+    }
+
 }
