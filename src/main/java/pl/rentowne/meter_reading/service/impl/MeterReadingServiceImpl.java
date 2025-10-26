@@ -64,7 +64,7 @@ public class MeterReadingServiceImpl implements MeterReadingService {
         MeterReading meterReading = meterReadingRepository.findById(id)
                 .orElseThrow(() -> new RentowneBusinessException(RentowneErrorCode.METER_READING_NOT_FOUND));
 
-        if (meterReading.isSettled()) {
+        if (meterReading.isSettled() && meterReading.isApartmentSettled()) {
             throw new RentowneBusinessException(RentowneErrorCode.METER_READING_ALREADY_SETTLED);
         }
 
