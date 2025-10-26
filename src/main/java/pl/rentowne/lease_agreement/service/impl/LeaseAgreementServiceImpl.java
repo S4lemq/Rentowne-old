@@ -4,6 +4,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import pl.rentowne.apartment.model.Apartment;
 import pl.rentowne.housing_provider.model.ProviderType;
 import pl.rentowne.invoice.repository.InvoiceRepository;
 import pl.rentowne.lease_agreement.model.LeaseAgreement;
@@ -69,6 +70,8 @@ public class LeaseAgreementServiceImpl implements LeaseAgreementService {
         }
 
         Long rentedObjectId = leaseAgreement.getTenant().getRentedObject().getId();
+        RentedObject rentedObject = leaseAgreement.getTenant().getRentedObject();
+        Apartment apartment = rentedObject.getApartment();
 
         // Oblicz koszty mediów
         UtilityCostsDto utilityCosts = settlementService.calculateUtilityCostsOnly(rentedObjectId);
@@ -122,10 +125,13 @@ public class LeaseAgreementServiceImpl implements LeaseAgreementService {
         leaseAgreement.setChargeAmount(chargeAmount);
         leaseAgreement.setGasChargeAmount(gasChargeAmount);
         leaseAgreement.setReturnedDepositAmount(returnedDeposit);
-        leaseAgreement.setDepositReturnDate(LocalDateTime.now());
         leaseAgreement.setContractActive(false);
 
         leaseAgreementRepository.save(leaseAgreement);
+
+        // Ustaw isRented na false w RentedObject i Apartment
+        rentedObject.setRented(false);
+        apartment.setRented(false);
 
         log.info("Zakończono umowę o id: {}. Zwrócona kaucja: {}", leaseAgreementId, returnedDeposit);
     }
