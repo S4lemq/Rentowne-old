@@ -31,4 +31,18 @@ public interface RentedObjectRepository extends JpaRepository<RentedObject, Long
            "FROM RentedObject ro LEFT JOIN ro.tenant t WHERE ro.id = :rentedObjectId")
     String getSettlementFileNameData(@Param("rentedObjectId") Long rentedObjectId);
 
+    /**
+     * Pobiera obiekty wynajmowane z powiązanymi encjami dla danego użytkownika
+     */
+    @Query("""
+            select distinct ro
+            from RentedObject ro
+            left join fetch ro.tenant t
+            left join fetch ro.apartment a
+            where a.user.id = :userId
+            and (:apartmentId is null or a.id = :apartmentId)
+            order by a.apartmentName, ro.rentedObjectName
+            """)
+    List<RentedObject> findRentedObjectsWithDetailsForUser(@Param("userId") Long userId, @Param("apartmentId") Long apartmentId);
+
 }

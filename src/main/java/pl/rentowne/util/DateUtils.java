@@ -50,6 +50,9 @@ public class DateUtils {
     }
 
     public static String formatPolishDate(LocalDateTime date) {
+        if (date == null) {
+            return null;
+        }
         String formattedDate = date.format(formatter);
         for (Map.Entry<String, String> entry : monthReplacements.entrySet()) {
             if (formattedDate.contains(entry.getKey())) {

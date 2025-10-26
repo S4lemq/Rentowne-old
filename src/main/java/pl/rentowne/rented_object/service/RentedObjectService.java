@@ -2,6 +2,7 @@ package pl.rentowne.rented_object.service;
 
 import pl.rentowne.exception.RentowneBusinessException;
 import pl.rentowne.rented_object.model.RentedObject;
+import pl.rentowne.rented_object.model.dto.RentedObjectDetailsDto;
 import pl.rentowne.rented_object.model.dto.RentedObjectDto;
 
 import java.util.List;
@@ -55,5 +56,12 @@ public interface RentedObjectService {
      * @return lista obiektów do wynajęcia
      */
     List<RentedObjectDto> getAllByApartmentAndOptionalRentedObject(Long apartmentId, Long rentedObjectId) throws RentowneBusinessException;
+
+    /**
+     * Pobiera szczegółowe informacje o obiektach do wynajęcia z danymi rozliczenia
+     * @param apartmentId opcjonalne id mieszkania do filtrowania
+     * @return lista szczegółowych informacji o obiektach
+     */
+    List<RentedObjectDetailsDto> getRentedObjectsDetails(Long apartmentId);
 
 }

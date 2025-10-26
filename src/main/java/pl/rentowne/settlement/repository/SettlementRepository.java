@@ -137,4 +137,16 @@ public interface SettlementRepository extends JpaRepository<Settlement, Long>, S
             @Param("dateFrom") LocalDateTime dateFrom,
             @Param("dateTo") LocalDateTime dateTo
     );
+
+    /**
+     * Pobiera najnowsze rozliczenie dla danego obiektu wynajmowanego
+     */
+    @Query("""
+            select s
+            from Settlement s
+            where s.rentedObject.id = :rentedObjectId
+            order by s.settlementDate desc
+            limit 1
+            """)
+    Settlement findLatestByRentedObjectId(@Param("rentedObjectId") Long rentedObjectId);
 }
