@@ -89,6 +89,7 @@ public class RentedObjectServiceImpl implements RentedObjectService {
         BigDecimal electricityAmount = latestSettlement != null ? latestSettlement.getElectricityAmount() : null;
         BigDecimal waterAmount = latestSettlement != null ? latestSettlement.getWaterAmount() : null;
         BigDecimal compensationAmount = latestSettlement != null ? latestSettlement.getCompensationAmount() : null;
+        LocalDateTime lastSettlementDate = latestSettlement != null ? latestSettlement.getSettlementDate() : null;
 
         // Oblicz totalAmount jako sumę wszystkich składników
         BigDecimal totalAmount = BigDecimal.ZERO;
@@ -126,7 +127,7 @@ public class RentedObjectServiceImpl implements RentedObjectService {
                 rentedObject.getRentedObjectName(),
                 tenantFullName,
                 tenantId,
-                formatPolishDate(rentedObject.getLastSettlementDate()),
+                formatPolishDate(lastSettlementDate),
                 totalAmount.compareTo(BigDecimal.ZERO) > 0 ? totalAmount : null,
                 compensationAmount,
                 sum.compareTo(BigDecimal.ZERO) > 0 ? sum : null,
