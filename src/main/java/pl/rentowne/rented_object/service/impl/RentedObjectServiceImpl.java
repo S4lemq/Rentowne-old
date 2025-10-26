@@ -78,11 +78,10 @@ public class RentedObjectServiceImpl implements RentedObjectService {
     }
 
     private RentedObjectDetailsDto mapToDetailsDto(RentedObject rentedObject) {
-        Settlement latestSettlement = settlementRepository.findLatestByRentedObjectId(rentedObject.getId());
+        Long tenantId = rentedObject.getTenant().getId();
+        Settlement latestSettlement = settlementRepository.findLatestByRentedObjectId(rentedObject.getId(), tenantId);
 
-        String tenantFullName = rentedObject.getTenant() != null
-                ? rentedObject.getTenant().getFirstname() + " " + rentedObject.getTenant().getLastname()
-                : null;
+        String tenantFullName = rentedObject.getTenant().getFirstname() + " " + rentedObject.getTenant().getLastname();
 
         BigDecimal rentAmount = latestSettlement != null ? latestSettlement.getRentAmount() : null;
         BigDecimal internetFee = latestSettlement != null ? latestSettlement.getInternetFee() : null;

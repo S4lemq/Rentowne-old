@@ -145,8 +145,10 @@ public interface SettlementRepository extends JpaRepository<Settlement, Long>, S
             select s
             from Settlement s
             where s.rentedObject.id = :rentedObjectId
+              and s.rentedObject.tenant.id = :tenantId
             order by s.settlementDate desc
             limit 1
             """)
-    Settlement findLatestByRentedObjectId(@Param("rentedObjectId") Long rentedObjectId);
+    Settlement findLatestByRentedObjectId(@Param("rentedObjectId") Long rentedObjectId,
+                                          @Param("tenantId") Long tenantId);
 }
