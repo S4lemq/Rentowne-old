@@ -274,11 +274,12 @@ public class SettlementServiceImpl implements SettlementService {
 
             if (optionalField.isPresent()) {
                 ProviderField field = optionalField.get();
-                List<MeterReadingDto> meterReadingDtos = meterReadingRepository.findReadingsWithDatesByRentedObjectAndMeterType(rentedObjectId, MeterType.WATER_COLD);
-                BigDecimal consumption = meterReadingDtos.stream()
+                // Pobierz nierozliczone odczyty do obliczenia zużycia i oznaczenia jako settled
+                List<MeterReadingDto> unsettledReadings = meterReadingRepository.findReadingsWithDatesByRentedObjectAndMeterType(rentedObjectId, MeterType.WATER_COLD);
+                BigDecimal consumption = unsettledReadings.stream()
                         .map(MeterReadingDto::getConsumption)
                         .reduce(BigDecimal.ZERO, BigDecimal::add);
-                allMeterReadingIds.addAll(meterReadingDtos.stream()
+                allMeterReadingIds.addAll(unsettledReadings.stream()
                         .map(MeterReadingDto::getId)
                         .toList());
 
@@ -291,8 +292,9 @@ public class SettlementServiceImpl implements SettlementService {
                 }
 
                 // Odjęcie wliczonych w cenę jednostek wody
-                // Oblicz rzeczywistą liczbę miesięcy między pierwszym a ostatnim odczytem
-                int monthCount = calculateMonthsBetweenReadings(meterReadingDtos);
+                // Pobierz dwa ostatnie odczyty, aby obliczyć liczbę miesięcy między nimi
+                List<MeterReadingDto> lastTwoReadings = meterReadingRepository.findLastTwoReadingsWithDatesByRentedObjectAndMeterType(rentedObjectId, MeterType.WATER_COLD);
+                int monthCount = calculateMonthsBetweenReadings(lastTwoReadings);
                 BigDecimal includedWaterMeters = this.calculateByConsumptionAndMonthCount(field.getPrice(), leaseAgreement.getIncludedWaterMeters(), monthCount);
                 waterResult = waterResult.subtract(includedWaterMeters);
             }
@@ -302,21 +304,22 @@ public class SettlementServiceImpl implements SettlementService {
     }
 
     /**
-     * Oblicza liczbę miesięcy między pierwszym a ostatnim odczytem.
-     * Jeśli jest tylko 1 odczyt lub brak odczytów, zwraca 1.
-     * Jeśli odczyty są posortowane według daty, oblicza różnicę w miesiącach między pierwszym a ostatnim.
+     * Oblicza liczbę miesięcy między dwoma ostatnimi odczytami.
+     * Odczyty są posortowane według daty malejąco (od najnowszego do najstarszego).
+     * Jeśli jest mniej niż 2 odczyty, zwraca 1.
      */
     private int calculateMonthsBetweenReadings(List<MeterReadingDto> readings) {
-        if (readings == null || readings.isEmpty() || readings.size() == 1) {
+        if (readings == null || readings.size() < 2) {
             return 1;
         }
 
-        LocalDateTime firstDate = readings.get(0).getReadingDate();
-        LocalDateTime lastDate = readings.get(readings.size() - 1).getReadingDate();
+        // readings[0] to najnowszy odczyt, readings[1] to poprzedni
+        LocalDateTime newestDate = readings.get(0).getReadingDate();
+        LocalDateTime previousDate = readings.get(1).getReadingDate();
 
-        // Oblicz różnicę w miesiącach
-        int yearsDiff = lastDate.getYear() - firstDate.getYear();
-        int monthsDiff = lastDate.getMonthValue() - firstDate.getMonthValue();
+        // Oblicz różnicę w miesiącach (od poprzedniego do najnowszego)
+        int yearsDiff = newestDate.getYear() - previousDate.getYear();
+        int monthsDiff = newestDate.getMonthValue() - previousDate.getMonthValue();
 
         return yearsDiff * 12 + monthsDiff;
     }

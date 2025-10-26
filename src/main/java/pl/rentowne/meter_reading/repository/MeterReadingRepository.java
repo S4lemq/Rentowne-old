@@ -59,6 +59,19 @@ public interface MeterReadingRepository extends JpaRepository<MeterReading, Long
     List<MeterReadingDto> findReadingsWithDatesByRentedObjectAndMeterType(@Param("rentedObjectId") Long rentedObjectId,
                                                                            @Param("meterType") MeterType meterType);
 
+    // Pobieranie dwóch ostatnich odczytów z datami dla danego RO i typu licznika (bez względu na settled)
+    @Query("""
+       select new pl.rentowne.meter_reading.model.dto.MeterReadingDto(mr.id, mr.consumption, mr.readingDate)
+       from MeterReading mr
+       join mr.meter m
+       where m.rentedObject.id = :rentedObjectId
+         and m.meterType = :meterType
+       order by mr.readingDate desc
+       limit 2
+       """)
+    List<MeterReadingDto> findLastTwoReadingsWithDatesByRentedObjectAndMeterType(@Param("rentedObjectId") Long rentedObjectId,
+                                                                                 @Param("meterType") MeterType meterType);
+
     // Suma zużycia dla RO, tylko z odczytów niezamkniętych na poziomie mieszkania (ignoruje settled)
     @Query("""
        select coalesce(sum(mr.consumption), 0)
