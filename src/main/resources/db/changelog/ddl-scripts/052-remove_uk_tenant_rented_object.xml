@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<databaseChangeLog
+        xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+        http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-latest.xsd">
+
+    <!-- Drops the unique constraint on RENTED_OBJECT_ID if it exists -->
+    <changeSet id="052-remove_uk_tenant_rented_object" author="plubowicz">
+        <preConditions onFail="MARK_RAN">
+            <!-- check if constraint exists (case-insensitive) -->
+            <sqlCheck expectedResult="1">SELECT COUNT(*) FROM information_schema.table_constraints WHERE lower(constraint_name)='uk_tenant_2' AND lower(table_name)='tenant' AND constraint_type='UNIQUE' AND lower(table_schema)='public'</sqlCheck>
+        </preConditions>
+
+        <dropUniqueConstraint constraintName="UK_TENANT_2" tableName="TENANT" schemaName="public"/>
+    </changeSet>
+
+    <!-- Drop the index if it still exists (some DBs create a separate index) -->
+    <changeSet id="052-drop_index_uk_tenant_2" author="plubowicz">
+        <preConditions onFail="MARK_RAN">
+            <!-- no-op: we'll run DROP INDEX IF EXISTS via SQL which is safe -->
+        </preConditions>
+        <sql splitStatements="true" stripComments="true">
+            DROP INDEX IF EXISTS public.uk_tenant_2;
+        </sql>
+    </changeSet>
+
+</databaseChangeLog>

@@ -1,7 +1,24 @@
 package pl.rentowne.tenant.model;
 
-import jakarta.persistence.*;
-import lombok.*;
+import jakarta.persistence.CascadeType;
+import jakarta.persistence.Column;
+import jakarta.persistence.Entity;
+import jakarta.persistence.FetchType;
+import jakarta.persistence.GeneratedValue;
+import jakarta.persistence.GenerationType;
+import jakarta.persistence.Id;
+import jakarta.persistence.Index;
+import jakarta.persistence.JoinColumn;
+import jakarta.persistence.OneToMany;
+import jakarta.persistence.OneToOne;
+import jakarta.persistence.SequenceGenerator;
+import jakarta.persistence.Table;
+import jakarta.persistence.UniqueConstraint;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.Setter;
 import pl.rentowne.address.model.Address;
 import pl.rentowne.common.model.BaseEntity;
 import pl.rentowne.lease_agreement.model.LeaseAgreement;
@@ -20,14 +37,12 @@ import java.util.List;
         name = "TENANT",
         uniqueConstraints = {
                 @UniqueConstraint(name = "PK_TENANT", columnNames = "TENANT_ID"),
-                @UniqueConstraint(name = "UK_TENANT_1", columnNames = "ADDRESS_ID"),
-                @UniqueConstraint(name = "UK_TENANT_2", columnNames = "RENTED_OBJECT_ID")
+                @UniqueConstraint(name = "UK_TENANT_1", columnNames = "ADDRESS_ID")
         },
         indexes = {
                 @Index(name = "PK_TENANT", columnList = "TENANT_ID", unique = true),
                 @Index(name = "UK_TENANT_1", columnList = "ADDRESS_ID", unique = true),
-                @Index(name = "UK_TENANT_2", columnList = "RENTED_OBJECT_ID", unique = true),
-                @Index(name = "I_TENANT_1", columnList = "EMAIL"),
+                @Index(name = "I_TENANT_1", columnList = "EMAIL")
         }
 )
 public class Tenant extends BaseEntity {
@@ -62,7 +77,7 @@ public class Tenant extends BaseEntity {
     private LeaseAgreement leaseAgreement;
 
     @OneToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "RENTED_OBJECT_ID", unique = true)
+    @JoinColumn(name = "RENTED_OBJECT_ID")
     private RentedObject rentedObject;
 
     @OneToMany(fetch = FetchType.LAZY, mappedBy = "tenant")

@@ -53,5 +53,6 @@
     <include file="/db/changelog/ddl-scripts/049-add_recurring_payment_to_housing_provider.xml"/>
     <include file="/db/changelog/ddl-scripts/050-add_lease_agreement_columns_to_settlement.xml"/>
     <include file="/db/changelog/ddl-scripts/051-add_charge_columns_to_lease_agreement.xml"/>
+    <include file="/db/changelog/ddl-scripts/052-remove_uk_tenant_rented_object.xml"/>
 
 </databaseChangeLog>
