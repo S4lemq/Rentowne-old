@@ -6,6 +6,7 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import pl.rentowne.meter.model.MeterType;
 import pl.rentowne.meter_reading.model.MeterReading;
+import pl.rentowne.meter_reading.model.dto.MeterReadingDto;
 import pl.rentowne.meter_reading.model.dto.PrevMeterReadingDto;
 import pl.rentowne.meter_reading.repository.custom.MeterReadingRepositoryCustom;
 
@@ -44,6 +45,19 @@ public interface MeterReadingRepository extends JpaRepository<MeterReading, Long
        """)
     List<Long> findUnclosedReadingIdsInApartment(@Param("apartmentId") Long apartmentId,
                                                  @Param("type") MeterType type);
+
+    // Pobieranie odczytów z datami dla danego RO i typu licznika (nierozliczone)
+    @Query("""
+       select new pl.rentowne.meter_reading.model.dto.MeterReadingDto(mr.id, mr.consumption, mr.readingDate)
+       from MeterReading mr
+       join mr.meter m
+       where m.rentedObject.id = :rentedObjectId
+         and m.meterType = :meterType
+         and mr.settled = false
+       order by mr.readingDate asc
+       """)
+    List<MeterReadingDto> findReadingsWithDatesByRentedObjectAndMeterType(@Param("rentedObjectId") Long rentedObjectId,
+                                                                           @Param("meterType") MeterType meterType);
 
     // Suma zużycia dla RO, tylko z odczytów niezamkniętych na poziomie mieszkania (ignoruje settled)
     @Query("""

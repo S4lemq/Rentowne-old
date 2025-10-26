@@ -274,7 +274,7 @@ public class SettlementServiceImpl implements SettlementService {
 
             if (optionalField.isPresent()) {
                 ProviderField field = optionalField.get();
-                List<MeterReadingDto> meterReadingDtos = meterRepository.getConsumptionAndIdByRentedObjectAndMeterType(rentedObjectId, MeterType.WATER_COLD);
+                List<MeterReadingDto> meterReadingDtos = meterReadingRepository.findReadingsWithDatesByRentedObjectAndMeterType(rentedObjectId, MeterType.WATER_COLD);
                 BigDecimal consumption = meterReadingDtos.stream()
                         .map(MeterReadingDto::getConsumption)
                         .reduce(BigDecimal.ZERO, BigDecimal::add);
@@ -291,12 +291,34 @@ public class SettlementServiceImpl implements SettlementService {
                 }
 
                 // Odjęcie wliczonych w cenę jednostek wody
-                BigDecimal includedWaterMeters = this.calculateByConsumptionAndMonthCount(field.getPrice(), leaseAgreement.getIncludedWaterMeters(), meterReadingDtos.size());
+                // Oblicz rzeczywistą liczbę miesięcy między pierwszym a ostatnim odczytem
+                int monthCount = calculateMonthsBetweenReadings(meterReadingDtos);
+                BigDecimal includedWaterMeters = this.calculateByConsumptionAndMonthCount(field.getPrice(), leaseAgreement.getIncludedWaterMeters(), monthCount);
                 waterResult = waterResult.subtract(includedWaterMeters);
             }
             return waterResult;
         }
         return BigDecimal.ZERO;
+    }
+
+    /**
+     * Oblicza liczbę miesięcy między pierwszym a ostatnim odczytem.
+     * Jeśli jest tylko 1 odczyt lub brak odczytów, zwraca 1.
+     * Jeśli odczyty są posortowane według daty, oblicza różnicę w miesiącach między pierwszym a ostatnim.
+     */
+    private int calculateMonthsBetweenReadings(List<MeterReadingDto> readings) {
+        if (readings == null || readings.isEmpty() || readings.size() == 1) {
+            return 1;
+        }
+
+        LocalDateTime firstDate = readings.get(0).getReadingDate();
+        LocalDateTime lastDate = readings.get(readings.size() - 1).getReadingDate();
+
+        // Oblicz różnicę w miesiącach
+        int yearsDiff = lastDate.getYear() - firstDate.getYear();
+        int monthsDiff = lastDate.getMonthValue() - firstDate.getMonthValue();
+
+        return yearsDiff * 12 + monthsDiff;
     }
 
     private BigDecimal calculateByConsumption(final BigDecimal entityField, BigDecimal consumptionAfterConversion) {

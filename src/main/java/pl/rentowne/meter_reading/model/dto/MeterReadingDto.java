@@ -32,6 +32,12 @@ public class MeterReadingDto {
         this.consumption = consumption;
     }
 
+    public MeterReadingDto(Long id, BigDecimal consumption, LocalDateTime readingDate) {
+        this.id = id;
+        this.consumption = consumption;
+        this.readingDate = readingDate;
+    }
+
     @QueryProjection
     public MeterReadingDto(BigDecimal currentReading, MeterDto meterDto, LocalDateTime readingDate) {
         this.currentReading = currentReading;
