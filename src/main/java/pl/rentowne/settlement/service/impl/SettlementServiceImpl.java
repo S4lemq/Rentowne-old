@@ -29,6 +29,8 @@ import pl.rentowne.settlement.model.dto.UtilityCostsDto;
 import pl.rentowne.settlement.repository.SettlementRepository;
 import pl.rentowne.settlement.service.SettlementReportService;
 import pl.rentowne.settlement.service.SettlementService;
+import pl.rentowne.tenant.model.Tenant;
+import pl.rentowne.tenant.repository.TenantRepository;
 
 import java.math.BigDecimal;
 import java.math.RoundingMode;
@@ -56,6 +58,7 @@ public class SettlementServiceImpl implements SettlementService {
     private final ApartmentService apartmentService;
     private final SettlementReportService reportService;
     private final SettlementMapper settlementMapper;
+    private final TenantRepository tenantRepository;
 
     @Transactional
     @Override
@@ -113,6 +116,8 @@ public class SettlementServiceImpl implements SettlementService {
 
             reportService.reportSummary(electricResult, waterResult, gasResult, leaseAgreement, totalSum);
 
+            Tenant tenant = tenantRepository.getTenantByRentedObjectId(rentedObjectId);
+
             Settlement settlement = Settlement.builder()
                     .electricityAmount(electricResult)
                     .waterAmount(waterResult)
@@ -124,6 +129,7 @@ public class SettlementServiceImpl implements SettlementService {
                     .gasDeposit(leaseAgreement.getGasDeposit())
                     .settlementDate(dto.getSettlementDate())
                     .rentedObject(RentedObject.builder().id(rentedObjectId).build())
+                    .tenant(tenant)
                     .settlementStatus(SettlementStatus.TO_PAY)
                     .build();
 

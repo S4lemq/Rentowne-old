@@ -35,4 +35,11 @@ public interface TenantRepositoryCustom {
      * @return id obiektu do wynajęcia
      */
     Long getRentedObjectIdByTenantEmail(String email);
+
+    /**
+     * Pobiera najemcę po id obiektu do wynajęcia
+     * @param rentedObjectId id obiektu do wynajęcia
+     * @return {@link Tenant}
+     */
+    Tenant getTenantByRentedObjectId(Long rentedObjectId);
 }

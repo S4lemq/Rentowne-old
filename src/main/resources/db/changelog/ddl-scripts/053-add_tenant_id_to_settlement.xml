@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<databaseChangeLog
+        xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+        http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-latest.xsd">
+
+    <changeSet author="assistant" id="053-add_tenant_id_to_settlement">
+        <addColumn tableName="SETTLEMENT">
+            <column name="TENANT_ID" type="bigint">
+                <constraints nullable="true"/>
+            </column>
+        </addColumn>
+
+        <addForeignKeyConstraint baseTableName="SETTLEMENT"
+                                 baseColumnNames="TENANT_ID"
+                                 constraintName="FK_SETTLEMENT_ON_TENANT"
+                                 referencedTableName="TENANT"
+                                 referencedColumnNames="TENANT_ID"/>
+
+        <setColumnRemarks tableName="SETTLEMENT" columnName="TENANT_ID" remarks="Referencja do najemcy (tenant)"/>
+    </changeSet>
+
+</databaseChangeLog>
+

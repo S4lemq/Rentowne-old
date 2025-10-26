@@ -21,6 +21,7 @@ import lombok.NoArgsConstructor;
 import lombok.Setter;
 import pl.rentowne.common.model.BaseEntity;
 import pl.rentowne.rented_object.model.RentedObject;
+import pl.rentowne.tenant.model.Tenant;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
@@ -82,6 +83,10 @@ public class Settlement extends BaseEntity {
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "RENTED_OBJECT_ID")
     private RentedObject rentedObject;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "TENANT_ID")
+    private Tenant tenant;
 
     @Column(name = "STATUS", nullable = false, length = 32)
     @Enumerated(EnumType.STRING)
