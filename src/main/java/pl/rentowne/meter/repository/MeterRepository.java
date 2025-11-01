@@ -30,18 +30,20 @@ public interface MeterRepository extends JpaRepository<Meter, Long>, MeterReposi
     @Query("""
             SELECT new pl.rentowne.meter.model.dto.MeterListDto(
                 m.id,
-                a.apartmentName,
-                ro.rentedObjectName,
+                COALESCE(a.apartmentName, ma.apartmentName),
+                COALESCE(ro.rentedObjectName, 'Licznik mieszkania'),
                 m.meterType,
-                m.meterNumber
+                m.meterNumber,
+                m.distributeReadings
             )
             FROM Meter m
-            JOIN m.rentedObject ro
-            JOIN ro.apartment a
-            WHERE a.user.id = :userAccountId
-            AND (:apartmentId IS NULL OR a.id = :apartmentId)
+            LEFT JOIN m.rentedObject ro
+            LEFT JOIN ro.apartment a
+            LEFT JOIN m.apartment ma
+            WHERE (a.user.id = :userAccountId OR ma.user.id = :userAccountId)
+            AND (:apartmentId IS NULL OR a.id = :apartmentId OR ma.id = :apartmentId)
             AND (:searchText IS NULL OR :searchText = ''
-                OR LOWER(a.apartmentName) LIKE LOWER(CONCAT('%', :searchText, '%'))
+                OR LOWER(COALESCE(a.apartmentName, ma.apartmentName)) LIKE LOWER(CONCAT('%', :searchText, '%'))
                 OR LOWER(ro.rentedObjectName) LIKE LOWER(CONCAT('%', :searchText, '%')))
             """)
     Page<MeterListDto> getMetersList(Pageable pageable,

@@ -10,7 +10,7 @@ public record MeterListDto(
         String apartmentName,
         String rentedObject,
         MeterType meterType,
-        String meterNumber
+        String meterNumber,
+        boolean distributeReadings
 ) {
 }
-
