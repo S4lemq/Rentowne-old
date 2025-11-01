@@ -96,6 +96,7 @@ public class MeterServiceImpl implements MeterService {
         meterEntity.setMeterNumber(meter.meterNumber());
         meterEntity.setInitialMeterReading(meter.initialMeterReading());
         meterEntity.setInstallationDate(meter.installationDate());
+        meterEntity.setDistributeReadings(meter.distributeReadings());
 
         if (meter.apartment() != null && meter.apartment().getId() != null) {
             meterEntity.setApartment(new Apartment(meter.apartment().getId()));
@@ -148,6 +149,7 @@ public class MeterServiceImpl implements MeterService {
                 .meterNumber(dto.meterNumber())
                 .initialMeterReading(dto.initialMeterReading())
                 .installationDate(dto.installationDate())
+                .distributeReadings(dto.distributeReadings())
                 .build();
     }
 
@@ -170,7 +172,8 @@ public class MeterServiceImpl implements MeterService {
                 null,
                 entity.getMeterNumber(),
                 entity.getInitialMeterReading(),
-                entity.getInstallationDate()
+                entity.getInstallationDate(),
+                entity.isDistributeReadings()
         );
     }
 }

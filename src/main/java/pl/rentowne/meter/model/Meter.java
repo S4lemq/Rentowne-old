@@ -69,6 +69,9 @@ public class Meter extends BaseEntity {
     @Column(name = "INSTALLATION_DATE")
     private LocalDateTime installationDate;
 
+    @Column(name = "DISTRIBUTE_READINGS", nullable = false)
+    private boolean distributeReadings;
+
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "RENTED_OBJECT_ID")
     private RentedObject rentedObject;

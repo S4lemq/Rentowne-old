@@ -13,6 +13,7 @@ public record ApartmentMeterDto(
         ApartmentDto apartment,
         String meterNumber,
         BigDecimal initialMeterReading,
-        LocalDateTime installationDate
+        LocalDateTime installationDate,
+        boolean distributeReadings
 ) {
 }
