@@ -13,6 +13,7 @@ public record SettlementListDto(
         BigDecimal internetFee, // kwota za internet
         BigDecimal gasDeposit, // opłata za gaz
         BigDecimal electricityAmount, // kwota elektryczna z liczników
+        BigDecimal distributedElectricityAmount, // kwota elektryczna z licznika mieszkania
         BigDecimal waterAmount, // kwota wody z liczników
         BigDecimal gasAmount, // kwota za gaz z liczników
         BigDecimal totalAmount, // kwota całkowita

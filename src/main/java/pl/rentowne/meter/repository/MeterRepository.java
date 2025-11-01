@@ -51,4 +51,14 @@ public interface MeterRepository extends JpaRepository<Meter, Long>, MeterReposi
                                      @Param("apartmentId") Long apartmentId,
                                      @Param("searchText") String searchText);
 
+    @Query("""
+            SELECT m
+            FROM Meter m
+            WHERE m.apartment.id = :apartmentId
+            AND m.meterType = :meterType
+            AND m.distributeReadings = true
+            """)
+    List<Meter> findDistributedMetersByApartmentAndType(@Param("apartmentId") Long apartmentId,
+                                                         @Param("meterType") pl.rentowne.meter.model.MeterType meterType);
+
 }

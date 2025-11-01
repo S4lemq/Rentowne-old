@@ -126,4 +126,18 @@ public interface MeterReadingRepository extends JpaRepository<MeterReading, Long
     List<Long> findUnsettledReadingIdsByRentedObjectAndType(@Param("rentedObjectId") Long rentedObjectId,
                                                              @Param("type") MeterType type);
 
+    // Pobiera nierozliczone odczyty z licznika mieszkania (distributeReadings = true)
+    @Query("""
+           select new pl.rentowne.meter_reading.model.dto.MeterReadingDto(mr.id, mr.consumption, mr.readingDate)
+           from MeterReading mr
+           join mr.meter m
+           where m.apartment.id = :apartmentId
+             and m.meterType = :meterType
+             and m.distributeReadings = true
+             and mr.settled = false
+           order by mr.readingDate asc
+           """)
+    List<MeterReadingDto> findUnsettledDistributedReadingsByApartmentAndType(@Param("apartmentId") Long apartmentId,
+                                                                              @Param("meterType") MeterType meterType);
+
 }

@@ -55,6 +55,7 @@ public class SettlementMapper {
                 settlement.getInternetFee(),
                 settlement.getGasDeposit(),
                 settlement.getElectricityAmount(),
+                settlement.getDistributedElectricityAmount(),
                 settlement.getWaterAmount(),
                 settlement.getGasAmount(),
                 settlement.getTotalAmount(),

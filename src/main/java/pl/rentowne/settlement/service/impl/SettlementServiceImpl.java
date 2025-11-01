@@ -69,6 +69,7 @@ public class SettlementServiceImpl implements SettlementService {
 
             List<Long> allMeterReadingIds = new ArrayList<>();
             BigDecimal electricResult = BigDecimal.ZERO;
+            BigDecimal distributedElectricResult = BigDecimal.ZERO;
             BigDecimal gasResult;
             BigDecimal waterResult = BigDecimal.ZERO;
 
@@ -76,6 +77,7 @@ public class SettlementServiceImpl implements SettlementService {
                 elecCtx = this.calculateElectricityCost(
                         providerWithProviderFields, rentedObjectId, allMeterReadingIds);
                 electricResult = (elecCtx != null) ? elecCtx.amount() : BigDecimal.ZERO;
+                distributedElectricResult = (elecCtx != null) ? elecCtx.distributedAmount() : BigDecimal.ZERO;
             }
 
             if (dto.isWaterIncluded()) {
@@ -94,6 +96,7 @@ public class SettlementServiceImpl implements SettlementService {
             log.info("Rozliczenie obiektu o id: {}", rentedObjectId);
             log.info("Rozliczano: wodę-{}, prąd-{}", dto.isWaterIncluded(), dto.isElectricityIncluded());
             log.info("Kwota za prąd: {}", electricResult);
+            log.info("Kwota za prąd z licznika mieszkania: {}", distributedElectricResult);
             log.info("Kwota za wodę: {}", waterResult);
             log.info("Kwota za gaz: {}", gasResult);
             log.info("Kwota odstępnego: {}", leaseAgreement.getCompensationAmount());
@@ -105,6 +108,7 @@ public class SettlementServiceImpl implements SettlementService {
 
             Settlement settlement = Settlement.builder()
                     .electricityAmount(electricResult)
+                    .distributedElectricityAmount(distributedElectricResult)
                     .waterAmount(waterResult)
                     .gasAmount(gasResult)
                     .totalAmount(totalSum)
@@ -181,7 +185,7 @@ public class SettlementServiceImpl implements SettlementService {
                 .findFirst();
     }
 
-    // ZWRACA kontekst (kwota dla bieżącej kawalerki + snapshot mieszkania do domknięcia cyklu)
+    // ZWRACA kontekst (kwota dla bieżącej kawalerki + snapshot mieszkania do domknięcia cyklu + kwota z licznika mieszkania)
     private ElectricityCalcResult calculateElectricityCost(List<HousingProvider> providerWithProviderFields,
                                                            Long rentedObjectId,
                                                            List<Long> allMeterReadingIds) {
@@ -203,49 +207,75 @@ public class SettlementServiceImpl implements SettlementService {
         List<Long> apartmentSnapshotIds =
                 meterReadingRepository.findUnclosedReadingIdsInApartment(apartmentId, MeterType.ELECTRIC);
 
-        // --- 3) SUMA mieszkania (NETTO) na podstawie SNAPSHOTU ---
-        // 3a) Suma zużycia = suma po RO (ignoruje 'settled', patrzy wyłącznie na 'apartmentSettled=false')
-        BigDecimal totalConsumption = rentedObjectIds.stream()
+        // --- 3) Pobierz odczyty z licznika mieszkania (distributeReadings = true) ---
+        List<MeterReadingDto> distributedReadings =
+                meterReadingRepository.findUnsettledDistributedReadingsByApartmentAndType(apartmentId, MeterType.ELECTRIC);
+
+        BigDecimal distributedConsumption = distributedReadings.stream()
+                .map(MeterReadingDto::getConsumption)
+                .reduce(BigDecimal.ZERO, BigDecimal::add);
+
+        // Dodaj ID odczytów z licznika mieszkania do listy settled
+        allMeterReadingIds.addAll(distributedReadings.stream()
+                .map(MeterReadingDto::getId)
+                .toList());
+
+        // Oblicz udział z licznika mieszkania na kawalerkę
+        BigDecimal distributedPerRo = (count > 0 && distributedConsumption.compareTo(BigDecimal.ZERO) > 0)
+                ? distributedConsumption.divide(BigDecimal.valueOf(count), 4, RoundingMode.HALF_UP)
+                : BigDecimal.ZERO;
+
+        // --- 4) SUMA mieszkania (NETTO) na podstawie SNAPSHOTU + licznik mieszkania ---
+        // 4a) Suma zużycia = suma po RO (ignoruje 'settled', patrzy wyłącznie na 'apartmentSettled=false') + licznik mieszkania
+        BigDecimal totalConsumptionFromRo = rentedObjectIds.stream()
                 .map(roId -> meterReadingRepository.sumConsumptionUnclosedForRentedObject(roId, MeterType.ELECTRIC))
                 .reduce(BigDecimal.ZERO, BigDecimal::add);
 
-        // 3b) Zmienne wg zużycia – "jak na fakturze": stawka * SUMA_zużycia (per stawka), r2, a potem suma
+        BigDecimal totalConsumption = totalConsumptionFromRo.add(distributedConsumption);
+
+        // 4b) Zmienne wg zużycia – "jak na fakturze": stawka * SUMA_zużycia (per stawka), r2, a potem suma
         List<ProviderField> fields = provider.getProviderFields();
         BigDecimal variableNetTotal = variableNetForConsumption(totalConsumption, fields);
 
-        // 3c) Miesięczne (suma wszystkich pozycji miesięcznych dla mieszkania)
+        // 4c) Miesięczne (suma wszystkich pozycji miesięcznych dla mieszkania)
         BigDecimal monthlySum = sumMonthlyForProvider(provider);
 
-        // 3d) NETTO i BRUTTO mieszkania
+        // 4d) NETTO i BRUTTO mieszkania
         BigDecimal apartmentNet = variableNetTotal.add(monthlySum);
         BigDecimal apartmentGross = r2(apartmentNet.multiply(vatFactor(vatPercent)));
 
-        // --- 4) NETTO per kawalerka (SNAPSHOT) + równy udział miesięcznych ---
+        // --- 5) NETTO per kawalerka (SNAPSHOT + udział z licznika mieszkania) + równy udział miesięcznych ---
         Map<Long, BigDecimal> netPerRo = new LinkedHashMap<>();
         for (Long roId : rentedObjectIds) {
-            BigDecimal cons = meterReadingRepository.sumConsumptionUnclosedForRentedObject(roId, MeterType.ELECTRIC);
-            BigDecimal variableNet = variableNetForConsumption(cons, fields);
+            BigDecimal consFromRo = meterReadingRepository.sumConsumptionUnclosedForRentedObject(roId, MeterType.ELECTRIC);
+            BigDecimal totalConsForRo = consFromRo.add(distributedPerRo);
+            BigDecimal variableNet = variableNetForConsumption(totalConsForRo, fields);
             BigDecimal monthlyShareNet = monthlyShare(monthlySum, count);
             BigDecimal net = variableNet.add(monthlyShareNet).setScale(2, RoundingMode.HALF_UP);
             netPerRo.put(roId, net);
         }
 
-        // --- 5) Alokacja BRUTTO na kawalerki (dopina grosze) ---
+        // --- 6) Alokacja BRUTTO na kawalerki (dopina grosze) ---
         Map<Long, BigDecimal> grossPerRo = allocateGrossPerRentedObject(netPerRo, apartmentGross, vatPercent);
 
-        // --- 6) Odczyty do oznaczenia 'settled' – tylko bieżący RO ---
+        // --- 7) Odczyty do oznaczenia 'settled' – tylko bieżący RO ---
         List<MeterReadingDto> meterReadingDtos =
                 meterRepository.getConsumptionAndIdByRentedObjectAndMeterType(rentedObjectId, MeterType.ELECTRIC);
         allMeterReadingIds.addAll(meterReadingDtos.stream().map(MeterReadingDto::getId).toList());
 
         BigDecimal resultGrossForCurrent = grossPerRo.getOrDefault(rentedObjectId, BigDecimal.ZERO);
 
-        log.debug("[ELEKTRYCZNOŚĆ][ALLOC] aptId={} roId={} totalConsumption={} apartmentNet={} apartmentGross={} roNet={} roGross={}",
-                apartmentId, rentedObjectId, totalConsumption, apartmentNet, apartmentGross,
-                netPerRo.get(rentedObjectId), resultGrossForCurrent);
+        // --- 8) Oblicz kwotę za dodatkowe zużycie z licznika mieszkania dla tej kawalerki ---
+        BigDecimal distributedAmountNet = variableNetForConsumption(distributedPerRo, fields);
+        BigDecimal distributedAmountGross = r2(distributedAmountNet.multiply(vatFactor(vatPercent)));
+
+        log.debug("[ELEKTRYCZNOŚĆ][ALLOC] aptId={} roId={} totalConsumption={} (fromRo={} + distributed={}) apartmentNet={} apartmentGross={} roNet={} roGross={} distributedPerRo={} distributedAmount={}",
+                apartmentId, rentedObjectId, totalConsumption, totalConsumptionFromRo, distributedConsumption,
+                apartmentNet, apartmentGross, netPerRo.get(rentedObjectId), resultGrossForCurrent,
+                distributedPerRo, distributedAmountGross);
 
         // Zwracamy kwotę dla bieżącej kawalerki **oraz** kontekst do domknięcia cyklu po zapisie rozliczenia
-        return new ElectricityCalcResult(resultGrossForCurrent, apartmentId, apartmentSnapshotIds);
+        return new ElectricityCalcResult(resultGrossForCurrent, apartmentId, apartmentSnapshotIds, distributedAmountGross);
     }
 
 
@@ -417,7 +447,8 @@ public class SettlementServiceImpl implements SettlementService {
 
     private record ElectricityCalcResult(BigDecimal amount,
                                          Long apartmentId,
-                                         List<Long> apartmentSnapshotIds) { }
+                                         List<Long> apartmentSnapshotIds,
+                                         BigDecimal distributedAmount) { }
 
     @Override
     @Transactional(readOnly = true)

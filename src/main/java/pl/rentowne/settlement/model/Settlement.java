@@ -53,6 +53,9 @@ public class Settlement extends BaseEntity {
     @Column(name = "ELECTRICITY_AMOUNT")
     private BigDecimal electricityAmount;
 
+    @Column(name = "DISTRIBUTED_ELECTRICITY_AMOUNT")
+    private BigDecimal distributedElectricityAmount;
+
     @Column(name = "WATER_AMOUNT")
     private BigDecimal waterAmount;
 
