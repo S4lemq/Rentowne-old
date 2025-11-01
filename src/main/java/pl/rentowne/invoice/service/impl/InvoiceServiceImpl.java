@@ -115,6 +115,13 @@ public class InvoiceServiceImpl implements InvoiceService {
 
     @Override
     @Transactional
+    public String uploadPdfOnly(String filename, InputStream inputStream) {
+        // Wgraj plik PDF bez przypisywania do faktury
+        return invoicePdfService.uploadInvoicePdf(filename, inputStream);
+    }
+
+    @Override
+    @Transactional
     public String uploadAndAttachPdf(Long invoiceId, String filename, InputStream inputStream) {
         // Pobierz fakturę
         Invoice invoice = invoiceRepository.findById(invoiceId)

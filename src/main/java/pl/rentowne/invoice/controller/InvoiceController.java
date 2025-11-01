@@ -154,19 +154,21 @@ public class InvoiceController {
     }
 
     @Operation(
-            summary = "Wgrywa plik PDF faktury i przypisuje go do faktury",
-            description = "Metoda służy do wgrywania pliku PDF faktury. Plik jest automatycznie przypisywany do faktury o podanym ID.",
+            summary = "Wgrywa plik PDF faktury",
+            description = "Metoda służy do wgrywania pliku PDF faktury. " +
+                    "Jeśli podano invoiceId, plik jest automatycznie przypisywany do faktury. " +
+                    "Jeśli nie podano invoiceId, plik jest tylko wgrywany i może być później przypisany przy tworzeniu faktury.",
             responses = {
-                    @ApiResponse(responseCode = "200", description = "Plik PDF został wgrany i przypisany do faktury pomyślnie"),
-                    @ApiResponse(responseCode = "400", description = "Niepoprawny plik lub brak faktury"),
-                    @ApiResponse(responseCode = "404", description = "Nie znaleziono faktury"),
+                    @ApiResponse(responseCode = "200", description = "Plik PDF został wgrany pomyślnie"),
+                    @ApiResponse(responseCode = "400", description = "Niepoprawny plik"),
+                    @ApiResponse(responseCode = "404", description = "Nie znaleziono faktury (jeśli podano invoiceId)"),
                     @ApiResponse(responseCode = "500", description = "Wewnętrzny błąd serwera")
             }
     )
     @PostMapping("/api/invoices/upload-pdf")
     public ResponseEntity<UploadResponse> uploadInvoicePdf(
             @RequestParam("file") MultipartFile file,
-            @RequestParam("invoiceId") Long invoiceId) {
+            @RequestParam(value = "invoiceId", required = false) Long invoiceId) {
         if (file.isEmpty()) {
             throw new RentowneBusinessException(RentowneErrorCode.FILE_UPLOAD_ERROR);
         }
@@ -178,7 +180,16 @@ public class InvoiceController {
         }
 
         try (InputStream inputStream = file.getInputStream()) {
-            String savedFileName = invoiceService.uploadAndAttachPdf(invoiceId, file.getOriginalFilename(), inputStream);
+            String savedFileName;
+
+            if (invoiceId != null) {
+                // Wgraj i przypisz do istniejącej faktury
+                savedFileName = invoiceService.uploadAndAttachPdf(invoiceId, file.getOriginalFilename(), inputStream);
+            } else {
+                // Tylko wgraj plik bez przypisania
+                savedFileName = invoiceService.uploadPdfOnly(file.getOriginalFilename(), inputStream);
+            }
+
             return ResponseEntity.ok(new UploadResponse(savedFileName));
         } catch (IOException e) {
             throw new RuntimeException("Błąd podczas wgrywania pliku PDF faktury", e);

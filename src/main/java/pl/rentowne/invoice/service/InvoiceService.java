@@ -47,6 +47,15 @@ public interface InvoiceService {
     void deleteInvoice(Long id);
 
     /**
+     * Wgrywa plik PDF bez przypisania do faktury (faktura może być dodana później)
+     *
+     * @param filename oryginalna nazwa pliku
+     * @param inputStream strumień danych pliku
+     * @return nazwa zapisanego pliku
+     */
+    String uploadPdfOnly(String filename, InputStream inputStream);
+
+    /**
      * Wgrywa plik PDF i automatycznie przypisuje go do faktury
      *
      * @param invoiceId id faktury
@@ -60,8 +69,8 @@ public interface InvoiceService {
      * Pobiera paginowaną listę faktur
      *
      * @param pageable         parametry paginacji i sortowania
-     * @param filterType
-     * @param invoiceFilterDto
+     * @param filterType       typ filtra do zastosowania
+     * @param invoiceFilterDto dodatkowe filtry
      * @return strona z listą faktur
      */
     Page<InvoiceListDto> getInvoices(Pageable pageable, final InvoiceFilterType filterType, final InvoiceFilterDto invoiceFilterDto);
