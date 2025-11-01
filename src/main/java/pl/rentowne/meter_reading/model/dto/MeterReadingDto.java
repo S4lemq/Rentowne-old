@@ -46,18 +46,20 @@ public class MeterReadingDto {
     }
 
     public static MeterReading asEntity(MeterReadingDto dto) {
+        BigDecimal previousReading = dto.getPreviousReading() != null ?
+                dto.getPreviousReading() : BigDecimal.ZERO;
+        BigDecimal currentReading = dto.getCurrentReading() != null ?
+                dto.getCurrentReading() : BigDecimal.ZERO;
+
         return MeterReading.builder()
                 .id(dto.getId())
-                .currentReading(dto.getCurrentReading())
+                .currentReading(currentReading)
                 .readingDate(dto.getReadingDate())
-                .consumption(
-                        dto.getPreviousReading() != null ?
-                        dto.getCurrentReading().subtract(dto.getPreviousReading()) :
-                        BigDecimal.ZERO
-                )
+                .consumption(currentReading.subtract(previousReading))
                 .meter(Meter.builder()
                         .id(dto.getMeterDto().getId())
                         .build())
                 .build();
     }
+
 }
