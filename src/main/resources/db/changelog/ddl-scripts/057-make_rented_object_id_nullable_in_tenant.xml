@@ -5,7 +5,7 @@
         xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
         http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-3.1.xsd">
 
-    <changeSet id="055-make_rented_object_id_nullable_in_tenant" author="piotr">
+    <changeSet id="057-make_rented_object_id_nullable_in_tenant" author="piotr">
         <comment>Zmiana kolumny rented_object_id w tabeli tenant na nullable</comment>
 
         <dropNotNullConstraint
@@ -22,4 +22,3 @@
     </changeSet>
 
 </databaseChangeLog>
-

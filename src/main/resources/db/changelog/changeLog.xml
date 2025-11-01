@@ -58,5 +58,6 @@
     <include file="db/changelog/ddl-scripts/054-add_apartment_fk_to_meter.xml"/>
     <include file="db/changelog/ddl-scripts/055-add_distribute_readings_to_meter.xml"/>
     <include file="db/changelog/ddl-scripts/056-add_distributed_electricity_amount_to_settlement.xml"/>
+    <include file="db/changelog/ddl-scripts/057-make_rented_object_id_nullable_in_tenant.xml"/>
 
 </databaseChangeLog>
