@@ -27,7 +27,6 @@ import pl.rentowne.settlement.model.SettlementStatus;
 import pl.rentowne.settlement.model.dto.SettlementListDto;
 import pl.rentowne.settlement.model.dto.UtilityCostsDto;
 import pl.rentowne.settlement.repository.SettlementRepository;
-import pl.rentowne.settlement.service.SettlementReportService;
 import pl.rentowne.settlement.service.SettlementService;
 import pl.rentowne.tenant.model.Tenant;
 import pl.rentowne.tenant.repository.TenantRepository;
@@ -56,25 +55,17 @@ public class SettlementServiceImpl implements SettlementService {
     private final LeaseAgreementRepository leaseAgreementRepository;
     private final RentedObjectRepository rentedObjectRepository;
     private final ApartmentService apartmentService;
-    private final SettlementReportService reportService;
     private final SettlementMapper settlementMapper;
     private final TenantRepository tenantRepository;
 
     @Transactional
     @Override
     public void calculate(Long rentedObjectId, CalculateRequestDto dto) {
-        // Inicjalizacja raportu
-        String fileNameData = rentedObjectRepository.getSettlementFileNameData(rentedObjectId);
-        reportService.initializeReport(fileNameData, dto.getSettlementDate());
-
         ElectricityCalcResult elecCtx = null;
         try {
             List<HousingProvider> providerWithProviderFields =
                     housingProviderRepository.findHousingProviderWithProviderFieldsByRentedObjectId(rentedObjectId);
             LeaseAgreementDto leaseAgreement = leaseAgreementRepository.getData(rentedObjectId);
-            int rentedObjectsInApartment = apartmentService.getCountOfRentedObjectsInApartment(rentedObjectId);
-
-            reportService.reportBasicInfo(rentedObjectId, dto, rentedObjectsInApartment);
 
             List<Long> allMeterReadingIds = new ArrayList<>();
             BigDecimal electricResult = BigDecimal.ZERO;
@@ -82,18 +73,14 @@ public class SettlementServiceImpl implements SettlementService {
             BigDecimal waterResult = BigDecimal.ZERO;
 
             if (dto.isElectricityIncluded()) {
-                reportService.startElectricitySection();
                 elecCtx = this.calculateElectricityCost(
                         providerWithProviderFields, rentedObjectId, allMeterReadingIds);
                 electricResult = (elecCtx != null) ? elecCtx.amount() : BigDecimal.ZERO;
-                reportService.reportElectricityResult(electricResult);
             }
 
             if (dto.isWaterIncluded()) {
-                reportService.startWaterSection();
                 waterResult = this.calculateWaterCost(
                         providerWithProviderFields, rentedObjectId, waterResult, allMeterReadingIds, leaseAgreement);
-                reportService.reportWaterResult(waterResult);
             }
 
             gasResult = leaseAgreement.getGasDeposit() != null ? leaseAgreement.getGasDeposit() : BigDecimal.ZERO;
@@ -114,8 +101,6 @@ public class SettlementServiceImpl implements SettlementService {
             log.info("Kwota czynszu: {}", leaseAgreement.getRentAmount());
             log.info("Kwota całkowita: {}", totalSum);
 
-            reportService.reportSummary(electricResult, waterResult, gasResult, leaseAgreement, totalSum);
-
             Tenant tenant = tenantRepository.getTenantByRentedObjectId(rentedObjectId);
 
             Settlement settlement = Settlement.builder()
@@ -134,11 +119,9 @@ public class SettlementServiceImpl implements SettlementService {
                     .build();
 
             Long settlementId = settlementRepository.saveAndFlush(settlement).getId();
-            reportService.reportSettlementCreated(settlementId);
 
             if (!allMeterReadingIds.isEmpty()) {
                 meterReadingRepository.updateSettled(allMeterReadingIds, settlementId);
-                reportService.reportSettledMeterReadings(allMeterReadingIds);
             }
             log.info("W następujących odczytach liczników ustawiono odczyty na rozliczone: {}", allMeterReadingIds);
 
@@ -151,22 +134,17 @@ public class SettlementServiceImpl implements SettlementService {
                     meterReadingRepository.markApartmentSettled(elecCtx.apartmentSnapshotIds());
                     log.debug("[ELEKTRYCZNOŚĆ][CLOSE_CYCLE] aptId={} closed {} readings: {}",
                             elecCtx.apartmentId(), elecCtx.apartmentSnapshotIds().size(), elecCtx.apartmentSnapshotIds());
-                    reportService.reportCycleClosure(elecCtx.apartmentId(), elecCtx.apartmentSnapshotIds().size());
                 }
             }
 
             rentedObjectRepository.updateSettlement(rentedObjectId, totalSum, dto.getSettlementDate());
 
-            reportService.reportSuccess();
-
         } catch (Exception e) {
-            reportService.reportError(e);
             log.error("Błąd podczas rozliczenia obiektu {}", rentedObjectId, e);
             throw e;
-        } finally {
-            reportService.closeReport();
         }
     }
+
 
     @Override
     @Transactional
