@@ -5,6 +5,7 @@ import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
+import pl.rentowne.apartment.model.dto.ApartmentDto;
 import pl.rentowne.meter.model.MeterType;
 import pl.rentowne.rented_object.model.dto.RentedObjectDto;
 
@@ -20,9 +21,11 @@ public class MeterDto {
     private String name;
     private MeterType meterType;
     private RentedObjectDto rentedObject;
+    private ApartmentDto apartment;
     private String meterNumber;
     private BigDecimal initialMeterReading;
     private LocalDateTime installationDate;
+    private boolean distributeReadings;
 
     @QueryProjection
     public MeterDto(Long id) {

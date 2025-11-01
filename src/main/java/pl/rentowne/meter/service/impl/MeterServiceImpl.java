@@ -6,6 +6,7 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import pl.rentowne.apartment.model.Apartment;
+import pl.rentowne.apartment.model.dto.ApartmentDto;
 import pl.rentowne.exception.RentowneBusinessException;
 import pl.rentowne.exception.RentowneErrorCode;
 import pl.rentowne.meter.model.Meter;
@@ -50,20 +51,38 @@ public class MeterServiceImpl implements MeterService {
     @Override
     @Transactional(readOnly = true)
     public MeterDto getMeterById(Long id) {
-        Meter meterDto = meterRepository.getMeterDtoById(id);
-        RentedObject rentedObject = meterDto.getRentedObject();
+        Meter meter = meterRepository.getMeterDtoById(id);
 
-        return MeterDto.builder()
-                .id(meterDto.getId())
-                .name(meterDto.getName())
-                .meterType(meterDto.getMeterType())
-                .rentedObject(RentedObjectDto.builder()
-                        .id(rentedObject.getId())
-                        .build())
-                .meterNumber(meterDto.getMeterNumber())
-                .initialMeterReading(meterDto.getInitialMeterReading())
-                .installationDate(meterDto.getInstallationDate())
-                .build();
+        if (meter.getRentedObject() != null) {
+            RentedObject rentedObject = meter.getRentedObject();
+            return MeterDto.builder()
+                    .id(meter.getId())
+                    .name(meter.getName())
+                    .meterType(meter.getMeterType())
+                    .rentedObject(RentedObjectDto.builder()
+                            .id(rentedObject.getId())
+                            .build())
+                    .meterNumber(meter.getMeterNumber())
+                    .initialMeterReading(meter.getInitialMeterReading())
+                    .installationDate(meter.getInstallationDate())
+                    .distributeReadings(false)
+                    .build();
+        } else {
+            Apartment apartment = meter.getApartment();
+            return MeterDto.builder()
+                    .id(meter.getId())
+                    .name(meter.getName())
+                    .meterType(meter.getMeterType())
+                    .apartment(ApartmentDto.builder()
+                            .id(apartment.getId())
+                            .apartmentName(apartment.getApartmentName())
+                            .build())
+                    .meterNumber(meter.getMeterNumber())
+                    .initialMeterReading(meter.getInitialMeterReading())
+                    .installationDate(meter.getInstallationDate())
+                    .distributeReadings(meter.isDistributeReadings())
+                    .build();
+        }
     }
 
     @Override
