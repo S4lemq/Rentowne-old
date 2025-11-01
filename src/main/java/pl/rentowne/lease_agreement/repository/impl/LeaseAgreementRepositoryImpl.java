@@ -27,7 +27,8 @@ public class LeaseAgreementRepositoryImpl extends BaseRepositoryImpl<LeaseAgreem
         return queryFactory.select(leaseAgreementDto)
                 .from(leaseAgreement)
                 .join(tenant).on(leaseAgreement.tenant().id.eq(tenant.id))
-                .where(tenant.rentedObject().id.eq(rentedObjectId))
+                .where(tenant.rentedObject().id.eq(rentedObjectId)
+                        .and(leaseAgreement.isContractActive.eq(true)))
                 .fetchOne();
     }
 }

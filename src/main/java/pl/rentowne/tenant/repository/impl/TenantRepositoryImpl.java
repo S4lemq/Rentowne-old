@@ -65,7 +65,8 @@ public class TenantRepositoryImpl extends BaseRepositoryImpl<Tenant, Long> imple
     @Override
     public Tenant getTenantByRentedObjectId(Long rentedObjectId) {
         return queryFactory.selectFrom(tenant)
-                .where(tenant.rentedObject().id.eq(rentedObjectId))
+                .where(tenant.rentedObject().id.eq(rentedObjectId)
+                        .and(tenant.leaseAgreement().isContractActive.eq(true)))
                 .fetchOne();
     }
 }

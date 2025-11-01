@@ -36,14 +36,17 @@ public class MeterServiceImpl implements MeterService {
     }
 
     @Override
+    @Transactional(readOnly = true)
     public MeterDto getMeterById(Long id) {
         Meter meterDto = meterRepository.getMeterDtoById(id);
+        RentedObject rentedObject = meterDto.getRentedObject();
+
         return MeterDto.builder()
                 .id(meterDto.getId())
                 .name(meterDto.getName())
                 .meterType(meterDto.getMeterType())
                 .rentedObject(RentedObjectDto.builder()
-                        .id(meterDto.getRentedObject().getId())
+                        .id(rentedObject.getId())
                         .build())
                 .meterNumber(meterDto.getMeterNumber())
                 .initialMeterReading(meterDto.getInitialMeterReading())

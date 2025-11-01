@@ -73,7 +73,7 @@ public class MeterController extends AbstractController {
     )
     @GetMapping("/api/meter/{id}")
     public ResponseEntity<MeterDto> getMeter(@Parameter(description = "id licznika", required = true) @PathVariable Long id) {
-        return new ResponseEntity<>(meterService.getMeterById(id), HttpStatus.CREATED);
+        return new ResponseEntity<>(meterService.getMeterById(id), HttpStatus.OK);
     }
 
     @Operation(

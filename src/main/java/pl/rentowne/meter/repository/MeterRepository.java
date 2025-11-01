@@ -14,7 +14,7 @@ import pl.rentowne.meter.repository.cutom.MeterRepositoryCustom;
  */
 public interface MeterRepository extends JpaRepository<Meter, Long>, MeterRepositoryCustom {
 
-    @Query("SELECT meter FROM Meter meter LEFT JOIN FETCH meter.rentedObject WHERE meter.id = :id")
+    @Query("SELECT meter FROM Meter meter WHERE meter.id = :id")
     Meter getMeterDtoById(@Param("id") Long id);
 
     @Query("""
