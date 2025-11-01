@@ -19,9 +19,12 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import pl.rentowne.common.controler.AbstractController;
+import pl.rentowne.meter.model.dto.ApartmentMeterDto;
 import pl.rentowne.meter.model.dto.MeterDto;
 import pl.rentowne.meter.model.dto.MeterListDto;
 import pl.rentowne.meter.service.MeterService;
+
+import java.util.List;
 
 @RestController
 @RequiredArgsConstructor
@@ -43,6 +46,21 @@ public class MeterController extends AbstractController {
     @PostMapping("/api/meter")
     public ResponseEntity<MeterDto> addMeter(@Parameter(description = "dto licznika", required = true) @RequestBody MeterDto meter) {
         return new ResponseEntity<>(meterService.addMeter(meter), HttpStatus.CREATED);
+    }
+
+    @Operation(
+            summary = "Zapisuje licznik dla danego mieszkania",
+            description = "Metoda służy do zapisu licznika przypisanego bezpośrednio do mieszkania",
+            responses = {
+                    @ApiResponse(responseCode = "201", description = "Licznik dodano pomyślnie"),
+                    @ApiResponse(responseCode = "400", description = "Niepoprawne dane wejściowe"),
+                    @ApiResponse(responseCode = "404", description = "Nie znaleziono danych"),
+                    @ApiResponse(responseCode = "500", description = "Wewnętrzny błąd serwera")
+            }
+    )
+    @PostMapping("/api/apartment-meter")
+    public ResponseEntity<ApartmentMeterDto> addApartmentMeter(@Parameter(description = "dto licznika mieszkania", required = true) @RequestBody ApartmentMeterDto meter) {
+        return new ResponseEntity<>(meterService.addApartmentMeter(meter), HttpStatus.CREATED);
     }
 
     @Operation(
@@ -107,5 +125,20 @@ public class MeterController extends AbstractController {
             @Parameter(description = "ID mieszkania do filtrowania") @RequestParam(required = false) Long apartmentId,
             @Parameter(description = "Tekst do wyszukiwania w nazwie mieszkania lub obiektu") @RequestParam(required = false) String searchText) {
         return new ResponseEntity<>(meterService.getMetersList(pageable, apartmentId, searchText), HttpStatus.OK);
+    }
+
+    @Operation(
+            summary = "Pobiera liczniki przypisane do mieszkania",
+            description = "Metoda służy do pobrania listy liczników przypisanych bezpośrednio do mieszkania",
+            responses = {
+                    @ApiResponse(responseCode = "200", description = "Lista liczników została pobrana pomyślnie"),
+                    @ApiResponse(responseCode = "400", description = "Niepoprawne dane wejściowe"),
+                    @ApiResponse(responseCode = "500", description = "Wewnętrzny błąd serwera")
+            }
+    )
+    @GetMapping("/api/apartment-meters")
+    public ResponseEntity<List<ApartmentMeterDto>> getApartmentMeters(
+            @Parameter(description = "ID mieszkania", required = true) @RequestParam Long apartmentId) {
+        return new ResponseEntity<>(meterService.getApartmentMeters(apartmentId), HttpStatus.OK);
     }
 }

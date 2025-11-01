@@ -2,8 +2,11 @@ package pl.rentowne.meter.service;
 
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import pl.rentowne.meter.model.dto.ApartmentMeterDto;
 import pl.rentowne.meter.model.dto.MeterDto;
 import pl.rentowne.meter.model.dto.MeterListDto;
+
+import java.util.List;
 
 /**
  * Serwis liczników
@@ -17,11 +20,25 @@ public interface MeterService {
     MeterDto addMeter(MeterDto meter);
 
     /**
+     * Dodaje licznik przypisany do mieszkania
+     * @param meter dto licznika {@link ApartmentMeterDto}
+     * @return zapisane dto licznika
+     */
+    ApartmentMeterDto addApartmentMeter(ApartmentMeterDto meter);
+
+    /**
      * Pobiera dto licznika po jego id
      * @param id id licznika
      * @return dto licznika
      */
     MeterDto getMeterById(Long id);
+
+    /**
+     * Pobiera listę liczników przypisanych do mieszkania
+     * @param apartmentId id mieszkania
+     * @return lista liczników mieszkania
+     */
+    List<ApartmentMeterDto> getApartmentMeters(Long apartmentId);
 
     /**
      * Aktualizuje dane licznika

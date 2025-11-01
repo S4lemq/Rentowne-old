@@ -1,16 +1,38 @@
 package pl.rentowne.apartment.model;
 
-import jakarta.persistence.*;
-import lombok.*;
+import jakarta.persistence.CascadeType;
+import jakarta.persistence.Column;
+import jakarta.persistence.Entity;
+import jakarta.persistence.FetchType;
+import jakarta.persistence.GeneratedValue;
+import jakarta.persistence.GenerationType;
+import jakarta.persistence.Id;
+import jakarta.persistence.Index;
+import jakarta.persistence.JoinColumn;
+import jakarta.persistence.ManyToMany;
+import jakarta.persistence.ManyToOne;
+import jakarta.persistence.OneToMany;
+import jakarta.persistence.OneToOne;
+import jakarta.persistence.SequenceGenerator;
+import jakarta.persistence.Table;
+import jakarta.persistence.UniqueConstraint;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.Setter;
 import pl.rentowne.address.model.Address;
 import pl.rentowne.common.model.BaseEntity;
 import pl.rentowne.housing_provider.model.HousingProvider;
+import pl.rentowne.meter.model.Meter;
 import pl.rentowne.rented_object.model.RentedObject;
 import pl.rentowne.user.model.User;
 
 import java.math.BigDecimal;
 import java.math.BigInteger;
-import java.util.*;
+import java.util.HashSet;
+import java.util.Objects;
+import java.util.Set;
 
 @Getter
 @Setter
@@ -62,6 +84,9 @@ public class Apartment extends BaseEntity {
 
     @OneToMany(fetch = FetchType.LAZY, mappedBy = "apartment")
     private Set<RentedObject> rentedObjects;
+
+    @OneToMany(fetch = FetchType.LAZY, mappedBy = "apartment")
+    private Set<Meter> meters;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "USER_ACCOUNT_ID")

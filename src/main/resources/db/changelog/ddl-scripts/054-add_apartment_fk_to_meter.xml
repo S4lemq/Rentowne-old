@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<databaseChangeLog
+        xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+        http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-latest.xsd">
+
+    <changeSet author="plubowicz" id="054-add_apartment_id_to_meter">
+        <addColumn tableName="METER">
+            <column name="APARTMENT_ID" type="bigint">
+                <constraints nullable="true"
+                             foreignKeyName="FK_METER_ON_APARTMENT"
+                             references="APARTMENT(APARTMENT_ID)"/>
+            </column>
+        </addColumn>
+    </changeSet>
+
+    <changeSet author="plubowicz" id="054-add_comments_to_meter_apartment_id">
+        <setColumnRemarks tableName="METER" columnName="APARTMENT_ID" remarks="Referencja do mieszkania (opcjonalna)" />
+    </changeSet>
+
+    <changeSet author="plubowicz" id="054-make_rented_object_id_nullable">
+        <dropNotNullConstraint tableName="METER" columnName="RENTED_OBJECT_ID" columnDataType="bigint"/>
+    </changeSet>
+
+</databaseChangeLog>
+

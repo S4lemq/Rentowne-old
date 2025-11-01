@@ -5,9 +5,11 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import pl.rentowne.apartment.model.Apartment;
 import pl.rentowne.exception.RentowneBusinessException;
 import pl.rentowne.exception.RentowneErrorCode;
 import pl.rentowne.meter.model.Meter;
+import pl.rentowne.meter.model.dto.ApartmentMeterDto;
 import pl.rentowne.meter.model.dto.MeterDto;
 import pl.rentowne.meter.model.dto.MeterListDto;
 import pl.rentowne.meter.repository.MeterRepository;
@@ -33,6 +35,16 @@ public class MeterServiceImpl implements MeterService {
         Meter meter = this.convertToEntity(meterDto, rentedObjectReference);
         Meter savedMeter = meterRepository.save(meter);
         return this.convertToDto(savedMeter);
+    }
+
+    @Override
+    @Transactional
+    public ApartmentMeterDto addApartmentMeter(ApartmentMeterDto meterDto) {
+        Apartment apartmentReference = new Apartment(meterDto.apartment().getId());
+
+        Meter meter = this.convertToEntityFromApartmentMeter(meterDto, apartmentReference);
+        Meter savedMeter = meterRepository.save(meter);
+        return this.convertToApartmentMeterDto(savedMeter);
     }
 
     @Override
@@ -73,6 +85,15 @@ public class MeterServiceImpl implements MeterService {
 
     @Override
     @Transactional(readOnly = true)
+    public List<ApartmentMeterDto> getApartmentMeters(Long apartmentId) {
+        List<Meter> meters = meterRepository.findByApartmentId(apartmentId);
+        return meters.stream()
+                .map(this::convertToApartmentMeterDto)
+                .toList();
+    }
+
+    @Override
+    @Transactional(readOnly = true)
     public void getMeterCountByRentedObject(Long id) {
         List<Long> ids = meterRepository.findMeterCountByRentedObject(id);
         if (ids.isEmpty()) {
@@ -98,6 +119,17 @@ public class MeterServiceImpl implements MeterService {
                 .build();
     }
 
+    private Meter convertToEntityFromApartmentMeter(ApartmentMeterDto dto, Apartment apartmentReference) {
+        return Meter.builder()
+                .name(dto.name())
+                .meterType(dto.meterType())
+                .apartment(apartmentReference)
+                .meterNumber(dto.meterNumber())
+                .initialMeterReading(dto.initialMeterReading())
+                .installationDate(dto.installationDate())
+                .build();
+    }
+
     private MeterDto convertToDto(Meter entity) {
         return MeterDto.builder()
                 .id(entity.getId())
@@ -107,5 +139,17 @@ public class MeterServiceImpl implements MeterService {
                 .initialMeterReading(entity.getInitialMeterReading())
                 .installationDate(entity.getInstallationDate())
                 .build();
+    }
+
+    private ApartmentMeterDto convertToApartmentMeterDto(Meter entity) {
+        return new ApartmentMeterDto(
+                entity.getId(),
+                entity.getName(),
+                entity.getMeterType(),
+                null,
+                entity.getMeterNumber(),
+                entity.getInitialMeterReading(),
+                entity.getInstallationDate()
+        );
     }
 }

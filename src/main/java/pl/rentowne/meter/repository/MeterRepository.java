@@ -9,6 +9,8 @@ import pl.rentowne.meter.model.Meter;
 import pl.rentowne.meter.model.dto.MeterListDto;
 import pl.rentowne.meter.repository.cutom.MeterRepositoryCustom;
 
+import java.util.List;
+
 /**
  * Repozytorium liczników
  */
@@ -16,6 +18,14 @@ public interface MeterRepository extends JpaRepository<Meter, Long>, MeterReposi
 
     @Query("SELECT meter FROM Meter meter WHERE meter.id = :id")
     Meter getMeterDtoById(@Param("id") Long id);
+
+    @Query("""
+            SELECT m
+            FROM Meter m
+            WHERE m.apartment.id = :apartmentId
+            ORDER BY m.id ASC
+            """)
+    List<Meter> findByApartmentId(@Param("apartmentId") Long apartmentId);
 
     @Query("""
             SELECT new pl.rentowne.meter.model.dto.MeterListDto(

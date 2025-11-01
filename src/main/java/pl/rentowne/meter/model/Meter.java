@@ -1,7 +1,26 @@
 package pl.rentowne.meter.model;
 
-import jakarta.persistence.*;
-import lombok.*;
+import jakarta.persistence.Column;
+import jakarta.persistence.Entity;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
+import jakarta.persistence.FetchType;
+import jakarta.persistence.GeneratedValue;
+import jakarta.persistence.GenerationType;
+import jakarta.persistence.Id;
+import jakarta.persistence.Index;
+import jakarta.persistence.JoinColumn;
+import jakarta.persistence.ManyToOne;
+import jakarta.persistence.OneToMany;
+import jakarta.persistence.SequenceGenerator;
+import jakarta.persistence.Table;
+import jakarta.persistence.UniqueConstraint;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.Setter;
+import pl.rentowne.apartment.model.Apartment;
 import pl.rentowne.common.model.BaseEntity;
 import pl.rentowne.meter_reading.model.MeterReading;
 import pl.rentowne.rented_object.model.RentedObject;
@@ -53,6 +72,10 @@ public class Meter extends BaseEntity {
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "RENTED_OBJECT_ID")
     private RentedObject rentedObject;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "APARTMENT_ID")
+    private Apartment apartment;
 
     @OneToMany(fetch = FetchType.LAZY, mappedBy = "meter")
     private Set<MeterReading> meterReadings;
