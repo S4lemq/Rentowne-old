@@ -80,6 +80,22 @@ public class MeterController extends AbstractController {
     }
 
     @Operation(
+            summary = "Aktualizuje licznik przypisany do mieszkania",
+            description = "Metoda służy do aktualizowania licznika przypisanego bezpośrednio do mieszkania",
+            responses = {
+                    @ApiResponse(responseCode = "200", description = "Licznik mieszkania zaktualizowano pomyślnie"),
+                    @ApiResponse(responseCode = "400", description = "Niepoprawne dane wejściowe"),
+                    @ApiResponse(responseCode = "404", description = "Nie znaleziono danych"),
+                    @ApiResponse(responseCode = "500", description = "Wewnętrzny błąd serwera")
+            }
+    )
+    @PutMapping("/api/apartment-meter")
+    public ResponseEntity<Void> updateApartmentMeter(@Parameter(description = "dto licznika mieszkania", required = true) @RequestBody ApartmentMeterDto meter) {
+        meterService.updateApartmentMeter(meter);
+        return ResponseEntity.ok().build();
+    }
+
+    @Operation(
             summary = "Pobiera licznik po id",
             description = "Metoda służy do pobrania licznika po id",
             responses = {

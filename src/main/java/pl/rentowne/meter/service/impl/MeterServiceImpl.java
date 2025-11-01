@@ -69,17 +69,38 @@ public class MeterServiceImpl implements MeterService {
     @Override
     @Transactional
     public void updateMeter(MeterDto meter) {
-        Meter meterEntity = Meter.builder()
-                .id(meter.getId())
-                .name(meter.getName())
-                .meterType(meter.getMeterType())
-                .rentedObject(RentedObject.builder()
-                        .id(meter.getRentedObject().getId())
-                        .build())
-                .meterNumber(meter.getMeterNumber())
-                .initialMeterReading(meter.getInitialMeterReading())
-                .installationDate(meter.getInstallationDate())
-                .build();
+        Meter meterEntity = meterRepository.findById(meter.getId())
+                .orElseThrow(() -> new RentowneBusinessException(RentowneErrorCode.ITEM_NOT_FOUND));
+
+        meterEntity.setName(meter.getName());
+        meterEntity.setMeterType(meter.getMeterType());
+        meterEntity.setMeterNumber(meter.getMeterNumber());
+        meterEntity.setInitialMeterReading(meter.getInitialMeterReading());
+        meterEntity.setInstallationDate(meter.getInstallationDate());
+
+        if (meter.getRentedObject() != null && meter.getRentedObject().getId() != null) {
+            meterEntity.setRentedObject(new RentedObject(meter.getRentedObject().getId()));
+        }
+
+        meterRepository.save(meterEntity);
+    }
+
+    @Override
+    @Transactional
+    public void updateApartmentMeter(ApartmentMeterDto meter) {
+        Meter meterEntity = meterRepository.findById(meter.id())
+                .orElseThrow(() -> new RentowneBusinessException(RentowneErrorCode.ITEM_NOT_FOUND));
+
+        meterEntity.setName(meter.name());
+        meterEntity.setMeterType(meter.meterType());
+        meterEntity.setMeterNumber(meter.meterNumber());
+        meterEntity.setInitialMeterReading(meter.initialMeterReading());
+        meterEntity.setInstallationDate(meter.installationDate());
+
+        if (meter.apartment() != null && meter.apartment().getId() != null) {
+            meterEntity.setApartment(new Apartment(meter.apartment().getId()));
+        }
+
         meterRepository.save(meterEntity);
     }
 

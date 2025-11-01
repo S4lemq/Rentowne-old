@@ -47,6 +47,12 @@ public interface MeterService {
     void updateMeter(MeterDto meter);
 
     /**
+     * Aktualizuje licznik przypisany do mieszkania
+     * @param meter dto licznika mieszkania
+     */
+    void updateApartmentMeter(ApartmentMeterDto meter);
+
+    /**
      *
      * Pobiera ilość wymaganych liczników dla danego obiektu
      * @param id obiektu

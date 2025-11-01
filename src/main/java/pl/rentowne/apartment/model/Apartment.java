@@ -92,7 +92,7 @@ public class Apartment extends BaseEntity {
     @JoinColumn(name = "USER_ACCOUNT_ID")
     private User user;
 
-    @ManyToMany(mappedBy = "apartments")
+    @ManyToMany(mappedBy = "apartments", fetch = FetchType.LAZY)
     private Set<HousingProvider> housingProviders = new HashSet<>();
 
     public Apartment(Long id) {
