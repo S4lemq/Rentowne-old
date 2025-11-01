@@ -56,5 +56,6 @@
     <include file="/db/changelog/ddl-scripts/052-remove_uk_tenant_rented_object.xml"/>
     <include file="db/changelog/ddl-scripts/053-add_tenant_id_to_settlement.xml"/>
     <include file="db/changelog/ddl-scripts/054-add_apartment_fk_to_meter.xml"/>
+    <include file="db/changelog/ddl-scripts/055-make_rented_object_id_nullable_in_tenant.xml"/>
 
 </databaseChangeLog>

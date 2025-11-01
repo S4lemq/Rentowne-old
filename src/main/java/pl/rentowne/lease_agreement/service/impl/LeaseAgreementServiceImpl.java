@@ -129,6 +129,9 @@ public class LeaseAgreementServiceImpl implements LeaseAgreementService {
 
         leaseAgreementRepository.save(leaseAgreement);
 
+        // Usuń relację tenant-rentedObject
+        leaseAgreement.getTenant().setRentedObject(null);
+
         // Ustaw isRented na false w RentedObject i Apartment
         rentedObject.setRented(false);
         apartment.setRented(false);
