@@ -24,6 +24,7 @@ import pl.rentowne.settlement.model.Settlement;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.Objects;
+import java.util.Set;
 
 @Getter
 @Setter
@@ -70,6 +71,9 @@ public class MeterReading extends BaseEntity {
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "SETTLEMENT_ID")
     private Settlement settlement;
+
+    @Column(name = "METER_READING_SETTLEMENT_IDS")
+    private Set<Long> meterReadingSettlementIds;
 
     @Override
     public boolean equals(Object o) {

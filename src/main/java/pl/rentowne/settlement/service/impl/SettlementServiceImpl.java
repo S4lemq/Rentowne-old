@@ -14,6 +14,7 @@ import pl.rentowne.lease_agreement.model.dto.LeaseAgreementDto;
 import pl.rentowne.lease_agreement.repository.LeaseAgreementRepository;
 import pl.rentowne.meter.model.MeterType;
 import pl.rentowne.meter.repository.MeterRepository;
+import pl.rentowne.meter_reading.model.MeterReading;
 import pl.rentowne.meter_reading.model.dto.MeterReadingDto;
 import pl.rentowne.meter_reading.repository.MeterReadingRepository;
 import pl.rentowne.provider_field.model.BillingMethod;
@@ -43,6 +44,8 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
+import java.util.stream.Collectors;
 
 @Service
 @Slf4j
@@ -135,7 +138,15 @@ public class SettlementServiceImpl implements SettlementService {
                         elecCtx.apartmentId(), MeterType.ELECTRIC);
 
                 if (pending == 0 && elecCtx.apartmentSnapshotIds() != null && !elecCtx.apartmentSnapshotIds().isEmpty()) {
-                    meterReadingRepository.markApartmentSettled(elecCtx.apartmentSnapshotIds());
+                    List<Long> distributeReadings = elecCtx.apartmentSnapshotIds.stream()
+                            .filter(ElectricityCalcResult.ReadingSnapshot::distributeReadings)
+                            .map(ElectricityCalcResult.ReadingSnapshot::id).toList();
+
+                    Set<Long> notDistributeReadings = elecCtx.apartmentSnapshotIds.stream()
+                            .filter(t -> !t.distributeReadings())
+                            .map(ElectricityCalcResult.ReadingSnapshot::id).collect(Collectors.toSet());
+                    meterReadingRepository.markDistributedReadingsSettled(distributeReadings, notDistributeReadings);
+                    meterReadingRepository.markApartmentSettled(notDistributeReadings);
                     log.debug("[ELEKTRYCZNOŚĆ][CLOSE_CYCLE] aptId={} closed {} readings: {}",
                             elecCtx.apartmentId(), elecCtx.apartmentSnapshotIds().size(), elecCtx.apartmentSnapshotIds());
                 }
@@ -163,6 +174,16 @@ public class SettlementServiceImpl implements SettlementService {
 
         // 3) Cofnij znacznik apartmentSettled dla wszystkich odczytów tego cyklu (ELEKTRYKA)
         if (!cycleSettlementIds.isEmpty()) {
+            List<Long> meterReadings = meterReadingRepository.findMeterReadings(cycleSettlementIds);
+            List<MeterReading> allDistributed = meterReadingRepository.findAllBySettledTrueAndApartmentSettledTrueAndMeter_DistributeReadingsTrue();
+
+            List<MeterReading> matchingDistributed = allDistributed.stream()
+                    .filter(mr -> mr.getMeterReadingSettlementIds().stream()
+                            .anyMatch(meterReadings::contains))
+                    .toList();
+            List<Long> meterReadingIds = matchingDistributed.stream().map(MeterReading::getId).toList();
+            meterReadingRepository.unsetDistributedReadingsSettled(meterReadingIds);
+
             meterReadingRepository.unsetApartmentSettledBySettlementIdsAndType(cycleSettlementIds, MeterType.ELECTRIC);
             log.debug("[DELETE][CYCLE-OPEN] aptId={} date={} cycleSettlements={} -> apartmentSettled=false",
                     apartmentId, settlementDate, cycleSettlementIds);
@@ -222,12 +243,17 @@ public class SettlementServiceImpl implements SettlementService {
                 .map(MeterReadingDto::getId)
                 .toList();
 
-        // Dodaj do snapshot tylko jeśli jeszcze tam nie są
-        List<Long> combinedSnapshotIds = new ArrayList<>(apartmentSnapshotIds);
+        // Tworzenie listy ReadingSnapshot z odpowiednimi flagami
+        List<ElectricityCalcResult.ReadingSnapshot> combinedSnapshotIds = new ArrayList<>();
+
+        // Dodaj odczyty z kawalerek (distributeReadings = false)
+        for (Long id : apartmentSnapshotIds) {
+            combinedSnapshotIds.add(new ElectricityCalcResult.ReadingSnapshot(id, false));
+        }
+
+        // Dodaj odczyty z licznika mieszkania (distributeReadings = true)
         for (Long id : distributedReadingIds) {
-            if (!combinedSnapshotIds.contains(id)) {
-                combinedSnapshotIds.add(id);
-            }
+            combinedSnapshotIds.add(new ElectricityCalcResult.ReadingSnapshot(id, true));
         }
 
         // Oblicz udział z licznika mieszkania na kawalerkę
@@ -458,8 +484,10 @@ public class SettlementServiceImpl implements SettlementService {
 
     private record ElectricityCalcResult(BigDecimal amount,
                                          Long apartmentId,
-                                         List<Long> apartmentSnapshotIds,
-                                         BigDecimal distributedAmount) { }
+                                         List<ReadingSnapshot> apartmentSnapshotIds,
+                                         BigDecimal distributedAmount) {
+        record ReadingSnapshot(Long id, boolean distributeReadings) {}
+    }
 
     @Override
     @Transactional(readOnly = true)

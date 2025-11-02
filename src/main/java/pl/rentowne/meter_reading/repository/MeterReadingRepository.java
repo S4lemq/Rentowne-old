@@ -12,6 +12,7 @@ import pl.rentowne.meter_reading.repository.custom.MeterReadingRepositoryCustom;
 
 import java.math.BigDecimal;
 import java.util.List;
+import java.util.Set;
 
 /**
  * Repozytorium odczytów stanu licznika
@@ -27,8 +28,8 @@ public interface MeterReadingRepository extends JpaRepository<MeterReading, Long
             "concat(t.firstname, ' ', t.lastname), ro.rentedObjectName, m.meterType)" +
             "from MeterReading mr " +
             "join mr.meter m " +
-            "join m.rentedObject ro " +
-            "join ro.tenant t " +
+            "left join m.rentedObject ro " +
+            "left join ro.tenant t " +
             "where m.id = :meterId " +
             "order by mr.readingDate desc")
     List<PrevMeterReadingDto> findPrevMeterReading(Long meterId);
@@ -100,13 +101,13 @@ public interface MeterReadingRepository extends JpaRepository<MeterReading, Long
     // Ustawienie apartmentSettled = true dla listy ID (zamyka cykl na poziomie mieszkania)
     @Modifying
     @Query("update MeterReading mr set mr.apartmentSettled = true where mr.id in :ids")
-    int markApartmentSettled(@Param("ids") List<Long> ids);
+    int markApartmentSettled(@Param("ids") Set<Long> ids);
 
 
     // Cofnięcie apartmentSettled dla WSZYSTKICH odczytów w cyklu (po typie licznika – elektryka)
     @Modifying
     @Query("""
-           update MeterReading m 
+           update MeterReading m
               set m.apartmentSettled = false
             where m.settlement.id in :settlementIds
               and m.meter.meterType = :type
@@ -140,4 +141,30 @@ public interface MeterReadingRepository extends JpaRepository<MeterReading, Long
     List<MeterReadingDto> findUnsettledDistributedReadingsByApartmentAndType(@Param("apartmentId") Long apartmentId,
                                                                               @Param("meterType") MeterType meterType);
 
+
+    @Modifying
+    @Query("""
+        UPDATE MeterReading mr
+        SET mr.settled = true, mr.apartmentSettled = true, mr.meterReadingSettlementIds = :notDistributeReadings
+        WHERE mr.id IN :distributeReadings
+    """)
+    void markDistributedReadingsSettled(List<Long> distributeReadings, Set<Long> notDistributeReadings);
+
+
+    @Query("""
+        select mr.id
+        from MeterReading mr
+        where mr.settlement.id in :cycleSettlementIds
+    """)
+    List<Long> findMeterReadings(List<Long> cycleSettlementIds);
+
+    List<MeterReading> findAllBySettledTrueAndApartmentSettledTrueAndMeter_DistributeReadingsTrue();
+
+    @Modifying
+    @Query("""
+           update MeterReading m
+              set m.apartmentSettled = false, m.settled = false, m.meterReadingSettlementIds = null
+            where m.id in :meterReadingIds
+    """)
+    void unsetDistributedReadingsSettled(List<Long> meterReadingIds);
 }
