@@ -70,4 +70,53 @@ class RentedObjectControllerTest {
         assertEquals(BigDecimal.valueOf(118.41), sum, "Suma za energię elektryczną powinna wynosić 118.41");
     }
 
+    @Test
+    @WithMockRentowneUser
+    @Sql("classpath:sql/init_data.sql")
+    void shouldCalculateRentedObjectThreeTimesAndSaveThreeRows() {
+        // given
+        when(auditorAware.getCurrentAuditor()).thenReturn(Optional.of("peter.lubowicz@gmail.com"));
+
+        var dto = CalculateRequestDto.builder()
+                .electricityIncluded(true)
+                .waterIncluded(true)
+                .settlementDate(LocalDateTime.of(2025, 10, 3, 19, 0, 0))
+                .build();
+
+        // when
+        webTestClient.post()
+                .uri("/api/rented-objects/6/calculate")
+                .bodyValue(dto)
+                .exchange()
+                .expectStatus().isOk();
+
+        webTestClient.post()
+                .uri("/api/rented-objects/7/calculate")
+                .bodyValue(dto)
+                .exchange()
+                .expectStatus().isOk();
+
+        webTestClient.post()
+                .uri("/api/rented-objects/8/calculate")
+                .bodyValue(dto)
+                .exchange()
+                .expectStatus().isOk();
+
+        // then
+        var settlements = settlementRepository.findAll();
+
+        BigDecimal sum = settlements.stream()
+                .map(Settlement::getElectricityAmount)
+                .reduce(BigDecimal.ZERO, BigDecimal::add);
+
+        assertEquals(new BigDecimal("305.90"), sum, "Suma za energię elektryczną powinna wynosić 305.90");
+
+//        BigDecimal expectedAmountPerSettlement = BigDecimal.valueOf(39.47);
+//        settlements.forEach(settlement ->
+//                assertEquals(expectedAmountPerSettlement, settlement.getElectricityAmount(),
+//                        "Każde rozliczenie powinno mieć równą wartość energii elektrycznej")
+//        );
+
+    }
+
 }

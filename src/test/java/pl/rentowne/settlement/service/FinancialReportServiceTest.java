@@ -12,7 +12,7 @@ import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-@Sql("classpath:sql/init_data.sql")
+@Sql("classpath:sql/init_data-2.sql")
 @IntegrationTest
 class FinancialReportServiceTest {
 

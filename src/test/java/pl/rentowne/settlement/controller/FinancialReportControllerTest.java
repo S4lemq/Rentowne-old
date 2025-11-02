@@ -16,7 +16,7 @@ import pl.rentowne.config.WithMockRentowneUser;
 import pl.rentowne.util.Clock;
 import pl.rentowne.util.FixedClock;
 
-@Sql("classpath:sql/init_data.sql")
+@Sql("classpath:sql/init_data-2.sql")
 @IntegrationTest
 @Import({TestSecurityConfig.class, FinancialReportControllerTest.TestClockConfig.class})
 class FinancialReportControllerTest {
