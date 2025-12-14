@@ -67,9 +67,9 @@ public class DTLeaseAgreementDefinition implements DTDefinition {
                 new DTColumnDefinition("fullName", tenant.firstname.concat(" ").concat(tenant.lastname), true),
                 new DTColumnDefinition("apartment", apartment.apartmentName,
                         jpaQuery -> jpaQuery
-                                .join(tenant).on(leaseAgreement.id.eq(tenant.leaseAgreement().id))
-                                .join(rentedObject).on(tenant.rentedObject().id.eq(rentedObject.id))
-                                .join(apartment).on(rentedObject.apartment().id.eq(apartment.id))),
+                                .leftJoin(tenant).on(leaseAgreement.id.eq(tenant.leaseAgreement().id))
+                                .leftJoin(rentedObject).on(tenant.rentedObject().id.eq(rentedObject.id))
+                                .leftJoin(apartment).on(rentedObject.apartment().id.eq(apartment.id))),
                 new DTColumnDefinition("rentedObject", rentedObject.rentedObjectName),
                 new DTColumnDefinition("leaseAgreement", leaseAgreement.compensationAmount, true),
                 new DTColumnDefinition("leaseAgreement", leaseAgreement.rentAmount, true),
