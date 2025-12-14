@@ -49,13 +49,13 @@ public class MeterReading extends BaseEntity {
     @Column(name = "METER_READING_ID", nullable = false)
     private Long id;
 
-    @Column(name = "CURRENT_READING", nullable = false)
+    @Column(name = "CURRENT_READING", nullable = false, precision = 11, scale = 5)
     private BigDecimal currentReading; //bieżący odczyt w danym miesiącu
 
     @Column(name = "READING_DATE", nullable = false)
     private LocalDateTime readingDate; //data odczytu
 
-    @Column(name = "CONSUMPTION", nullable = false)
+    @Column(name = "CONSUMPTION", nullable = false, precision = 8, scale = 5)
     private BigDecimal consumption; //zużycie w danym miesiącu
 
     @Column(name = "SETTLED", nullable = false)
