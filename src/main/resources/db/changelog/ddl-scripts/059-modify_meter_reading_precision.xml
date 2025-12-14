@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<databaseChangeLog
+        xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+        http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-latest.xsd">
+
+    <changeSet author="plubowicz" id="059-modify_consumption_precision">
+        <modifyDataType tableName="METER_READING" columnName="CONSUMPTION" newDataType="numeric(11,5)"/>
+    </changeSet>
+
+    <changeSet author="plubowicz" id="059-update_consumption_column_remarks">
+        <setColumnRemarks tableName="METER_READING" columnName="CONSUMPTION" remarks="Zużycie w danym miesiącu (zwiększona precyzja do 11,5)" />
+    </changeSet>
+
+</databaseChangeLog>
+

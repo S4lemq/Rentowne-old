@@ -60,5 +60,6 @@
     <include file="db/changelog/ddl-scripts/056-add_distributed_electricity_amount_to_settlement.xml"/>
     <include file="db/changelog/ddl-scripts/057-make_rented_object_id_nullable_in_tenant.xml"/>
     <include file="db/changelog/ddl-scripts/058-add_settlement_ids_to_meter_reading.xml"/>
+    <include file="db/changelog/ddl-scripts/059-modify_meter_reading_precision.xml"/>
 
 </databaseChangeLog>
