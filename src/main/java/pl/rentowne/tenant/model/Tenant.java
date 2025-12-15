@@ -36,12 +36,10 @@ import java.util.List;
 @Table(
         name = "TENANT",
         uniqueConstraints = {
-                @UniqueConstraint(name = "PK_TENANT", columnNames = "TENANT_ID"),
-                @UniqueConstraint(name = "UK_TENANT_1", columnNames = "ADDRESS_ID")
+                @UniqueConstraint(name = "PK_TENANT", columnNames = "TENANT_ID")
         },
         indexes = {
                 @Index(name = "PK_TENANT", columnList = "TENANT_ID", unique = true),
-                @Index(name = "UK_TENANT_1", columnList = "ADDRESS_ID", unique = true),
                 @Index(name = "I_TENANT_1", columnList = "EMAIL")
         }
 )
@@ -69,7 +67,7 @@ public class Tenant extends BaseEntity {
     private String phoneNumber;
 
     @OneToOne(fetch = FetchType.LAZY, cascade = CascadeType.ALL, orphanRemoval = true)
-    @JoinColumn(name = "ADDRESS_ID", unique = true)
+    @JoinColumn(name = "ADDRESS_ID")
     private Address address;
 
     @OneToOne(fetch = FetchType.LAZY, cascade = CascadeType.ALL)

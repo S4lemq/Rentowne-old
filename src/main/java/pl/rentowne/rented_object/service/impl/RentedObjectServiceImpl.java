@@ -273,6 +273,7 @@ public class RentedObjectServiceImpl implements RentedObjectService {
                             .map(meter -> MeterDto.builder()
                                     .id(meter.getId())
                                     .name(meter.getName())
+                                    .meterNumber(meter.getMeterNumber())
                                     .meterType(meter.getMeterType())
                                     .build())
                             .collect(Collectors.toList());

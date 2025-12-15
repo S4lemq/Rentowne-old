@@ -30,7 +30,7 @@ public class TenantRepositoryImpl extends BaseRepositoryImpl<Tenant, Long> imple
     public Optional<Tenant> findByTenantId(Long id) {
         return Optional.ofNullable(
                 queryFactory.selectFrom(tenant)
-                        .join(tenant.address(), address).fetchJoin()
+                        .leftJoin(tenant.address(), address).fetchJoin()
                         .join(tenant.leaseAgreement(), leaseAgreement).fetchJoin()
                         .join(tenant.rentedObject(), rentedObject).fetchJoin()
                         .join(rentedObject.apartment(), apartment).fetchJoin()

@@ -32,7 +32,7 @@ public class TenantDto {
                 .email(dto.email)
                 .accountNumber(dto.accountNumber)
                 .phoneNumber(dto.phoneNumber)
-                .address(AddressDto.asEntity(dto.addressDto))
+                .address(dto.addressDto != null ? AddressDto.asEntity(dto.addressDto) : null)
                 .leaseAgreement(LeaseAgreementDto.asEntity(dto.getLeaseAgreementDto()))
                 .rentedObject(new RentedObject(dto.getRentedObjectDto().getId()))
                 .build();
@@ -46,7 +46,7 @@ public class TenantDto {
                 .email(entity.getEmail())
                 .accountNumber(entity.getAccountNumber())
                 .phoneNumber(entity.getPhoneNumber())
-                .addressDto(AddressDto.asDto(entity.getAddress()))
+                .addressDto(entity.getAddress() != null ? AddressDto.asDto(entity.getAddress()) : null)
                 .leaseAgreementDto(LeaseAgreementDto.asDto(entity.getLeaseAgreement()))
                 .rentedObjectDto(RentedObjectDto.asDtoWithoutMeters(entity.getRentedObject()))
                 .apartment(ApartmentDto.asBasicDto(entity.getRentedObject().getApartment()))
