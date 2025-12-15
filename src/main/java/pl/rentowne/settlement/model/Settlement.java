@@ -95,4 +95,7 @@ public class Settlement extends BaseEntity {
     @Enumerated(EnumType.STRING)
     private SettlementStatus settlementStatus;
 
+    @Column(name = "PRORATION_DESCRIPTION", columnDefinition = "TEXT")
+    private String prorationDescription;
+
 }

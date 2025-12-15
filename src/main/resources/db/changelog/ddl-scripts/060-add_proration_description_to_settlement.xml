@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<databaseChangeLog
+        xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+        http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-latest.xsd">
+
+    <changeSet id="060-add_proration_description_to_settlement" author="plubowicz">
+        <addColumn tableName="SETTLEMENT">
+            <column name="PRORATION_DESCRIPTION" type="TEXT">
+                <constraints nullable="true"/>
+            </column>
+        </addColumn>
+    </changeSet>
+
+    <changeSet id="060-add_comment_to_proration_description" author="plubowicz">
+        <setColumnRemarks tableName="SETTLEMENT" columnName="PRORATION_DESCRIPTION"
+                          remarks="Opis okresu rozliczenia i składników dla rozliczenia niepełnego miesiąca (np. '15-31.01.2025 | Czynsz: 900 zł (proporcja), Odstępne: 300 zł (pełna)')"/>
+    </changeSet>
+
+</databaseChangeLog>
+

@@ -2,6 +2,7 @@ package pl.rentowne.rented_object.service;
 
 import pl.rentowne.exception.RentowneBusinessException;
 import pl.rentowne.rented_object.model.RentedObject;
+import pl.rentowne.rented_object.model.dto.ProrationCheckResponseDto;
 import pl.rentowne.rented_object.model.dto.RentedObjectDetailsDto;
 import pl.rentowne.rented_object.model.dto.RentedObjectDto;
 
@@ -63,5 +64,20 @@ public interface RentedObjectService {
      * @return lista szczegółowych informacji o obiektach
      */
     List<RentedObjectDetailsDto> getRentedObjectsDetails(Long apartmentId);
+
+    /**
+     * Sprawdza czy dany obiekt do wynajęcia posiada gasDeposit w ostatnim rozliczeniu
+     * @param rentedObjectId id obiektu do wynajęcia
+     * @return true jeśli obiekt ma gasDeposit, false w przeciwnym wypadku
+     */
+    boolean hasGasDeposit(Long rentedObjectId);
+
+    /**
+     * Sprawdza czy należy zasugerować rozliczenie niepełnego miesiąca
+     * @param rentedObjectId id obiektu do wynajęcia
+     * @param settlementDate data rozliczenia wybrana przez użytkownika (format: YYYY-MM-DD)
+     * @return informacje o sugestii proporcjonalnego rozliczenia
+     */
+    ProrationCheckResponseDto checkProrationSuggestion(Long rentedObjectId, String settlementDate);
 
 }

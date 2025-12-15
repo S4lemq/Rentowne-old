@@ -59,7 +59,8 @@ public class SettlementMapper {
                 settlement.getWaterAmount(),
                 settlement.getGasAmount(),
                 settlement.getTotalAmount(),
-                rentAndUtilities
+                rentAndUtilities,
+                settlement.getProrationDescription()
         );
     }
 }

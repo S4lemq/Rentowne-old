@@ -17,6 +17,7 @@ public record SettlementListDto(
         BigDecimal waterAmount, // kwota wody z liczników
         BigDecimal gasAmount, // kwota za gaz z liczników
         BigDecimal totalAmount, // kwota całkowita
-        BigDecimal rentAndUtilitiesAmount // Czynsz i media – kwota czynszu + internet + gaz + prąd + woda
+        BigDecimal rentAndUtilitiesAmount, // Czynsz i media – kwota czynszu + internet + gaz + prąd + woda
+        String prorationDescription // opis proporcjonalności rozliczenia
 ) {
 }

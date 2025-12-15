@@ -69,9 +69,40 @@ public class RentedObjectController extends AbstractController {
         return ResponseEntity.ok(rentedObjectService.getRentedObjectsDetails(apartmentId));
     }
 
+    @Operation(
+            summary = "Sprawdza czy obiekt posiada gasDeposit",
+            description = "Metoda sprawdzająca czy dany obiekt do wynajęcia ma gasDeposit w ostatnim rozliczeniu",
+            responses = {
+                    @ApiResponse(responseCode = "200", description = "Sukces", content = @Content(mediaType = "application/json")),
+                    @ApiResponse(responseCode = "404", description = "Nie znaleziono obiektu"),
+                    @ApiResponse(responseCode = "500", description = "Wewnętrzny błąd serwera")
+            }
+    )
+    @GetMapping(value = "/api/rented-objects/{id}/has-gas-deposit")
+    public ResponseEntity<Boolean> hasGasDeposit(@PathVariable Long id) {
+        return ResponseEntity.ok(rentedObjectService.hasGasDeposit(id));
+    }
+
     @PostMapping(value = "/api/rented-objects/{id}/calculate")
     public ResponseEntity<Void> calculate(@PathVariable Long id, @RequestBody CalculateRequestDto dto) {
         settlementService.calculate(id, dto);
         return new ResponseEntity<>(HttpStatus.OK);
+    }
+
+    @Operation(
+            summary = "Sprawdza czy należy zasugerować rozliczenie niepełnego miesiąca",
+            description = "Metoda sprawdzająca czy dla wybranej daty rozliczenia należy zasugerować użytkownikowi rozliczenie niepełnego miesiąca na podstawie daty rozpoczęcia umowy najmu",
+            responses = {
+                    @ApiResponse(responseCode = "200", description = "Sukces", content = @Content(mediaType = "application/json")),
+                    @ApiResponse(responseCode = "400", description = "Niepoprawne dane wejściowe"),
+                    @ApiResponse(responseCode = "404", description = "Nie znaleziono obiektu lub umowy najmu"),
+                    @ApiResponse(responseCode = "500", description = "Wewnętrzny błąd serwera")
+            }
+    )
+    @GetMapping(value = "/api/rented-objects/{rentedObjectId}/check-proration")
+    public ResponseEntity<pl.rentowne.rented_object.model.dto.ProrationCheckResponseDto> checkProrationSuggestion(
+            @PathVariable Long rentedObjectId,
+            @RequestParam String settlementDate) {
+        return ResponseEntity.ok(rentedObjectService.checkProrationSuggestion(rentedObjectId, settlementDate));
     }
 }

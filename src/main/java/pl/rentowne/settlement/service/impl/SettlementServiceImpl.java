@@ -23,6 +23,7 @@ import pl.rentowne.rented_object.model.RentedObject;
 import pl.rentowne.rented_object.model.dto.CalculateRequestDto;
 import pl.rentowne.rented_object.repository.RentedObjectRepository;
 import pl.rentowne.settlement.mapper.SettlementMapper;
+import pl.rentowne.settlement.model.ProrationMode;
 import pl.rentowne.settlement.model.Settlement;
 import pl.rentowne.settlement.model.SettlementStatus;
 import pl.rentowne.settlement.model.dto.SettlementListDto;
@@ -64,6 +65,13 @@ public class SettlementServiceImpl implements SettlementService {
     @Transactional
     @Override
     public void calculate(Long rentedObjectId, CalculateRequestDto dto) {
+        // Check if this is a partial month settlement
+        if (Boolean.TRUE.equals(dto.getIsPartialMonth())) {
+            calculatePartialMonth(rentedObjectId, dto);
+            return;
+        }
+
+        // Original full month settlement logic
         ElectricityCalcResult elecCtx = null;
         try {
             List<HousingProvider> providerWithProviderFields =
@@ -197,6 +205,256 @@ public class SettlementServiceImpl implements SettlementService {
 
         // 6) Usuń samo rozliczenie
         settlementRepository.deleteById(settlementId);
+    }
+
+
+    /**
+     * Rozliczenie niepełnego miesiąca z proporcjonalnym przeliczeniem wybranych składników
+     */
+    @Transactional
+    public void calculatePartialMonth(Long rentedObjectId, CalculateRequestDto dto) {
+        ElectricityCalcResult elecCtx = null;
+        try {
+            log.info("Rozpoczynam rozliczenie niepełnego miesiąca dla obiektu: {}", rentedObjectId);
+
+            // Walidacja dat
+            if (dto.getPeriodStartDate() == null || dto.getPeriodEndDate() == null) {
+                throw new IllegalArgumentException("Dla rozliczenia niepełnego miesiąca wymagane są daty: periodStartDate i periodEndDate");
+            }
+
+            // Walidacja logiki: isWaterMetersProrated ma sens tylko gdy waterIncluded=true
+            if (Boolean.TRUE.equals(dto.getIsWaterMetersProrated()) && !dto.isWaterIncluded()) {
+                throw new IllegalArgumentException("isWaterMetersProrated może być true tylko gdy waterIncluded=true");
+            }
+
+            List<HousingProvider> providerWithProviderFields =
+                    housingProviderRepository.findHousingProviderWithProviderFieldsByRentedObjectId(rentedObjectId);
+            LeaseAgreementDto leaseAgreement = leaseAgreementRepository.getData(rentedObjectId);
+
+            // Utworzenie kalkulatora proporcji
+            ProrationCalculator prorationCalc = ProrationCalculator.builder()
+                    .periodStartDate(dto.getPeriodStartDate())
+                    .periodEndDate(dto.getPeriodEndDate())
+                    .settlementDate(dto.getSettlementDate())
+                    .build();
+
+            log.info("Okres rozliczenia: {} (dni: {}/{})",
+                    prorationCalc.getPeriodDescription(),
+                    prorationCalc.getActualDays(),
+                    prorationCalc.getTotalDaysInMonth());
+
+            List<Long> allMeterReadingIds = new ArrayList<>();
+            BigDecimal electricResult = BigDecimal.ZERO;
+            BigDecimal distributedElectricResult = BigDecimal.ZERO;
+            BigDecimal gasResult;
+            BigDecimal waterResult = BigDecimal.ZERO;
+
+            // Prąd - zawsze z liczników (rzeczywiste zużycie)
+            if (dto.isElectricityIncluded()) {
+                elecCtx = this.calculateElectricityCost(
+                        providerWithProviderFields, rentedObjectId, allMeterReadingIds);
+                electricResult = (elecCtx != null) ? elecCtx.amount() : BigDecimal.ZERO;
+                distributedElectricResult = (elecCtx != null) ? elecCtx.distributedAmount() : BigDecimal.ZERO;
+            }
+
+            // Woda - może być proporcjonalna (includedWaterMeters)
+            LeaseAgreementDto adjustedLeaseAgreement = leaseAgreement;
+            if (dto.isWaterIncluded()) {
+                adjustedLeaseAgreement = adjustWaterMetersForProration(
+                        leaseAgreement, prorationCalc, dto.getIsWaterMetersProrated());
+                waterResult = this.calculateWaterCost(
+                        providerWithProviderFields, rentedObjectId, waterResult, allMeterReadingIds, adjustedLeaseAgreement);
+            }
+
+            // Oblicz proporcjonalne kwoty z umowy
+            ProrationMode rentMode = Boolean.TRUE.equals(dto.getIsRentProrated()) ? ProrationMode.PRORATED : ProrationMode.FULL;
+            ProrationMode compensationMode = Boolean.TRUE.equals(dto.getIsCompensationProrated()) ? ProrationMode.PRORATED : ProrationMode.FULL;
+            ProrationMode gasMode = Boolean.TRUE.equals(dto.getIsGasDepositProrated()) ? ProrationMode.PRORATED : ProrationMode.FULL;
+            ProrationMode waterMode = Boolean.TRUE.equals(dto.getIsWaterMetersProrated()) ? ProrationMode.PRORATED : ProrationMode.FULL;
+
+            BigDecimal rentAmount = prorationCalc.calculateAmount(leaseAgreement.getRentAmount(), rentMode);
+            BigDecimal compensationAmount = prorationCalc.calculateAmount(leaseAgreement.getCompensationAmount(), compensationMode);
+            BigDecimal gasDeposit = leaseAgreement.getGasDeposit() != null
+                    ? prorationCalc.calculateAmount(leaseAgreement.getGasDeposit(), gasMode)
+                    : BigDecimal.ZERO;
+
+            gasResult = gasDeposit;
+
+            BigDecimal totalSum = electricResult.add(waterResult)
+                    .add(compensationAmount)
+                    .add(leaseAgreement.getInternetFee())
+                    .add(rentAmount);
+
+            // Generuj opis rozliczenia - użyj adjustedLeaseAgreement dla proporcjonalnej wody
+            String prorationDescription = buildProrationDescription(
+                    prorationCalc,
+                    rentAmount, rentMode,
+                    compensationAmount, compensationMode,
+                    gasDeposit, gasMode,
+                    adjustedLeaseAgreement.getIncludedWaterMeters(),
+                    waterMode
+            );
+
+            // Logi
+            log.info("Rozliczenie niepełnego miesiąca obiektu o id: {}", rentedObjectId);
+            log.info("Okres: {}", prorationCalc.getPeriodDescription());
+            log.info("Współczynnik proporcji: {}", prorationCalc.getProrationFactor());
+            log.info("Rozliczano: wodę-{}, prąd-{}", dto.isWaterIncluded(), dto.isElectricityIncluded());
+            log.info("Kwota czynszu: {} ({})", rentAmount, rentMode.getDescription());
+            log.info("Kwota odstępnego: {} ({})", compensationAmount, compensationMode.getDescription());
+            log.info("Kwota za prąd: {}", electricResult);
+            log.info("Kwota za prąd z licznika mieszkania: {}", distributedElectricResult);
+            log.info("Kwota za wodę: {}", waterResult);
+            log.info("Kwota za gaz: {} ({})", gasResult, gasMode.getDescription());
+            log.info("Kwota za internet: {}", leaseAgreement.getInternetFee());
+            log.info("Kwota całkowita: {}", totalSum);
+
+            Tenant tenant = tenantRepository.getTenantByRentedObjectId(rentedObjectId);
+
+            Settlement settlement = Settlement.builder()
+                    .electricityAmount(electricResult)
+                    .distributedElectricityAmount(distributedElectricResult)
+                    .waterAmount(waterResult)
+                    .gasAmount(gasResult)
+                    .totalAmount(totalSum)
+                    .compensationAmount(compensationAmount)
+                    .rentAmount(rentAmount)
+                    .internetFee(leaseAgreement.getInternetFee())
+                    .gasDeposit(gasDeposit)
+                    .settlementDate(dto.getSettlementDate())
+                    .rentedObject(RentedObject.builder().id(rentedObjectId).build())
+                    .tenant(tenant)
+                    .settlementStatus(SettlementStatus.TO_PAY)
+                    .prorationDescription(prorationDescription)
+                    .build();
+
+            Long settlementId = settlementRepository.saveAndFlush(settlement).getId();
+
+            if (!allMeterReadingIds.isEmpty()) {
+                meterReadingRepository.updateSettled(allMeterReadingIds, settlementId);
+            }
+            log.info("W następujących odczytach liczników ustawiono odczyty na rozliczone: {}", allMeterReadingIds);
+
+            // Domknięcie cyklu na poziomie mieszkania (tylko elektryka)
+            if (elecCtx != null && elecCtx.apartmentId() != null) {
+                long pending = meterReadingRepository.countUnclosedAndUnsettledInApartment(
+                        elecCtx.apartmentId(), MeterType.ELECTRIC);
+
+                if (pending == 0 && elecCtx.apartmentSnapshotIds() != null && !elecCtx.apartmentSnapshotIds().isEmpty()) {
+                    List<Long> distributeReadings = elecCtx.apartmentSnapshotIds.stream()
+                            .filter(ElectricityCalcResult.ReadingSnapshot::distributeReadings)
+                            .map(ElectricityCalcResult.ReadingSnapshot::id).toList();
+
+                    Set<Long> notDistributeReadings = elecCtx.apartmentSnapshotIds.stream()
+                            .filter(t -> !t.distributeReadings())
+                            .map(ElectricityCalcResult.ReadingSnapshot::id).collect(Collectors.toSet());
+                    meterReadingRepository.markDistributedReadingsSettled(distributeReadings, notDistributeReadings);
+                    meterReadingRepository.markApartmentSettled(notDistributeReadings);
+                    log.debug("[ELEKTRYCZNOŚĆ][CLOSE_CYCLE] aptId={} closed {} readings: {}",
+                            elecCtx.apartmentId(), elecCtx.apartmentSnapshotIds().size(), elecCtx.apartmentSnapshotIds());
+                }
+            }
+
+            rentedObjectRepository.updateSettlement(rentedObjectId, totalSum, dto.getSettlementDate());
+
+        } catch (Exception e) {
+            log.error("Błąd podczas rozliczenia niepełnego miesiąca obiektu {}", rentedObjectId, e);
+            throw e;
+        }
+    }
+
+    /**
+     * Dostosowuje wliczone metry wody proporcjonalnie do okresu
+     * Przykład: 4 m³ wody dla okresu 15-31 stycznia (17 dni z 31) = 4 × (17/31) = 2.19 m³
+     */
+    private LeaseAgreementDto adjustWaterMetersForProration(
+            LeaseAgreementDto leaseAgreement,
+            ProrationCalculator prorationCalc,
+            Boolean isWaterMetersProrated) {
+
+        if (!Boolean.TRUE.equals(isWaterMetersProrated)) {
+            return leaseAgreement; // Bez zmian - pełna ilość wody
+        }
+
+        BigDecimal originalWaterMeters = leaseAgreement.getIncludedWaterMeters();
+        BigDecimal proratedWaterMeters = prorationCalc.calculateAmount(originalWaterMeters, ProrationMode.PRORATED);
+
+        log.info("Woda wliczona: {} m³ → {} m³ (proporcjonalnie)", originalWaterMeters, proratedWaterMeters);
+
+        // Tworzymy nowy DTO ze wszystkimi polami, zmieniamy tylko includedWaterMeters
+        return LeaseAgreementDto.builder()
+                .id(leaseAgreement.getId())
+                .startContractDate(leaseAgreement.getStartContractDate())
+                .endContractDate(leaseAgreement.getEndContractDate())
+                .deposit(leaseAgreement.getDeposit())
+                .depositPaid(leaseAgreement.getDepositPaid())
+                .paymentDueDayOfMonth(leaseAgreement.getPaymentDueDayOfMonth())
+                .rentAmount(leaseAgreement.getRentAmount())
+                .compensationAmount(leaseAgreement.getCompensationAmount())
+                .internetFee(leaseAgreement.getInternetFee())
+                .gasDeposit(leaseAgreement.getGasDeposit())
+                .includedWaterMeters(proratedWaterMeters)  // JEDYNA ZMIENIONA WARTOŚĆ
+                .initialEnergyMeterReading(leaseAgreement.getInitialEnergyMeterReading())
+                .initialWaterMeterReading(leaseAgreement.getInitialWaterMeterReading())
+                .initialGasMeterReading(leaseAgreement.getInitialGasMeterReading())
+                .depositReturnDate(leaseAgreement.getDepositReturnDate())
+                .returnedDepositAmount(leaseAgreement.getReturnedDepositAmount())
+                .contractActive(leaseAgreement.isContractActive())
+                .contractSigningDate(leaseAgreement.getContractSigningDate())
+                .chargeDescription(leaseAgreement.getChargeDescription())
+                .chargeAmount(leaseAgreement.getChargeAmount())
+                .gasChargeAmount(leaseAgreement.getGasChargeAmount())
+                .build();
+    }
+
+    /**
+     * Buduje opis rozliczenia dla niepełnego miesiąca
+     * Format: "15-31.01.2025 (54.84%) | Proporcja: czynsz, gaz, woda: 2.74 m³ | Pełne: odstępne"
+     */
+    private String buildProrationDescription(
+            ProrationCalculator prorationCalc,
+            BigDecimal rentAmount, ProrationMode rentMode,
+            BigDecimal compensationAmount, ProrationMode compensationMode,
+            BigDecimal gasDeposit, ProrationMode gasMode,
+            BigDecimal includedWaterMeters, ProrationMode waterMode) {
+
+        StringBuilder sb = new StringBuilder();
+
+        // Okres i procent proporcji
+        BigDecimal percentage = prorationCalc.getProrationFactor().multiply(new BigDecimal("100"))
+                .setScale(2, RoundingMode.HALF_UP);
+        sb.append(prorationCalc.getPeriodDescription())
+          .append(" (").append(percentage).append("%)");
+
+        // Składniki w proporcji
+        List<String> proratedItems = new ArrayList<>();
+        if (rentMode == ProrationMode.PRORATED) proratedItems.add("czynsz");
+        if (compensationMode == ProrationMode.PRORATED) proratedItems.add("odstępne");
+        if (gasMode == ProrationMode.PRORATED && gasDeposit != null && gasDeposit.compareTo(BigDecimal.ZERO) > 0) {
+            proratedItems.add("gaz");
+        }
+        if (waterMode == ProrationMode.PRORATED) {
+            proratedItems.add("woda: " + includedWaterMeters + " m³");
+        }
+
+        if (!proratedItems.isEmpty()) {
+            sb.append(" | Proporcja: ").append(String.join(", ", proratedItems));
+        }
+
+        // Składniki pełne
+        List<String> fullItems = new ArrayList<>();
+        if (rentMode == ProrationMode.FULL) fullItems.add("czynsz");
+        if (compensationMode == ProrationMode.FULL) fullItems.add("odstępne");
+        if (gasMode == ProrationMode.FULL && gasDeposit != null && gasDeposit.compareTo(BigDecimal.ZERO) > 0) {
+            fullItems.add("gaz");
+        }
+        if (waterMode == ProrationMode.FULL) fullItems.add("woda");
+
+        if (!fullItems.isEmpty()) {
+            sb.append(" | Pełne: ").append(String.join(", ", fullItems));
+        }
+
+        return sb.toString();
     }
 
 
