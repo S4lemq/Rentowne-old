@@ -46,16 +46,38 @@ public class LeaseAgreementServiceImpl implements LeaseAgreementService {
                 .orElseThrow(() -> new IllegalArgumentException("Nie znaleziono umowy o id: " + leaseAgreementId));
 
         Long rentedObjectId = leaseAgreement.getTenant().getRentedObject().getId();
+        Long tenantId = leaseAgreement.getTenant().getId();
 
-        // Oblicz koszty mediów bez zapisu
-        UtilityCostsDto utilityCosts = settlementService.calculateUtilityCostsOnly(rentedObjectId);
+        // Pobierz ostatnie rozliczenie dla tego obiektu wynajmowanego i najemcy
+        Settlement lastSettlement = settlementRepository.findLatestByRentedObjectId(rentedObjectId, tenantId);
+
+        BigDecimal waterAmount;
+        BigDecimal electricityAmount;
+        boolean hasPartialSettlement = false;
+
+        // Sprawdź czy ostatnie rozliczenie było proporcjonalne (częściowe)
+        if (lastSettlement != null && lastSettlement.getProrationDescription() != null) {
+            // Było częściowe rozliczenie - pobierz dane z tego rozliczenia
+            waterAmount = lastSettlement.getWaterAmount() != null ? lastSettlement.getWaterAmount() : BigDecimal.ZERO;
+            electricityAmount = lastSettlement.getElectricityAmount() != null ? lastSettlement.getElectricityAmount() : BigDecimal.ZERO;
+            hasPartialSettlement = true;
+
+            log.info("Znaleziono częściowe rozliczenie dla umowy {}: woda={}, prąd={}",
+                    leaseAgreementId, waterAmount, electricityAmount);
+        } else {
+            // Nie było częściowego rozliczenia - przelicz koszty mediów
+            UtilityCostsDto utilityCosts = settlementService.calculateUtilityCostsOnly(rentedObjectId);
+            waterAmount = utilityCosts.getWaterAmount();
+            electricityAmount = utilityCosts.getElectricityAmount();
+        }
 
         return LeaseTerminationInfoDto.builder()
-                .waterConsumption(utilityCosts.getWaterConsumption())
-                .waterAmount(utilityCosts.getWaterAmount())
-                .electricityConsumption(utilityCosts.getElectricityConsumption())
-                .electricityAmount(utilityCosts.getElectricityAmount())
+                .waterConsumption(BigDecimal.ZERO)
+                .waterAmount(waterAmount)
+                .electricityConsumption(BigDecimal.ZERO)
+                .electricityAmount(electricityAmount)
                 .depositPaid(leaseAgreement.getDepositPaid())
+                .hasPartialSettlement(hasPartialSettlement)
                 .build();
     }
 
@@ -70,14 +92,33 @@ public class LeaseAgreementServiceImpl implements LeaseAgreementService {
         }
 
         Long rentedObjectId = leaseAgreement.getTenant().getRentedObject().getId();
+        Long tenantId = leaseAgreement.getTenant().getId();
         RentedObject rentedObject = leaseAgreement.getTenant().getRentedObject();
         Apartment apartment = rentedObject.getApartment();
 
-        // Oblicz koszty mediów
-        UtilityCostsDto utilityCosts = settlementService.calculateUtilityCostsOnly(rentedObjectId);
+        // Pobierz ostatnie rozliczenie dla tego obiektu wynajmowanego i najemcy
+        Settlement lastSettlement = settlementRepository.findLatestByRentedObjectId(rentedObjectId, tenantId);
 
-        BigDecimal electricityAmount = utilityCosts.getElectricityAmount();
-        BigDecimal waterAmount = utilityCosts.getWaterAmount();
+        BigDecimal electricityAmount;
+        BigDecimal waterAmount;
+
+        // Sprawdź czy ostatnie rozliczenie było proporcjonalne (częściowe)
+        if (lastSettlement != null && lastSettlement.getProrationDescription() != null) {
+            // Było częściowe rozliczenie - pobierz dane z tego rozliczenia
+            waterAmount = lastSettlement.getWaterAmount() != null ? lastSettlement.getWaterAmount() : BigDecimal.ZERO;
+            electricityAmount = lastSettlement.getElectricityAmount() != null ? lastSettlement.getElectricityAmount() : BigDecimal.ZERO;
+
+            log.info("Zakończenie umowy {}: używam danych z częściowego rozliczenia - woda={}, prąd={}",
+                    leaseAgreementId, waterAmount, electricityAmount);
+        } else {
+            // Nie było częściowego rozliczenia - przelicz koszty mediów
+            UtilityCostsDto utilityCosts = settlementService.calculateUtilityCostsOnly(rentedObjectId);
+            electricityAmount = utilityCosts.getElectricityAmount();
+            waterAmount = utilityCosts.getWaterAmount();
+
+            log.info("Zakończenie umowy {}: brak częściowego rozliczenia, przeliczono - woda={}, prąd={}",
+                    leaseAgreementId, waterAmount, electricityAmount);
+        }
 
         // Dodaj kwoty obciążeń
         BigDecimal chargeAmount = request.getChargeAmount() != null ? request.getChargeAmount() : BigDecimal.ZERO;
@@ -107,17 +148,19 @@ public class LeaseAgreementServiceImpl implements LeaseAgreementService {
 
         Long settlementId = settlementRepository.saveAndFlush(settlement).getId();
 
-        // Zaktualizuj odczyty liczników jako rozliczone
-        List<Long> electricityReadingIds = meterReadingRepository.findUnsettledReadingIdsByRentedObjectAndType(
-                rentedObjectId, MeterType.ELECTRIC);
-        List<Long> waterReadingIds = meterReadingRepository.findUnsettledReadingIdsByRentedObjectAndType(
-                rentedObjectId, MeterType.WATER_COLD);
+        // Zaktualizuj odczyty liczników jako rozliczone tylko jeśli nie było częściowego rozliczenia
+        if (lastSettlement == null || lastSettlement.getProrationDescription() == null) {
+            List<Long> electricityReadingIds = meterReadingRepository.findUnsettledReadingIdsByRentedObjectAndType(
+                    rentedObjectId, MeterType.ELECTRIC);
+            List<Long> waterReadingIds = meterReadingRepository.findUnsettledReadingIdsByRentedObjectAndType(
+                    rentedObjectId, MeterType.WATER_COLD);
 
-        List<Long> allMeterReadingIds = new ArrayList<>(electricityReadingIds);
-        allMeterReadingIds.addAll(waterReadingIds);
+            List<Long> allMeterReadingIds = new ArrayList<>(electricityReadingIds);
+            allMeterReadingIds.addAll(waterReadingIds);
 
-        if (!allMeterReadingIds.isEmpty()) {
-            meterReadingRepository.updateSettled(allMeterReadingIds, settlementId);
+            if (!allMeterReadingIds.isEmpty()) {
+                meterReadingRepository.updateSettled(allMeterReadingIds, settlementId);
+            }
         }
 
         // Zaktualizuj umowę
@@ -198,12 +241,25 @@ public class LeaseAgreementServiceImpl implements LeaseAgreementService {
                 .orElseThrow(() -> new IllegalArgumentException("Nie znaleziono umowy o id: " + leaseAgreementId));
 
         Long rentedObjectId = leaseAgreement.getTenant().getRentedObject().getId();
+        Long tenantId = leaseAgreement.getTenant().getId();
 
-        // Oblicz koszty mediów (bez zapisu)
-        UtilityCostsDto utilityCosts = settlementService.calculateUtilityCostsOnly(rentedObjectId);
+        // Pobierz ostatnie rozliczenie dla tego obiektu wynajmowanego i najemcy
+        Settlement lastSettlement = settlementRepository.findLatestByRentedObjectId(rentedObjectId, tenantId);
 
-        BigDecimal electricityAmount = utilityCosts.getElectricityAmount();
-        BigDecimal waterAmount = utilityCosts.getWaterAmount();
+        BigDecimal electricityAmount;
+        BigDecimal waterAmount;
+
+        // Sprawdź czy ostatnie rozliczenie było proporcjonalne (częściowe)
+        if (lastSettlement != null && lastSettlement.getProrationDescription() != null) {
+            // Było częściowe rozliczenie - pobierz dane z tego rozliczenia
+            waterAmount = lastSettlement.getWaterAmount() != null ? lastSettlement.getWaterAmount() : BigDecimal.ZERO;
+            electricityAmount = lastSettlement.getElectricityAmount() != null ? lastSettlement.getElectricityAmount() : BigDecimal.ZERO;
+        } else {
+            // Nie było częściowego rozliczenia - przelicz koszty mediów (bez zapisu)
+            UtilityCostsDto utilityCosts = settlementService.calculateUtilityCostsOnly(rentedObjectId);
+            electricityAmount = utilityCosts.getElectricityAmount();
+            waterAmount = utilityCosts.getWaterAmount();
+        }
 
         // Pobierz kwoty obciążeń z requestu
         BigDecimal chargeAmount = request.getChargeAmount() != null ? request.getChargeAmount() : BigDecimal.ZERO;

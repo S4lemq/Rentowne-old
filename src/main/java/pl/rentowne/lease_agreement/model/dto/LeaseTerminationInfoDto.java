@@ -25,4 +25,6 @@ public class LeaseTerminationInfoDto {
     private BigDecimal electricityAmount; //kwota za prąd
 
     private BigDecimal depositPaid; //wpłacona kaucja
+
+    private boolean hasPartialSettlement; //czy było częściowe rozliczenie
 }
