@@ -258,12 +258,10 @@ public class SettlementServiceImpl implements SettlementService {
             }
 
             // Woda - może być proporcjonalna (includedWaterMeters)
-            LeaseAgreementDto adjustedLeaseAgreement = leaseAgreement;
             if (dto.isWaterIncluded()) {
-                adjustedLeaseAgreement = adjustWaterMetersForProration(
+                waterResult = this.calculateWaterCostForPartialMonth(
+                        providerWithProviderFields, rentedObjectId, waterResult, allMeterReadingIds,
                         leaseAgreement, prorationCalc, dto.getIsWaterMetersProrated());
-                waterResult = this.calculateWaterCost(
-                        providerWithProviderFields, rentedObjectId, waterResult, allMeterReadingIds, adjustedLeaseAgreement);
             }
 
             // Oblicz proporcjonalne kwoty z umowy
@@ -285,13 +283,18 @@ public class SettlementServiceImpl implements SettlementService {
                     .add(leaseAgreement.getInternetFee())
                     .add(rentAmount);
 
-            // Generuj opis rozliczenia - użyj adjustedLeaseAgreement dla proporcjonalnej wody
+            // Oblicz proporcjonalne metry wody dla opisu
+            BigDecimal waterMetersForDescription = Boolean.TRUE.equals(dto.getIsWaterMetersProrated())
+                    ? prorationCalc.calculateAmount(leaseAgreement.getIncludedWaterMeters(), ProrationMode.PRORATED)
+                    : leaseAgreement.getIncludedWaterMeters();
+
+            // Generuj opis rozliczenia
             String prorationDescription = buildProrationDescription(
                     prorationCalc,
                     rentAmount, rentMode,
                     compensationAmount, compensationMode,
                     gasDeposit, gasMode,
-                    adjustedLeaseAgreement.getIncludedWaterMeters(),
+                    waterMetersForDescription,
                     waterMode
             );
 
@@ -361,50 +364,6 @@ public class SettlementServiceImpl implements SettlementService {
             log.error("Błąd podczas rozliczenia niepełnego miesiąca obiektu {}", rentedObjectId, e);
             throw e;
         }
-    }
-
-    /**
-     * Dostosowuje wliczone metry wody proporcjonalnie do okresu
-     * Przykład: 4 m³ wody dla okresu 15-31 stycznia (17 dni z 31) = 4 × (17/31) = 2.19 m³
-     */
-    private LeaseAgreementDto adjustWaterMetersForProration(
-            LeaseAgreementDto leaseAgreement,
-            ProrationCalculator prorationCalc,
-            Boolean isWaterMetersProrated) {
-
-        if (!Boolean.TRUE.equals(isWaterMetersProrated)) {
-            return leaseAgreement; // Bez zmian - pełna ilość wody
-        }
-
-        BigDecimal originalWaterMeters = leaseAgreement.getIncludedWaterMeters();
-        BigDecimal proratedWaterMeters = prorationCalc.calculateAmount(originalWaterMeters, ProrationMode.PRORATED);
-
-        log.info("Woda wliczona: {} m³ → {} m³ (proporcjonalnie)", originalWaterMeters, proratedWaterMeters);
-
-        // Tworzymy nowy DTO ze wszystkimi polami, zmieniamy tylko includedWaterMeters
-        return LeaseAgreementDto.builder()
-                .id(leaseAgreement.getId())
-                .startContractDate(leaseAgreement.getStartContractDate())
-                .endContractDate(leaseAgreement.getEndContractDate())
-                .deposit(leaseAgreement.getDeposit())
-                .depositPaid(leaseAgreement.getDepositPaid())
-                .paymentDueDayOfMonth(leaseAgreement.getPaymentDueDayOfMonth())
-                .rentAmount(leaseAgreement.getRentAmount())
-                .compensationAmount(leaseAgreement.getCompensationAmount())
-                .internetFee(leaseAgreement.getInternetFee())
-                .gasDeposit(leaseAgreement.getGasDeposit())
-                .includedWaterMeters(proratedWaterMeters)  // JEDYNA ZMIENIONA WARTOŚĆ
-                .initialEnergyMeterReading(leaseAgreement.getInitialEnergyMeterReading())
-                .initialWaterMeterReading(leaseAgreement.getInitialWaterMeterReading())
-                .initialGasMeterReading(leaseAgreement.getInitialGasMeterReading())
-                .depositReturnDate(leaseAgreement.getDepositReturnDate())
-                .returnedDepositAmount(leaseAgreement.getReturnedDepositAmount())
-                .contractActive(leaseAgreement.isContractActive())
-                .contractSigningDate(leaseAgreement.getContractSigningDate())
-                .chargeDescription(leaseAgreement.getChargeDescription())
-                .chargeAmount(leaseAgreement.getChargeAmount())
-                .gasChargeAmount(leaseAgreement.getGasChargeAmount())
-                .build();
     }
 
     /**
@@ -574,6 +533,96 @@ public class SettlementServiceImpl implements SettlementService {
     }
 
 
+
+    /**
+     * Oblicza koszt wody dla niepełnego miesiąca.
+     * Poprawnie odejmuje:
+     * 1. Pełne miesiące nierozliczone (z pełną ilością wody z umowy, np. 4m³)
+     * 2. Niepełny miesiąc (z proporcjonalną ilością wody)
+     */
+    private BigDecimal calculateWaterCostForPartialMonth(
+            List<HousingProvider> providerWithProviderFields,
+            Long rentedObjectId,
+            BigDecimal waterResult,
+            List<Long> allMeterReadingIds,
+            LeaseAgreementDto leaseAgreement,
+            ProrationCalculator prorationCalc,
+            Boolean isWaterMetersProrated) {
+
+        Optional<HousingProvider> waterHousingProviderOptional = findProvider(providerWithProviderFields, ProviderType.WATER);
+
+        if (waterHousingProviderOptional.isPresent()) {
+            HousingProvider waterHousingProvider = waterHousingProviderOptional.get();
+            Optional<ProviderField> optionalField = waterHousingProvider.getProviderFields().stream().findFirst();
+
+            if (optionalField.isPresent()) {
+                ProviderField field = optionalField.get();
+
+                // Pobierz nierozliczone odczyty do obliczenia zużycia i oznaczenia jako settled
+                List<MeterReadingDto> unsettledReadings = meterReadingRepository.findReadingsWithDatesByRentedObjectAndMeterType(rentedObjectId, MeterType.WATER_COLD);
+                BigDecimal consumption = unsettledReadings.stream()
+                        .map(MeterReadingDto::getConsumption)
+                        .reduce(BigDecimal.ZERO, BigDecimal::add);
+                allMeterReadingIds.addAll(unsettledReadings.stream()
+                        .map(MeterReadingDto::getId)
+                        .toList());
+
+                // Bezpośrednie obliczenie kosztu wody na podstawie zużycia
+                waterResult = waterResult.add(this.calculateByConsumption(field.getPrice(), consumption));
+
+                // Aplikowanie podatku VAT, jeśli jest ustawiony
+                if (waterHousingProvider.getTax() != null) {
+                    waterResult = this.calculateVat(waterHousingProvider.getTax(), waterResult);
+                }
+
+                // Pobierz liczbę miesięcy między ostatnimi odczytami
+                List<MeterReadingDto> lastTwoReadings = meterReadingRepository.findLastTwoReadingsWithDatesByRentedObjectAndMeterType(rentedObjectId, MeterType.WATER_COLD);
+                int monthCount = calculateMonthsBetweenReadings(lastTwoReadings);
+
+                if (Boolean.TRUE.equals(isWaterMetersProrated)) {
+                    // PRZYPADEK PROPORCJONALNY: odejmujemy oddzielnie pełne miesiące i niepełny miesiąc
+
+                    // 1. Pełne miesiące (jeśli były) - z pełną ilością wody z umowy
+                    int fullMonths = monthCount - 1; // ostatni miesiąc to niepełny
+                    if (fullMonths > 0) {
+                        BigDecimal fullMonthsDeduction = this.calculateByConsumptionAndMonthCount(
+                                field.getPrice(),
+                                leaseAgreement.getIncludedWaterMeters(),
+                                fullMonths);
+                        waterResult = waterResult.subtract(fullMonthsDeduction);
+
+                        log.debug("[WODA][PARTIAL] Odejmowanie pełnych miesięcy: {} × {}m³ × {}zł = {}zł",
+                                fullMonths, leaseAgreement.getIncludedWaterMeters(), field.getPrice(), fullMonthsDeduction);
+                    }
+
+                    // 2. Niepełny miesiąc - z proporcjonalną ilością wody
+                    BigDecimal proratedWaterMeters = prorationCalc.calculateAmount(
+                            leaseAgreement.getIncludedWaterMeters(),
+                            ProrationMode.PRORATED);
+                    BigDecimal partialMonthDeduction = this.calculateByConsumption(
+                            field.getPrice(),
+                            proratedWaterMeters);
+                    waterResult = waterResult.subtract(partialMonthDeduction);
+
+                    log.debug("[WODA][PARTIAL] Odejmowanie niepełnego miesiąca: {}m³ × {}zł = {}zł",
+                            proratedWaterMeters, field.getPrice(), partialMonthDeduction);
+
+                } else {
+                    // PRZYPADEK PEŁNY: wszystkie miesiące z pełną ilością wody
+                    BigDecimal includedWaterMeters = this.calculateByConsumptionAndMonthCount(
+                            field.getPrice(),
+                            leaseAgreement.getIncludedWaterMeters(),
+                            monthCount);
+                    waterResult = waterResult.subtract(includedWaterMeters);
+
+                    log.debug("[WODA][FULL] Odejmowanie pełnych miesięcy: {} × {}m³ × {}zł = {}zł",
+                            monthCount, leaseAgreement.getIncludedWaterMeters(), field.getPrice(), includedWaterMeters);
+                }
+            }
+            return waterResult;
+        }
+        return BigDecimal.ZERO;
+    }
 
     public BigDecimal calculateWaterCost(List<HousingProvider> providerWithProviderFields, Long rentedObjectId, BigDecimal waterResult, List<Long> allMeterReadingIds, LeaseAgreementDto leaseAgreement) {
         Optional<HousingProvider> waterHousingProviderOptional = findProvider(providerWithProviderFields, ProviderType.WATER);
