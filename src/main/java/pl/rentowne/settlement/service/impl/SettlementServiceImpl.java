@@ -268,6 +268,7 @@ public class SettlementServiceImpl implements SettlementService {
             ProrationMode rentMode = Boolean.TRUE.equals(dto.getIsRentProrated()) ? ProrationMode.PRORATED : ProrationMode.FULL;
             ProrationMode compensationMode = Boolean.TRUE.equals(dto.getIsCompensationProrated()) ? ProrationMode.PRORATED : ProrationMode.FULL;
             ProrationMode gasMode = Boolean.TRUE.equals(dto.getIsGasDepositProrated()) ? ProrationMode.PRORATED : ProrationMode.FULL;
+            ProrationMode internetMode = Boolean.TRUE.equals(dto.getIsInternetFeeProrated()) ? ProrationMode.PRORATED : ProrationMode.FULL;
             ProrationMode waterMode = Boolean.TRUE.equals(dto.getIsWaterMetersProrated()) ? ProrationMode.PRORATED : ProrationMode.FULL;
 
             BigDecimal rentAmount = prorationCalc.calculateAmount(leaseAgreement.getRentAmount(), rentMode);
@@ -275,12 +276,15 @@ public class SettlementServiceImpl implements SettlementService {
             BigDecimal gasDeposit = leaseAgreement.getGasDeposit() != null
                     ? prorationCalc.calculateAmount(leaseAgreement.getGasDeposit(), gasMode)
                     : BigDecimal.ZERO;
+            BigDecimal internetFee = leaseAgreement.getInternetFee() != null
+                    ? prorationCalc.calculateAmount(leaseAgreement.getInternetFee(), internetMode)
+                    : BigDecimal.ZERO;
 
             gasResult = gasDeposit;
 
             BigDecimal totalSum = electricResult.add(waterResult)
                     .add(compensationAmount)
-                    .add(leaseAgreement.getInternetFee())
+                    .add(internetFee)
                     .add(rentAmount);
 
             // Oblicz proporcjonalne metry wody dla opisu
@@ -294,6 +298,7 @@ public class SettlementServiceImpl implements SettlementService {
                     rentAmount, rentMode,
                     compensationAmount, compensationMode,
                     gasDeposit, gasMode,
+                    internetFee, internetMode,
                     waterMetersForDescription,
                     waterMode
             );
@@ -309,7 +314,7 @@ public class SettlementServiceImpl implements SettlementService {
             log.info("Kwota za prąd z licznika mieszkania: {}", distributedElectricResult);
             log.info("Kwota za wodę: {}", waterResult);
             log.info("Kwota za gaz: {} ({})", gasResult, gasMode.getDescription());
-            log.info("Kwota za internet: {}", leaseAgreement.getInternetFee());
+            log.info("Kwota za internet: {} ({})", internetFee, internetMode.getDescription());
             log.info("Kwota całkowita: {}", totalSum);
 
             Tenant tenant = tenantRepository.getTenantByRentedObjectId(rentedObjectId);
@@ -322,7 +327,7 @@ public class SettlementServiceImpl implements SettlementService {
                     .totalAmount(totalSum)
                     .compensationAmount(compensationAmount)
                     .rentAmount(rentAmount)
-                    .internetFee(leaseAgreement.getInternetFee())
+                    .internetFee(internetFee)
                     .gasDeposit(gasDeposit)
                     .settlementDate(dto.getSettlementDate())
                     .rentedObject(RentedObject.builder().id(rentedObjectId).build())
@@ -375,6 +380,7 @@ public class SettlementServiceImpl implements SettlementService {
             BigDecimal rentAmount, ProrationMode rentMode,
             BigDecimal compensationAmount, ProrationMode compensationMode,
             BigDecimal gasDeposit, ProrationMode gasMode,
+            BigDecimal internetFee, ProrationMode internetMode,
             BigDecimal includedWaterMeters, ProrationMode waterMode) {
 
         StringBuilder sb = new StringBuilder();
@@ -392,6 +398,9 @@ public class SettlementServiceImpl implements SettlementService {
         if (gasMode == ProrationMode.PRORATED && gasDeposit != null && gasDeposit.compareTo(BigDecimal.ZERO) > 0) {
             proratedItems.add("gaz");
         }
+        if (internetMode == ProrationMode.PRORATED && internetFee != null && internetFee.compareTo(BigDecimal.ZERO) > 0) {
+            proratedItems.add("internet");
+        }
         if (waterMode == ProrationMode.PRORATED) {
             proratedItems.add("woda: " + includedWaterMeters + " m³");
         }
@@ -406,6 +415,9 @@ public class SettlementServiceImpl implements SettlementService {
         if (compensationMode == ProrationMode.FULL) fullItems.add("odstępne");
         if (gasMode == ProrationMode.FULL && gasDeposit != null && gasDeposit.compareTo(BigDecimal.ZERO) > 0) {
             fullItems.add("gaz");
+        }
+        if (internetMode == ProrationMode.FULL && internetFee != null && internetFee.compareTo(BigDecimal.ZERO) > 0) {
+            fullItems.add("internet");
         }
         if (waterMode == ProrationMode.FULL) fullItems.add("woda");
 

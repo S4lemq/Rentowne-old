@@ -21,5 +21,6 @@ public class CalculateRequestDto {
     private Boolean isRentProrated;
     private Boolean isCompensationProrated;
     private Boolean isGasDepositProrated;
+    private Boolean isInternetFeeProrated;
     private Boolean isWaterMetersProrated;
 }
