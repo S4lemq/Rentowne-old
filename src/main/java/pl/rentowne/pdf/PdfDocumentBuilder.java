@@ -27,6 +27,14 @@ import java.util.Optional;
 @RequiredArgsConstructor(access = AccessLevel.PACKAGE)
 public final class PdfDocumentBuilder implements AutoCloseable {
 
+    private static final float LABEL_WIDTH_RATIO = 0.35f;
+    private static final float ROW_SPACING_FACTOR = 0.3f;
+    private static final float TABLE_CELL_PADDING = 3f;
+    private static final float CELL_TEXT_Y_OFFSET = 0.75f;
+    private static final float IMAGE_BOTTOM_MARGIN = 10f;
+    private static final float HORIZONTAL_LINE_MARGIN = 10f;
+    private static final float PARAGRAPH_SPACING_FACTOR = 0.5f;
+
     private final PDDocument document;
     private final PdfTextHelper textHelper;
 
@@ -456,8 +464,9 @@ public final class PdfDocumentBuilder implements AutoCloseable {
             // Etykieta po lewej (tylko w pierwszej linii)
             textHelper.writeText(stream, label, margins.left(), currentY, labelConfig);
 
-            // Wartość z przesunięciem (może być wieloliniowa)
-            final float valueX = margins.left() + 200;
+            // Wartość z przesunięciem proporcjonalnym do szerokości strony (może być wieloliniowa)
+            final float contentWidth = pageSize.getWidth() - margins.left() - margins.right();
+            final float valueX = margins.left() + (contentWidth * LABEL_WIDTH_RATIO);
             float valueY = currentY;
 
             for (final String line : valueLines) {
@@ -465,7 +474,7 @@ public final class PdfDocumentBuilder implements AutoCloseable {
                 valueY -= lineHeight;
             }
 
-            currentY -= totalHeight + (lineHeight * 0.3f);
+            currentY -= totalHeight + (lineHeight * ROW_SPACING_FACTOR);
 
         } catch (final IOException e) {
             throw PdfGenerationException.error(PdfErrorCode.PARAGRAPH_CREATION_ERROR, e);
@@ -667,7 +676,7 @@ public final class PdfDocumentBuilder implements AutoCloseable {
                 stream.stroke();
 
                 // Rysuj każdą linię tekstu
-                float textY = currentY - cellPadding - lineHeight * 0.75f;
+                float textY = currentY - cellPadding - lineHeight * CELL_TEXT_Y_OFFSET;
                 for (final String line : lines) {
                     final float textWidth = textHelper.calculateTextWidth(line, fontConfig);
 

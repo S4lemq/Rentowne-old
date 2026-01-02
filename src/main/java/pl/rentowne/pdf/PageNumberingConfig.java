@@ -82,10 +82,27 @@ public record PageNumberingConfig(
      */
     @NonNull
     String formatPageNumber(int currentPage, int totalPages) {
-        if (format.contains("%d") && format.indexOf("%d") != format.lastIndexOf("%d")) {
+        final long placeholderCount = countPlaceholders(format);
+        if (placeholderCount >= 2) {
             return String.format(format, currentPage, totalPages);
         }
         return String.format(format, currentPage);
+    }
+
+    /**
+     * Zlicza liczbę placeholderów %d w formacie.
+     *
+     * @param format format do przeszukania
+     * @return liczba wystąpień %d
+     */
+    private static long countPlaceholders(@NonNull final String format) {
+        long count = 0;
+        int index = 0;
+        while ((index = format.indexOf("%d", index)) != -1) {
+            count++;
+            index += 2;
+        }
+        return count;
     }
 }
 

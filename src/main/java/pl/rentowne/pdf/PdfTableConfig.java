@@ -56,12 +56,13 @@ public record PdfTableConfig(
 
     /**
      * Zwraca opcjonalne szerokości kolumn.
+     * Zwraca kopię defensywną tablicy.
      *
      * @return szerokości kolumn lub empty
      */
     @NonNull
     public Optional<float[]> getColumnWidths() {
-        return Optional.ofNullable(columnWidths);
+        return Optional.ofNullable(columnWidths).map(float[]::clone);
     }
 
     /**
