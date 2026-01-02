@@ -9,7 +9,10 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
+import java.io.IOException;
+import java.io.InputStream;
 import java.util.List;
+import java.util.Objects;
 
 /**
  * Kontroler REST do generowania dokumentów PDF.
@@ -89,5 +92,156 @@ class PdfController {
         );
 
         return PdfResponseHelper.buildResponse(response, true);
+    }
+
+    /**
+     * Generuje dokument inwentaryzacji (Załącznik nr 3a).
+     *
+     * @return dokument PDF
+     */
+    @GetMapping("/inventory")
+    @NonNull
+    ResponseEntity<ByteArrayResource> generateInventoryPdf() throws IOException {
+        // Przykładowe dane (w przyszłości z bazy danych)
+        final String unitSymbol = "P00252";
+        final String unitNameAndAddress = "PARTNER SULEJÓWEK01\nUL. DWORCOWA 50, 05-070 SULEJÓWEK";
+        final String inventoryStartDate = "2025-08-18";
+        final String inventoryEndDate = "2025-08-22";
+        final String printDate = "2025-08-22 08:12";
+        final String executedBy = "Anna Testowa 403611";
+
+        // Załaduj logo
+        final byte[] logoBytes;
+        try (InputStream logoStream = getClass().getResourceAsStream("/images/ibkb-logo.jpg")) {
+            logoBytes = Objects.requireNonNull(logoStream).readAllBytes();
+        }
+
+        final PdfDocumentResponse response = pdfDocumentFactory.createDocumentResponse(
+                "zalacznik-3a",
+                builder -> builder
+                        .setMetadata(PdfMetadata.builder()
+                                .title("Załącznik nr 3a - Inwentaryzacja")
+                                .author("Rentowne System")
+                                .subject("Dokument inwentaryzacji")
+                                .build())
+                        .addPage()
+                        .createTopLeftText("22-08-2025, 08:12")
+                        .addLogo(logoBytes, 80f, 40f, TextAlignment.LEFT)
+                        .createTopRightText("Załącznik nr 3a")
+                        .addSpace(20)
+                        .createLabelValueRow("Symbol jednostki:", unitSymbol)
+                        .createLabelValueRow("Nazwa i adres jednostki:", unitNameAndAddress)
+                        .createLabelValueRow("Data wykonania inwentaryzacji:", inventoryStartDate)
+                        .createLabelValueRow("Data zakończenia inwentaryzacji:", inventoryEndDate)
+                        .createLabelValueRow("Data wydruku:", printDate)
+                        .createLabelValueRow("Wykonał:", executedBy)
+                        .addSpace(40)
+                        .createTextLine(
+                                "PROTOKÓŁ Z INWENTARYZACJI ŚRODKÓW PIENIĘŻNYCH I POZOSTAŁYCH WARTOŚCI",
+                                PdfFontConfig.TABLE_HEADER,
+                                TextAlignment.CENTER
+                        )
+                        .createTextLine(
+                                "PRZECHOWYWANYCH W SKARBCACH I KASACH JEDNOSTEK PROWADZONYCH W SI BM2",
+                                PdfFontConfig.TABLE_HEADER,
+                                TextAlignment.CENTER
+                        )
+                        .createTextLine(
+                                "według stanu na dzień " + inventoryStartDate,
+                                PdfFontConfig.TABLE_HEADER,
+                                TextAlignment.CENTER
+                        )
+                        .addSpace(40)
+                        .createTextLine(
+                                "W dniu " + inventoryStartDate + " komisja inwentaryzacyjna przeprowadziła kontrolę kas",
+                                PdfFontConfig.DEFAULT,
+                                TextAlignment.CENTER
+                        )
+                        .createTextLine(
+                                "oraz ustaliła następujące stany poszczególnych wartości",
+                                PdfFontConfig.DEFAULT,
+                                TextAlignment.CENTER
+                        )
+                        .addSpace(20)
+                        .createTable(
+                                new PdfTableConfig(
+                                        4,
+                                        new float[]{12f, 18f, 28f, 42f},
+                                        List.of("Typ waluty", "Symbol waluty", "Nazwa waluty", "Wartość środków pieniężnych"),
+                                        PdfFontConfig.TABLE_HEADER,
+                                        PdfFontConfig.DEFAULT
+                                ),
+                                List.of(
+                                        List.of("S", "AUD", "Dolar australijski", "0,00"),
+                                        List.of("S", "CAD", "Dolar kanadyjski", "0,00"),
+                                        List.of("S", "CHF", "Frank szwajcarski", "0,00"),
+                                        List.of("S", "CZK", "Korona czeska", "0,00"),
+                                        List.of("S", "DKK", "Korona duńska", "0,00"),
+                                        List.of("S", "EUR", "UGW", "0,00"),
+                                        List.of("S", "GBP", "Funt brytyjski", "0,00"),
+                                        List.of("S", "HUF", "Forint węgierski", "0,00"),
+                                        List.of("S", "JPY", "Jen japoński", "0,00"),
+                                        List.of("S", "NOK", "Korona norweska", "0,00"),
+                                        List.of("S", "PLN", "Złoty polski", "14 567,56"),
+                                        List.of("S", "SEK", "Korona szwedzka", "0,00"),
+                                        List.of("S", "USD", "Dolar amerykański", "0,00")
+                                )
+                        )
+                        // --- Strona 2 ---
+                        .addPage()
+                        // Tabela: Wg rejestru / Druki ścisłego zarachowania / Stan (szt.)
+                        .createTable(
+                                new PdfTableConfig(
+                                        3,
+                                        new float[]{30f, 50f, 20f},
+                                        List.of("Wg rejestru", "Druki ścisłego zarachowania", "Stan (szt.)"),
+                                        PdfFontConfig.TABLE_HEADER,
+                                        PdfFontConfig.DEFAULT
+                                ),
+                                List.of(
+                                        List.of("czeki", "czeki", "4"),
+                                        List.of("Razem", "", "4")
+                                )
+                        )
+                        .addSpace(20)
+                        // Tabela: Depozyty / Stan (szt.)
+                        .createTable(
+                                new PdfTableConfig(
+                                        2,
+                                        new float[]{85f, 15f},
+                                        List.of("Depozyty", "Stan (szt.)"),
+                                        PdfFontConfig.TABLE_HEADER,
+                                        PdfFontConfig.DEFAULT
+                                ),
+                                List.of(
+                                        List.of("Depozyty rzeczowe zewnętrzne", "1"),
+                                        List.of("Depozyty wewnętrzne innych jednostek organizacyjnych Banku (bez umów kredytowych i ich zabezpieczeń)", "2"),
+                                        List.of("Kasety i skrytki sejfowe", "1"),
+                                        List.of("Inne depozyty przechowywane w kasach/skarbcach (bez umów kredytowych i ich zabezpieczeń)", "3")
+                                )
+                        )
+                        .addSpace(30)
+                        // Sekcja: Osoby odpowiedzialne i Komisja inwentaryzacyjna
+                        .createTextLine("Osoby odpowiedzialne za stan", PdfFontConfig.TABLE_HEADER, TextAlignment.LEFT)
+                        .createTextLine("sprawdzanych wartości", PdfFontConfig.TABLE_HEADER, TextAlignment.LEFT)
+                        .createTextLine("1. 222222", PdfFontConfig.DEFAULT, TextAlignment.LEFT)
+                        .addSpace(20)
+                        .createTextLine("Komisja inwentaryzacyjna", PdfFontConfig.TABLE_HEADER, TextAlignment.LEFT)
+                        .createLabelValueRow("Przewodniczący:", "1. Anna Testowa 403611")
+                        .createLabelValueRow("Członkowie:", "2. Anna Testowa 403613")
+                        .addSpace(40)
+                        // Tekst końcowy
+                        .createTextLine("Stwierdzone stany są zgodne/niezgodne z księgami banku.", PdfFontConfig.DEFAULT, TextAlignment.CENTER)
+                        .createTextLine("*niewłaściwe skreślić", PdfFontConfig.DEFAULT, TextAlignment.CENTER)
+                        .addSpace(10)
+                        .createTextLine("Wykaz ujawnionych różnic i sposób ich rozliczenia (w przypadku wystąpienia różnic sporządzić zestawienie).", PdfFontConfig.DEFAULT, TextAlignment.CENTER)
+                        .addSpace(60)
+                        // Podpis
+                        .createTextLine("........................................................................", PdfFontConfig.DEFAULT, TextAlignment.RIGHT)
+                        .createTextLine("Dyrektor Oddziału/Kierujący Jednostką", PdfFontConfig.DEFAULT, TextAlignment.RIGHT)
+                        .createTextLine("111111", PdfFontConfig.DEFAULT, TextAlignment.RIGHT)
+        );
+
+        return PdfResponseHelper.buildResponse(response);
     }
 }

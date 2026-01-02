@@ -107,6 +107,80 @@ public final class PdfDocumentBuilder implements AutoCloseable {
     }
 
     /**
+     * Tworzy tekst w lewym górnym rogu strony (np. dla daty).
+     *
+     * @param text tekst do wyświetlenia
+     * @return ten builder
+     */
+    @NonNull
+    public PdfDocumentBuilder createTopLeftText(@NonNull final String text) {
+        return createTopLeftText(text, PdfFontConfig.DEFAULT);
+    }
+
+    /**
+     * Tworzy tekst w lewym górnym rogu strony z niestandardową konfiguracją czcionki.
+     *
+     * @param text       tekst do wyświetlenia
+     * @param fontConfig konfiguracja czcionki
+     * @return ten builder
+     */
+    @NonNull
+    public PdfDocumentBuilder createTopLeftText(@NonNull final String text, @NonNull final PdfFontConfig fontConfig) {
+        ensurePageExists();
+
+        try {
+            final PDPageContentStream stream = getContentStream();
+            final float x = margins.left();
+            final float y = pageSize.getHeight() - margins.top();
+
+            textHelper.writeText(stream, text, x, y, fontConfig);
+            currentY = y - textHelper.calculateLineHeight(fontConfig);
+
+        } catch (final IOException e) {
+            throw PdfGenerationException.error(PdfErrorCode.PARAGRAPH_CREATION_ERROR, e);
+        }
+
+        return this;
+    }
+
+    /**
+     * Tworzy tekst w prawym górnym rogu strony (np. dla załączników).
+     *
+     * @param text tekst do wyświetlenia
+     * @return ten builder
+     */
+    @NonNull
+    public PdfDocumentBuilder createTopRightText(@NonNull final String text) {
+        return createTopRightText(text, PdfFontConfig.DEFAULT);
+    }
+
+    /**
+     * Tworzy tekst w prawym górnym rogu strony z niestandardową konfiguracją czcionki.
+     *
+     * @param text       tekst do wyświetlenia
+     * @param fontConfig konfiguracja czcionki
+     * @return ten builder
+     */
+    @NonNull
+    public PdfDocumentBuilder createTopRightText(@NonNull final String text, @NonNull final PdfFontConfig fontConfig) {
+        ensurePageExists();
+
+        try {
+            final PDPageContentStream stream = getContentStream();
+            final float textWidth = textHelper.calculateTextWidth(text, fontConfig);
+            final float x = pageSize.getWidth() - margins.right() - textWidth;
+            final float y = pageSize.getHeight() - margins.top();
+
+            textHelper.writeText(stream, text, x, y, fontConfig);
+
+        } catch (final IOException e) {
+            throw PdfGenerationException.error(PdfErrorCode.PARAGRAPH_CREATION_ERROR, e);
+        }
+
+        return this;
+    }
+
+    /**
      * Tworzy główny nagłówek (wycentrowany, duża pogrubiona czcionka).
      *
      * @param text tekst nagłówka
@@ -159,6 +233,39 @@ public final class PdfDocumentBuilder implements AutoCloseable {
     @NonNull
     public PdfDocumentBuilder createCenteredParagraph(@NonNull final String text) {
         return createParagraph(text, PdfFontConfig.DEFAULT, TextAlignment.CENTER);
+    }
+
+    /**
+     * Tworzy pojedynczą linię tekstu bez zawijania i z minimalnym odstępem.
+     *
+     * @param text       tekst do wyświetlenia
+     * @param fontConfig konfiguracja czcionki
+     * @param alignment  wyrównanie tekstu
+     * @return ten builder
+     */
+    @NonNull
+    public PdfDocumentBuilder createTextLine(
+            @NonNull final String text,
+            @NonNull final PdfFontConfig fontConfig,
+            @NonNull final TextAlignment alignment
+    ) {
+        ensurePageExists();
+
+        try {
+            final float lineHeight = textHelper.calculateLineHeight(fontConfig);
+            checkPageBreak(lineHeight);
+
+            final PDPageContentStream stream = getContentStream();
+            final float x = textHelper.calculateXPosition(text, fontConfig, alignment, pageSize, margins);
+            textHelper.writeText(stream, text, x, currentY, fontConfig);
+
+            currentY -= lineHeight;
+
+        } catch (final IOException e) {
+            throw PdfGenerationException.error(PdfErrorCode.PARAGRAPH_CREATION_ERROR, e);
+        }
+
+        return this;
     }
 
     /**
@@ -299,6 +406,71 @@ public final class PdfDocumentBuilder implements AutoCloseable {
         }
         checkPageBreak(space);
         currentY -= space;
+        return this;
+    }
+
+    /**
+     * Tworzy wiersz z etykietą i wartością (etykieta normalna, wartość pogrubiona).
+     *
+     * @param label etykieta (wyświetlana normalną czcionką)
+     * @param value wartość (wyświetlana pogrubioną czcionką)
+     * @return ten builder
+     */
+    @NonNull
+    public PdfDocumentBuilder createLabelValueRow(@NonNull final String label, @NonNull final String value) {
+        return createLabelValueRow(label, value, PdfFontConfig.DEFAULT, PdfFontConfig.TABLE_HEADER);
+    }
+
+    /**
+     * Tworzy wiersz z etykietą i wartością z niestandardowymi konfiguracjami czcionek.
+     * Obsługuje wartości wieloliniowe (rozdzielone przez \n).
+     *
+     * @param label       etykieta
+     * @param value       wartość (może zawierać \n dla wielu linii)
+     * @param labelConfig konfiguracja czcionki dla etykiety
+     * @param valueConfig konfiguracja czcionki dla wartości
+     * @return ten builder
+     */
+    @NonNull
+    public PdfDocumentBuilder createLabelValueRow(
+            @NonNull final String label,
+            @NonNull final String value,
+            @NonNull final PdfFontConfig labelConfig,
+            @NonNull final PdfFontConfig valueConfig
+    ) {
+        ensurePageExists();
+
+        try {
+            final float lineHeight = Math.max(
+                    textHelper.calculateLineHeight(labelConfig),
+                    textHelper.calculateLineHeight(valueConfig)
+            );
+
+            // Podziel wartość na linie
+            final String[] valueLines = value.split("\n");
+            final float totalHeight = lineHeight * valueLines.length;
+
+            checkPageBreak(totalHeight);
+            final PDPageContentStream stream = getContentStream();
+
+            // Etykieta po lewej (tylko w pierwszej linii)
+            textHelper.writeText(stream, label, margins.left(), currentY, labelConfig);
+
+            // Wartość z przesunięciem (może być wieloliniowa)
+            final float valueX = margins.left() + 200;
+            float valueY = currentY;
+
+            for (final String line : valueLines) {
+                textHelper.writeText(stream, line, valueX, valueY, valueConfig);
+                valueY -= lineHeight;
+            }
+
+            currentY -= totalHeight + (lineHeight * 0.3f);
+
+        } catch (final IOException e) {
+            throw PdfGenerationException.error(PdfErrorCode.PARAGRAPH_CREATION_ERROR, e);
+        }
+
         return this;
     }
 
@@ -462,7 +634,21 @@ public final class PdfDocumentBuilder implements AutoCloseable {
             @NonNull final PdfFontConfig fontConfig
     ) {
         final float lineHeight = textHelper.calculateLineHeight(fontConfig);
-        final float rowHeight = lineHeight * 1.5f;
+        final float cellPadding = 3f;
+
+        // Oblicz liczbę linii dla każdej komórki i znajdź maksymalną
+        final List<List<String>> wrappedCells = new java.util.ArrayList<>();
+        int maxLines = 1;
+
+        for (int i = 0; i < cells.size() && i < columnWidths.length; i++) {
+            final String cellText = cells.get(i) != null ? cells.get(i) : "";
+            final float maxTextWidth = columnWidths[i] - (2 * cellPadding);
+            final List<String> lines = textHelper.wrapText(cellText, maxTextWidth, fontConfig);
+            wrappedCells.add(lines.isEmpty() ? List.of("") : lines);
+            maxLines = Math.max(maxLines, lines.size());
+        }
+
+        final float rowHeight = lineHeight * maxLines + (cellPadding * 2);
 
         checkPageBreak(rowHeight);
 
@@ -472,20 +658,30 @@ public final class PdfDocumentBuilder implements AutoCloseable {
             float x = margins.left();
 
             // Rysuj ramki komórek i tekst
-            for (int i = 0; i < cells.size() && i < columnWidths.length; i++) {
+            for (int i = 0; i < wrappedCells.size() && i < columnWidths.length; i++) {
                 final float cellWidth = columnWidths[i];
-                final String cellText = cells.get(i) != null ? cells.get(i) : "";
+                final List<String> lines = wrappedCells.get(i);
 
                 // Ramka komórki
                 stream.addRect(x, currentY - rowHeight, cellWidth, rowHeight);
                 stream.stroke();
 
-                // Tekst komórki (wycentrowany w komórce)
-                final float textWidth = textHelper.calculateTextWidth(cellText, fontConfig);
-                final float textX = x + (cellWidth - textWidth) / 2;
-                final float textY = currentY - rowHeight + (rowHeight - lineHeight) / 2 + lineHeight * 0.25f;
+                // Rysuj każdą linię tekstu
+                float textY = currentY - cellPadding - lineHeight * 0.75f;
+                for (final String line : lines) {
+                    final float textWidth = textHelper.calculateTextWidth(line, fontConfig);
 
-                textHelper.writeText(stream, cellText, textX, textY, fontConfig);
+                    // Pierwsza kolumna wyrównana do lewej, pozostałe wycentrowane
+                    final float textX;
+                    if (i == 0) {
+                        textX = x + cellPadding;
+                    } else {
+                        textX = x + (cellWidth - textWidth) / 2;
+                    }
+
+                    textHelper.writeText(stream, line, textX, textY, fontConfig);
+                    textY -= lineHeight;
+                }
 
                 x += cellWidth;
             }
