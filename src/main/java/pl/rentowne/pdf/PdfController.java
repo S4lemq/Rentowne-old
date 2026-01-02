@@ -72,27 +72,6 @@ class PdfController {
         return PdfResponseHelper.buildResponse(response);
     }
 
-    /**
-     * Generuje dokument PDF i wyświetla go w przeglądarce (inline).
-     *
-     * @param filename opcjonalna nazwa pliku
-     * @return dokument PDF do wyświetlenia inline
-     */
-    @GetMapping("/preview")
-    @NonNull
-    ResponseEntity<ByteArrayResource> previewPdf(
-            @RequestParam(defaultValue = "preview-document") final String filename
-    ) {
-        final PdfDocumentResponse response = pdfDocumentFactory.createDocumentResponse(
-                filename,
-                builder -> builder
-                        .addPage()
-                        .createPrimaryHeader("Podgląd dokumentu")
-                        .createLeftAlignedParagraph("Ten dokument jest wyświetlany bezpośrednio w przeglądarce.")
-        );
-
-        return PdfResponseHelper.buildResponse(response, true);
-    }
 
     /**
      * Generuje dokument inwentaryzacji (Załącznik nr 3a).

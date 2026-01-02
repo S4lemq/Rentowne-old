@@ -10,7 +10,6 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.lang.NonNull;
 
 import java.nio.charset.StandardCharsets;
-import java.time.Duration;
 
 /**
  * Pomocnik do tworzenia odpowiedzi HTTP dla dokumentów PDF.
@@ -28,19 +27,7 @@ final class PdfResponseHelper {
      */
     @NonNull
     ResponseEntity<ByteArrayResource> buildResponse(@NonNull final PdfDocumentResponse response) {
-        return buildResponse(response, false);
-    }
-
-    /**
-     * Tworzy ResponseEntity dla dokumentu PDF z odpowiednimi nagłówkami.
-     *
-     * @param response odpowiedź z dokumentem PDF
-     * @param inline   czy dokument ma być wyświetlany inline (w przeglądarce) czy jako załącznik
-     * @return ResponseEntity gotowe do zwrócenia z kontrolera
-     */
-    @NonNull
-    ResponseEntity<ByteArrayResource> buildResponse(@NonNull final PdfDocumentResponse response, final boolean inline) {
-        final HttpHeaders headers = createHeaders(response, inline);
+        final HttpHeaders headers = createHeaders(response);
 
         // Cache headers - prywatne, krótkie cachowanie
         headers.setCacheControl(CacheControl.noStore().getHeaderValue());
@@ -52,41 +39,16 @@ final class PdfResponseHelper {
                 .body(new ByteArrayResource(response.content()));
     }
 
-    /**
-     * Tworzy ResponseEntity dla dokumentu PDF z cachowaniem.
-     *
-     * @param response      odpowiedź z dokumentem PDF
-     * @param cacheDuration czas cachowania
-     * @return ResponseEntity gotowe do zwrócenia z kontrolera
-     */
-    @NonNull
-    ResponseEntity<ByteArrayResource> buildCacheableResponse(
-            @NonNull final PdfDocumentResponse response,
-            @NonNull final Duration cacheDuration
-    ) {
-        final HttpHeaders headers = createHeaders(response, false);
-
-        // Cache headers - prywatne, z określonym czasem
-        headers.setCacheControl(CacheControl.maxAge(cacheDuration).cachePrivate().getHeaderValue());
-
-        return ResponseEntity.ok()
-                .headers(headers)
-                .body(new ByteArrayResource(response.content()));
-    }
 
     @NonNull
-    private HttpHeaders createHeaders(@NonNull final PdfDocumentResponse response, final boolean inline) {
+    private HttpHeaders createHeaders(@NonNull final PdfDocumentResponse response) {
         final HttpHeaders headers = new HttpHeaders();
         headers.setContentType(APPLICATION_PDF);
         headers.setContentLength(response.size());
 
-        final ContentDisposition contentDisposition = inline
-                ? ContentDisposition.inline()
-                        .filename(response.filename(), StandardCharsets.UTF_8)
-                        .build()
-                : ContentDisposition.attachment()
-                        .filename(response.filename(), StandardCharsets.UTF_8)
-                        .build();
+        final ContentDisposition contentDisposition = ContentDisposition.attachment()
+                .filename(response.filename(), StandardCharsets.UTF_8)
+                .build();
 
         headers.setContentDisposition(contentDisposition);
         return headers;
