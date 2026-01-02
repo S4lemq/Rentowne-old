@@ -1,0 +1,258 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="pl">
+<head>
+    <meta charset="UTF-8"/>
+    <title>Lista Mieszkań</title>
+    <style>
+        @page {
+            size: A4 landscape;
+            margin: 20mm;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            font-size: 10pt;
+            color: #333;
+            line-height: 1.4;
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 20px;
+            padding-bottom: 15px;
+            border-bottom: 3px solid #2563eb;
+        }
+
+        .header h1 {
+            font-size: 20pt;
+            color: #1e40af;
+            margin-bottom: 8px;
+            font-weight: bold;
+        }
+
+        .header-info {
+            font-size: 9pt;
+            color: #666;
+            margin-top: 8px;
+        }
+
+        .header-info span {
+            display: inline-block;
+            margin: 0 15px;
+        }
+
+        .table-container {
+            width: 100%;
+            margin-bottom: 20px;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            border: 1px solid #ddd;
+        }
+
+        thead {
+            background-color: #2563eb;
+            color: white;
+        }
+
+        thead th {
+            padding: 10px 8px;
+            text-align: left;
+            font-weight: bold;
+            font-size: 9pt;
+            border: 1px solid #1e40af;
+        }
+
+        tbody tr {
+            border-bottom: 1px solid #e5e7eb;
+        }
+
+        tbody tr:nth-child(even) {
+            background-color: #f9fafb;
+        }
+
+        tbody tr:hover {
+            background-color: #eff6ff;
+        }
+
+        tbody td {
+            padding: 8px;
+            border: 1px solid #e5e7eb;
+            font-size: 9pt;
+        }
+
+        .text-center {
+            text-align: center;
+        }
+
+        .text-right {
+            text-align: right;
+        }
+
+        .status-badge {
+            display: inline-block;
+            padding: 3px 8px;
+            border-radius: 12px;
+            font-size: 8pt;
+            font-weight: bold;
+        }
+
+        .status-rented {
+            background-color: #dcfce7;
+            color: #166534;
+        }
+
+        .status-available {
+            background-color: #fef3c7;
+            color: #92400e;
+        }
+
+        .summary-section {
+            margin-top: 20px;
+            padding: 15px;
+            background-color: #f0f9ff;
+            border: 1px solid #bae6fd;
+            border-radius: 8px;
+        }
+
+        .summary-section h2 {
+            font-size: 12pt;
+            color: #0c4a6e;
+            margin-bottom: 12px;
+            font-weight: bold;
+        }
+
+        .summary-grid {
+            display: table;
+            width: 100%;
+        }
+
+        .summary-row {
+            display: table-row;
+        }
+
+        .summary-item {
+            display: table-cell;
+            padding: 8px 15px;
+            width: 33.33%;
+        }
+
+        .summary-label {
+            font-size: 9pt;
+            color: #64748b;
+            margin-bottom: 4px;
+        }
+
+        .summary-value {
+            font-size: 14pt;
+            font-weight: bold;
+            color: #1e293b;
+        }
+
+        .footer {
+            margin-top: 30px;
+            padding-top: 15px;
+            border-top: 1px solid #e5e7eb;
+            text-align: center;
+            font-size: 8pt;
+            color: #94a3b8;
+        }
+    </style>
+</head>
+<body>
+
+<div class="header">
+    <h1 th:text="${apartmentList.title}">Lista Mieszkań</h1>
+    <div class="header-info">
+        <span><strong>Data generowania:</strong> <span
+                th:text="${#temporals.format(apartmentList.generatedDate, 'dd.MM.yyyy')}">01.01.2024</span></span>
+        <span><strong>Wygenerował:</strong> <span th:text="${apartmentList.generatedBy}">Administrator</span></span>
+    </div>
+</div>
+
+<div class="table-container">
+    <table>
+        <thead>
+        <tr>
+            <th class="text-center" style="width: 5%;">Lp.</th>
+            <th style="width: 20%;">Nazwa mieszkania</th>
+            <th style="width: 30%;">Adres</th>
+            <th class="text-right" style="width: 10%;">Powierzchnia [m²]</th>
+            <th class="text-center" style="width: 10%;">Liczba najemców</th>
+            <th class="text-center" style="width: 12%;">Status</th>
+            <th style="width: 13%;">Zdjęcie</th>
+        </tr>
+        </thead>
+        <tbody>
+        <tr th:each="apartment : ${apartmentList.apartments}">
+            <td class="text-center" th:text="${apartment.ordinalNumber}">1</td>
+            <td th:text="${apartment.apartmentName}">Mieszkanie A1</td>
+            <td th:text="${apartment.address}">ul. Przykładowa 1, 00-001 Warszawa</td>
+            <td class="text-right"
+                th:text="${#numbers.formatDecimal(apartment.area, 1, 2)}">45.50
+            </td>
+            <td class="text-center" th:text="${apartment.leasesCount}">2</td>
+            <td class="text-center">
+                    <span class="status-badge"
+                          th:classappend="${apartment.status == 'Wynajęte'} ? 'status-rented' : 'status-available'"
+                          th:text="${apartment.status}">Wynajęte</span>
+            </td>
+            <td th:text="${apartment.imageName != null ? apartment.imageName : 'Brak'}">gosiczek.jpg</td>
+        </tr>
+        </tbody>
+    </table>
+</div>
+
+<div class="summary-section">
+    <h2>Podsumowanie</h2>
+    <div class="summary-grid">
+        <div class="summary-row">
+            <div class="summary-item">
+                <div class="summary-label">Łącznie mieszkań</div>
+                <div class="summary-value" th:text="${apartmentList.summary.totalApartments}">15</div>
+            </div>
+            <div class="summary-item">
+                <div class="summary-label">Wynajęte</div>
+                <div class="summary-value" th:text="${apartmentList.summary.rentedApartments}">12</div>
+            </div>
+            <div class="summary-item">
+                <div class="summary-label">Dostępne</div>
+                <div class="summary-value" th:text="${apartmentList.summary.availableApartments}">3</div>
+            </div>
+        </div>
+        <div class="summary-row">
+            <div class="summary-item">
+                <div class="summary-label">Łączna powierzchnia [m²]</div>
+                <div class="summary-value"
+                     th:text="${#numbers.formatDecimal(apartmentList.summary.totalArea, 1, 2)}">750.00
+                </div>
+            </div>
+            <div class="summary-item">
+                <div class="summary-label">Średnia powierzchnia [m²]</div>
+                <div class="summary-value"
+                     th:text="${#numbers.formatDecimal(apartmentList.summary.averageArea, 1, 2)}">50.00
+                </div>
+            </div>
+            <div class="summary-item">
+                <!-- Puste dla wyrównania -->
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="footer">
+    <p>Dokument wygenerowany automatycznie przez system Rentowne</p>
+    <p>© 2024 Rentowne Sp. z o.o. Wszelkie prawa zastrzeżone.</p>
+</div>
+
+</body>
+</html>
+
