@@ -307,7 +307,7 @@ public final class PdfDocumentBuilder implements AutoCloseable {
             }
 
             // Dodaj odstęp po paragrafie
-            currentY -= lineHeight * 0.5f;
+            currentY -= lineHeight * PARAGRAPH_SPACING_FACTOR;
 
         } catch (final IOException e) {
             throw PdfGenerationException.error(PdfErrorCode.PARAGRAPH_CREATION_ERROR, e);
@@ -391,7 +391,7 @@ public final class PdfDocumentBuilder implements AutoCloseable {
             final float x = calculateImageXPosition(width, alignment);
 
             stream.drawImage(image, x, currentY - height, width, height);
-            currentY -= height + 10; // Dodaj odstęp po obrazie
+            currentY -= height + IMAGE_BOTTOM_MARGIN;
 
         } catch (final IOException e) {
             throw PdfGenerationException.error(PdfErrorCode.LOGO_ADDITION_ERROR, e);
@@ -502,7 +502,7 @@ public final class PdfDocumentBuilder implements AutoCloseable {
             stream.lineTo(endX, currentY);
             stream.stroke();
 
-            currentY -= 10;
+            currentY -= HORIZONTAL_LINE_MARGIN;
         } catch (final IOException e) {
             throw PdfGenerationException.error(PdfErrorCode.HORIZONTAL_LINE_ERROR, e);
         }
@@ -643,7 +643,7 @@ public final class PdfDocumentBuilder implements AutoCloseable {
             @NonNull final PdfFontConfig fontConfig
     ) {
         final float lineHeight = textHelper.calculateLineHeight(fontConfig);
-        final float cellPadding = 3f;
+        final float cellPadding = TABLE_CELL_PADDING;
 
         // Oblicz liczbę linii dla każdej komórki i znajdź maksymalną
         final List<List<String>> wrappedCells = new java.util.ArrayList<>();

@@ -79,26 +79,6 @@ public class PdfDocumentFactory {
         return new PdfDocumentResponse(content, ensurePdfExtension(filename));
     }
 
-    /**
-     * Tworzy odpowiedź z dokumentem PDF z niestandardowymi ustawieniami.
-     *
-     * @param filename        nazwa pliku
-     * @param pageSize        rozmiar strony
-     * @param margins         marginesy
-     * @param builderConsumer funkcja budująca zawartość dokumentu
-     * @return odpowiedź z dokumentem PDF
-     */
-    @NonNull
-    public PdfDocumentResponse createDocumentResponse(
-            @NonNull final String filename,
-            @NonNull final PDRectangle pageSize,
-            @NonNull final PdfMargins margins,
-            @NonNull final Consumer<PdfDocumentBuilder> builderConsumer
-    ) {
-        final byte[] content = createDocument(pageSize, margins, builderConsumer);
-        return new PdfDocumentResponse(content, ensurePdfExtension(filename));
-    }
-
     @NonNull
     private String ensurePdfExtension(@NonNull final String filename) {
         return filename.toLowerCase().endsWith(".pdf") ? filename : filename + ".pdf";

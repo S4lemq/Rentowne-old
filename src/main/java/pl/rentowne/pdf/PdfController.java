@@ -40,7 +40,6 @@ class PdfController {
                 builder -> builder
                         .setMetadata(PdfMetadata.builder()
                                 .title("Przykładowy dokument PDF")
-                                .author("Rentowne System")
                                 .subject("Dokument demonstracyjny")
                                 .keywords("pdf, przykład, demo")
                                 .build())
@@ -100,7 +99,6 @@ class PdfController {
                 builder -> builder
                         .setMetadata(PdfMetadata.builder()
                                 .title("Załącznik nr 3a - Inwentaryzacja")
-                                .author("Rentowne System")
                                 .subject("Dokument inwentaryzacji")
                                 .build())
                         .addPage()
