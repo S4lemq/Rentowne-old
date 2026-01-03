@@ -53,6 +53,8 @@ public class LeaseAgreementServiceImpl implements LeaseAgreementService {
 
         BigDecimal waterAmount;
         BigDecimal electricityAmount;
+        BigDecimal waterConsumption;
+        BigDecimal electricityConsumption;
         boolean hasPartialSettlement = false;
 
         // Sprawdź czy ostatnie rozliczenie było proporcjonalne (częściowe)
@@ -60,6 +62,8 @@ public class LeaseAgreementServiceImpl implements LeaseAgreementService {
             // Było częściowe rozliczenie - pobierz dane z tego rozliczenia
             waterAmount = lastSettlement.getWaterAmount() != null ? lastSettlement.getWaterAmount() : BigDecimal.ZERO;
             electricityAmount = lastSettlement.getElectricityAmount() != null ? lastSettlement.getElectricityAmount() : BigDecimal.ZERO;
+            waterConsumption = BigDecimal.ZERO;
+            electricityConsumption = BigDecimal.ZERO;
             hasPartialSettlement = true;
 
             log.info("Znaleziono częściowe rozliczenie dla umowy {}: woda={}, prąd={}",
@@ -69,12 +73,14 @@ public class LeaseAgreementServiceImpl implements LeaseAgreementService {
             UtilityCostsDto utilityCosts = settlementService.calculateUtilityCostsOnly(rentedObjectId);
             waterAmount = utilityCosts.getWaterAmount();
             electricityAmount = utilityCosts.getElectricityAmount();
+            waterConsumption = utilityCosts.getWaterConsumption();
+            electricityConsumption = utilityCosts.getElectricityConsumption();
         }
 
         return LeaseTerminationInfoDto.builder()
-                .waterConsumption(BigDecimal.ZERO)
+                .waterConsumption(waterConsumption)
                 .waterAmount(waterAmount)
-                .electricityConsumption(BigDecimal.ZERO)
+                .electricityConsumption(electricityConsumption)
                 .electricityAmount(electricityAmount)
                 .depositPaid(leaseAgreement.getDepositPaid())
                 .hasPartialSettlement(hasPartialSettlement)
