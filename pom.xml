@@ -28,7 +28,23 @@
 		<slugify.version>3.0.6</slugify.version>
 		<commons-codec.version>1.16.0</commons-codec.version>
 		<commons-csv.version>1.10.0</commons-csv.version>
+		<tika.version>2.9.2</tika.version>
 	</properties>
+	<dependencyManagement>
+		<dependencies>
+			<!-- Wymuś wersję Apache Tika kompatybilną z PDFBox 3.0.3 -->
+			<dependency>
+				<groupId>org.apache.tika</groupId>
+				<artifactId>tika-core</artifactId>
+				<version>${tika.version}</version>
+			</dependency>
+			<dependency>
+				<groupId>org.apache.tika</groupId>
+				<artifactId>tika-parsers-standard-package</artifactId>
+				<version>${tika.version}</version>
+			</dependency>
+		</dependencies>
+	</dependencyManagement>
 	<dependencies>
 		<!-- Spring Data JPA for database interaction -->
 		<dependency>
@@ -218,6 +234,26 @@
 			<groupId>org.springframework.ai</groupId>
 			<artifactId>spring-ai-tika-document-reader</artifactId>
 			<version>1.1.0-M3</version>
+			<exclusions>
+				<!-- Wyklucz starsze wersje Tika, żeby użyć wersji z dependencyManagement -->
+				<exclusion>
+					<groupId>org.apache.tika</groupId>
+					<artifactId>tika-core</artifactId>
+				</exclusion>
+				<exclusion>
+					<groupId>org.apache.tika</groupId>
+					<artifactId>tika-parsers-standard-package</artifactId>
+				</exclusion>
+			</exclusions>
+		</dependency>
+		<!-- Jawnie dodaj Apache Tika w zgodnej wersji -->
+		<dependency>
+			<groupId>org.apache.tika</groupId>
+			<artifactId>tika-core</artifactId>
+		</dependency>
+		<dependency>
+			<groupId>org.apache.tika</groupId>
+			<artifactId>tika-parsers-standard-package</artifactId>
 		</dependency>
 	</dependencies>
 	<build>
