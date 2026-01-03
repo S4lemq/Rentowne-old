@@ -186,7 +186,7 @@ public class SettlementServiceImpl implements SettlementService {
             List<MeterReading> allDistributed = meterReadingRepository.findAllBySettledTrueAndApartmentSettledTrueAndMeter_DistributeReadingsTrue();
 
             List<MeterReading> matchingDistributed = allDistributed.stream()
-                    .filter(mr -> mr.getMeterReadingSettlementIds().stream()
+                    .filter(mr -> mr.getMeterReadingSettlementIds() != null && mr.getMeterReadingSettlementIds().stream()
                             .anyMatch(meterReadings::contains))
                     .toList();
             List<Long> meterReadingIds = matchingDistributed.stream().map(MeterReading::getId).toList();
