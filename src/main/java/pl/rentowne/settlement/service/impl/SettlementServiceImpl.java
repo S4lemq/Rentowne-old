@@ -261,7 +261,7 @@ public class SettlementServiceImpl implements SettlementService {
             if (dto.isWaterIncluded()) {
                 waterResult = this.calculateWaterCostForPartialMonth(
                         providerWithProviderFields, rentedObjectId, waterResult, allMeterReadingIds,
-                        leaseAgreement, prorationCalc, dto.getIsWaterMetersProrated());
+                        leaseAgreement, prorationCalc, dto.getIsWaterMetersProrated(), dto.getSettlementDate());
             }
 
             // Oblicz proporcjonalne kwoty z umowy
@@ -550,7 +550,7 @@ public class SettlementServiceImpl implements SettlementService {
      * Oblicza koszt wody dla niepełnego miesiąca.
      * Poprawnie odejmuje:
      * 1. Pełne miesiące nierozliczone (z pełną ilością wody z umowy, np. 4m³)
-     * 2. Niepełny miesiąc (z proporcjonalną ilością wody)
+     * 2. Niepełny miesiąc (z proporcjonalną ilością wody) - tylko jeśli settlementDate jest w tym samym miesiącu co ostatni odczyt
      */
     private BigDecimal calculateWaterCostForPartialMonth(
             List<HousingProvider> providerWithProviderFields,
@@ -559,7 +559,8 @@ public class SettlementServiceImpl implements SettlementService {
             List<Long> allMeterReadingIds,
             LeaseAgreementDto leaseAgreement,
             ProrationCalculator prorationCalc,
-            Boolean isWaterMetersProrated) {
+            Boolean isWaterMetersProrated,
+            LocalDateTime settlementDate) {
 
         Optional<HousingProvider> waterHousingProviderOptional = findProvider(providerWithProviderFields, ProviderType.WATER);
 
@@ -594,8 +595,12 @@ public class SettlementServiceImpl implements SettlementService {
                 if (Boolean.TRUE.equals(isWaterMetersProrated)) {
                     // PRZYPADEK PROPORCJONALNY: odejmujemy oddzielnie pełne miesiące i niepełny miesiąc
 
-                    // 1. Pełne miesiące (jeśli były) - z pełną ilością wody z umowy
-                    int fullMonths = monthCount - 1; // ostatni miesiąc to niepełny
+                    // Sprawdź, czy data rozliczenia (settlementDate) jest w tym samym miesiącu co ostatni odczyt
+                    // Jeśli tak - ostatni miesiąc z odczytów jest niepełny
+                    // Jeśli nie - wszystkie miesiące z odczytów są pełne, ale bieżący miesiąc (settlementDate) jest niepełny
+                    int fullMonths = getFullMonths(settlementDate, lastTwoReadings, monthCount);
+
+                    // 1. Pełne miesiące - z pełną ilością wody z umowy
                     if (fullMonths > 0) {
                         BigDecimal fullMonthsDeduction = this.calculateByConsumptionAndMonthCount(
                                 field.getPrice(),
@@ -608,6 +613,7 @@ public class SettlementServiceImpl implements SettlementService {
                     }
 
                     // 2. Niepełny miesiąc - z proporcjonalną ilością wody
+                    // Zawsze odejmujemy proporcjonalną ilość dla bieżącego miesiąca rozliczeniowego
                     BigDecimal proratedWaterMeters = prorationCalc.calculateAmount(
                             leaseAgreement.getIncludedWaterMeters(),
                             ProrationMode.PRORATED);
@@ -616,7 +622,7 @@ public class SettlementServiceImpl implements SettlementService {
                             proratedWaterMeters);
                     waterResult = waterResult.subtract(partialMonthDeduction);
 
-                    log.debug("[WODA][PARTIAL] Odejmowanie niepełnego miesiąca: {}m³ × {}zł = {}zł",
+                    log.debug("[WODA][PARTIAL] Odejmowanie niepełnego miesiąca (bieżący miesiąc): {}m³ × {}zł = {}zł",
                             proratedWaterMeters, field.getPrice(), partialMonthDeduction);
 
                 } else {
@@ -634,6 +640,23 @@ public class SettlementServiceImpl implements SettlementService {
             return waterResult;
         }
         return BigDecimal.ZERO;
+    }
+
+    private static int getFullMonths(final LocalDateTime settlementDate, final List<MeterReadingDto> lastTwoReadings, final int monthCount) {
+        LocalDateTime lastReadingDate = lastTwoReadings.getFirst().getReadingDate();
+        boolean isLastReadingMonthSameAsSettlement = lastReadingDate.getYear() == settlementDate.getYear()
+                && lastReadingDate.getMonth() == settlementDate.getMonth();
+
+        int fullMonths;
+
+        if (isLastReadingMonthSameAsSettlement) {
+            // Rozliczamy w tym samym miesiącu co ostatni odczyt - ostatni miesiąc z odczytów jest niepełny
+            fullMonths = monthCount - 1;
+        } else {
+            // Rozliczamy w późniejszym miesiącu - wszystkie miesiące z odczytów są pełne
+            fullMonths = monthCount;
+        }
+        return fullMonths;
     }
 
     public BigDecimal calculateWaterCost(List<HousingProvider> providerWithProviderFields, Long rentedObjectId, BigDecimal waterResult, List<Long> allMeterReadingIds, LeaseAgreementDto leaseAgreement) {
