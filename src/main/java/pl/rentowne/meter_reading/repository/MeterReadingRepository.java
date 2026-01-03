@@ -23,16 +23,20 @@ public interface MeterReadingRepository extends JpaRepository<MeterReading, Long
     @Query("update MeterReading m set m.settled = false, m.settlement.id = null where m.settlement.id = :id")
     int updateSettledToFalseBySettlementId(Long id);
 
-    @Query("select new pl.rentowne.meter_reading.model.dto.PrevMeterReadingDto(" +
-            "mr.id, mr.currentReading, mr.readingDate, " +
-            "concat(t.firstname, ' ', t.lastname), ro.rentedObjectName, m.meterType)" +
-            "from MeterReading mr " +
-            "join mr.meter m " +
-            "left join m.rentedObject ro " +
-            "left join ro.tenant t " +
-            "where m.id = :meterId " +
-            "order by mr.readingDate desc")
-    List<PrevMeterReadingDto> findPrevMeterReading(Long meterId);
+    @Query("""
+            select new pl.rentowne.meter_reading.model.dto.PrevMeterReadingDto(
+                mr.id, mr.currentReading, mr.readingDate,
+                concat(t.firstname, ' ', t.lastname), ro.rentedObjectName, m.meterType)
+            from MeterReading mr
+            join mr.meter m
+            left join m.rentedObject ro
+            left join ro.tenant t
+            left join t.leaseAgreement ls
+            where m.id = :meterId
+            and ls.isContractActive = true
+            order by mr.readingDate desc
+            """)
+    List<PrevMeterReadingDto> findPrevMeterReading(@Param("meterId") Long meterId);
 
 
     // IDs odczytów w mieszkaniu (dla danego typu licznika), które NIE są jeszcze zamknięte na poziomie mieszkania
