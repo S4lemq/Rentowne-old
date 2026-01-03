@@ -2,6 +2,7 @@ package pl.rentowne.meter.service;
 
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import pl.rentowne.housing_provider.model.ProviderType;
 import pl.rentowne.meter.model.dto.ApartmentMeterDto;
 import pl.rentowne.meter.model.dto.MeterDto;
 import pl.rentowne.meter.model.dto.MeterListDto;
@@ -63,8 +64,9 @@ public interface MeterService {
      * Pobiera paginowaną listę liczników dla zalogowanego użytkownika
      * @param pageable parametry paginacji i sortowania
      * @param apartmentId opcjonalne id mieszkania do filtrowania
+     * @param providerType opcjonalny typ dostawcy świadczeń do filtrowania
      * @param searchText opcjonalny tekst do filtrowania po apartmentName i rentedObjectName
      * @return strona z listą liczników
      */
-    Page<MeterListDto> getMetersList(Pageable pageable, Long apartmentId, String searchText);
+    Page<MeterListDto> getMetersList(Pageable pageable, Long apartmentId, ProviderType providerType, String searchText);
 }

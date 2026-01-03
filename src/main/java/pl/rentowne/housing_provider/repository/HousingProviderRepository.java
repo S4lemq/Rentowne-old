@@ -1,10 +1,13 @@
 package pl.rentowne.housing_provider.repository;
 
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.EntityGraph;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import pl.rentowne.housing_provider.model.HousingProvider;
+import pl.rentowne.housing_provider.model.dto.HousingProviderListDto;
 import pl.rentowne.housing_provider.repository.custom.HousingProviderRepositoryCustom;
 
 import java.util.List;
@@ -45,4 +48,25 @@ public interface HousingProviderRepository extends JpaRepository<HousingProvider
             where hp in :providers
             """)
     Set<HousingProvider> fetchApartmentsForProviders(@Param("providers") Set<HousingProvider> providers);
+
+    @Query("""
+            SELECT new pl.rentowne.housing_provider.model.dto.HousingProviderListDto(
+                hp.id,
+                hp.name,
+                hp.type,
+                hp.tax,
+                a.apartmentName
+            )
+            FROM HousingProvider hp
+            JOIN hp.apartments a
+            WHERE hp.user.id = :userAccountId
+            AND (:apartmentId IS NULL OR a.id = :apartmentId)
+            AND (:searchText IS NULL OR :searchText = ''
+                OR LOWER(hp.name) LIKE LOWER(CONCAT('%', :searchText, '%'))
+                OR LOWER(a.apartmentName) LIKE LOWER(CONCAT('%', :searchText, '%')))
+            """)
+    Page<HousingProviderListDto> getHousingProvidersList(Pageable pageable,
+                                                         @Param("userAccountId") Long userAccountId,
+                                                         @Param("apartmentId") Long apartmentId,
+                                                         @Param("searchText") String searchText);
 }

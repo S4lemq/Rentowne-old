@@ -1,8 +1,11 @@
 package pl.rentowne.housing_provider.service;
 
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import pl.rentowne.exception.RentowneBusinessException;
 import pl.rentowne.housing_provider.model.dto.HousingProviderBasicDto;
 import pl.rentowne.housing_provider.model.dto.HousingProviderDto;
+import pl.rentowne.housing_provider.model.dto.HousingProviderListDto;
 
 import java.util.List;
 
@@ -33,4 +36,13 @@ public interface HousingProviderService {
      * @return lista dostawców (id, name, type)
      */
     List<HousingProviderBasicDto> getHousingProvidersForLoggedUser();
+
+    /**
+     * Pobiera paginowaną listę dostawców świadczeń
+     * @param pageable obiekt paginacji
+     * @param apartmentId id mieszkania do filtrowania (opcjonalne)
+     * @param searchText tekst do wyszukiwania w nazwie dostawcy lub mieszkania (opcjonalne)
+     * @return paginowana lista dostawców
+     */
+    Page<HousingProviderListDto> getHousingProvidersList(Pageable pageable, Long apartmentId, String searchText);
 }

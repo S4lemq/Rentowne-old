@@ -9,6 +9,7 @@ import pl.rentowne.apartment.model.Apartment;
 import pl.rentowne.apartment.model.dto.ApartmentDto;
 import pl.rentowne.exception.RentowneBusinessException;
 import pl.rentowne.exception.RentowneErrorCode;
+import pl.rentowne.housing_provider.model.ProviderType;
 import pl.rentowne.meter.model.Meter;
 import pl.rentowne.meter.model.dto.ApartmentMeterDto;
 import pl.rentowne.meter.model.dto.MeterDto;
@@ -147,9 +148,9 @@ public class MeterServiceImpl implements MeterService {
 
     @Override
     @Transactional(readOnly = true)
-    public Page<MeterListDto> getMetersList(Pageable pageable, Long apartmentId, String searchText) {
+    public Page<MeterListDto> getMetersList(Pageable pageable, Long apartmentId, ProviderType providerType, String searchText) {
         Long userAccountId = userService.getLoggedUser().getId();
-        return meterRepository.getMetersList(pageable, userAccountId, apartmentId, searchText);
+        return meterRepository.getMetersList(pageable, userAccountId, apartmentId, providerType, searchText);
     }
 
     private Meter convertToEntity(MeterDto dto, RentedObject rentedObjectReference) {

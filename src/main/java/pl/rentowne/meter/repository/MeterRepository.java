@@ -5,6 +5,7 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
+import pl.rentowne.housing_provider.model.ProviderType;
 import pl.rentowne.meter.model.Meter;
 import pl.rentowne.meter.model.dto.MeterListDto;
 import pl.rentowne.meter.repository.cutom.MeterRepositoryCustom;
@@ -39,9 +40,12 @@ public interface MeterRepository extends JpaRepository<Meter, Long>, MeterReposi
             FROM Meter m
             LEFT JOIN m.rentedObject ro
             LEFT JOIN ro.apartment a
+            LEFT JOIN a.housingProviders hp1
             LEFT JOIN m.apartment ma
+            LEFT JOIN ma.housingProviders hp2
             WHERE (a.user.id = :userAccountId OR ma.user.id = :userAccountId)
             AND (:apartmentId IS NULL OR a.id = :apartmentId OR ma.id = :apartmentId)
+            AND (:providerType IS NULL OR hp1.type = :providerType OR hp2.type = :providerType)
             AND (:searchText IS NULL OR :searchText = ''
                 OR LOWER(COALESCE(a.apartmentName, ma.apartmentName)) LIKE LOWER(CONCAT('%', :searchText, '%'))
                 OR LOWER(ro.rentedObjectName) LIKE LOWER(CONCAT('%', :searchText, '%')))
@@ -49,6 +53,7 @@ public interface MeterRepository extends JpaRepository<Meter, Long>, MeterReposi
     Page<MeterListDto> getMetersList(Pageable pageable,
                                      @Param("userAccountId") Long userAccountId,
                                      @Param("apartmentId") Long apartmentId,
+                                     @Param("providerType") ProviderType providerType,
                                      @Param("searchText") String searchText);
 
     @Query("""

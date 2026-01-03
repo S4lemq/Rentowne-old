@@ -19,6 +19,7 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import pl.rentowne.common.controler.AbstractController;
+import pl.rentowne.housing_provider.model.ProviderType;
 import pl.rentowne.meter.model.dto.ApartmentMeterDto;
 import pl.rentowne.meter.model.dto.MeterDto;
 import pl.rentowne.meter.model.dto.MeterListDto;
@@ -128,7 +129,7 @@ public class MeterController extends AbstractController {
 
     @Operation(
             summary = "Pobiera paginowaną listę liczników",
-            description = "Metoda służy do pobrania listy liczników zalogowanego użytkownika z możliwością paginacji, sortowania po wszystkich kolumnach oraz filtrowania po ID mieszkania i nazwie mieszkania/obiektu",
+            description = "Metoda służy do pobrania listy liczników zalogowanego użytkownika z możliwością paginacji, sortowania po wszystkich kolumnach oraz filtrowania po ID mieszkania, typie dostawcy i nazwie mieszkania/obiektu",
             responses = {
                     @ApiResponse(responseCode = "200", description = "Lista liczników została pobrana pomyślnie"),
                     @ApiResponse(responseCode = "400", description = "Niepoprawne dane wejściowe"),
@@ -139,8 +140,9 @@ public class MeterController extends AbstractController {
     public ResponseEntity<Page<MeterListDto>> getMetersList(
             @PageableDefault(size = 20, sort = "id", direction = Sort.Direction.ASC) Pageable pageable,
             @Parameter(description = "ID mieszkania do filtrowania") @RequestParam(required = false) Long apartmentId,
+            @Parameter(description = "Typ dostawcy świadczeń do filtrowania") @RequestParam(required = false) ProviderType providerType,
             @Parameter(description = "Tekst do wyszukiwania w nazwie mieszkania lub obiektu") @RequestParam(required = false) String searchText) {
-        return new ResponseEntity<>(meterService.getMetersList(pageable, apartmentId, searchText), HttpStatus.OK);
+        return new ResponseEntity<>(meterService.getMetersList(pageable, apartmentId, providerType, searchText), HttpStatus.OK);
     }
 
     @Operation(
