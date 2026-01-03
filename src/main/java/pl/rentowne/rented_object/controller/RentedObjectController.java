@@ -65,8 +65,9 @@ public class RentedObjectController extends AbstractController {
     )
     @GetMapping(value = "/api/rented-objects/details")
     public ResponseEntity<List<RentedObjectDetailsDto>> getRentedObjectsDetails(
-            @RequestParam(name = "apartmentId", required = false) Long apartmentId) {
-        return ResponseEntity.ok(rentedObjectService.getRentedObjectsDetails(apartmentId));
+            @RequestParam(name = "apartmentId", required = false) Long apartmentId,
+            @RequestParam(name = "active") Boolean active) {
+        return ResponseEntity.ok(rentedObjectService.getRentedObjectsDetails(apartmentId, active));
     }
 
     @Operation(

@@ -61,9 +61,10 @@ public interface RentedObjectService {
     /**
      * Pobiera szczegółowe informacje o obiektach do wynajęcia z danymi rozliczenia
      * @param apartmentId opcjonalne id mieszkania do filtrowania
+     * @param active wymagany filtr po statusie aktywności umowy najmu (true = aktywne, false = nieaktywne)
      * @return lista szczegółowych informacji o obiektach
      */
-    List<RentedObjectDetailsDto> getRentedObjectsDetails(Long apartmentId);
+    List<RentedObjectDetailsDto> getRentedObjectsDetails(Long apartmentId, Boolean active);
 
     /**
      * Sprawdza czy dany obiekt do wynajęcia posiada gasDeposit w ostatnim rozliczeniu

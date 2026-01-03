@@ -40,10 +40,11 @@ public interface RentedObjectRepository extends JpaRepository<RentedObject, Long
             join fetch ro.tenant t
             join t.leaseAgreement ls
             join fetch ro.apartment a
-            where a.user.id = :userId and ls.isContractActive = true
+            where a.user.id = :userId
             and (:apartmentId is null or a.id = :apartmentId)
+            and ls.isContractActive = :active
             order by a.apartmentName, ro.rentedObjectName
             """)
-    List<RentedObject> findRentedObjectsWithDetailsForUser(@Param("userId") Long userId, @Param("apartmentId") Long apartmentId);
+    List<RentedObject> findRentedObjectsWithDetailsForUser(@Param("userId") Long userId, @Param("apartmentId") Long apartmentId, @Param("active") Boolean active);
 
 }

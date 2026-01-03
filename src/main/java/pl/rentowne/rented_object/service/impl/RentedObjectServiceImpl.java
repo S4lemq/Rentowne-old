@@ -76,9 +76,9 @@ public class RentedObjectServiceImpl implements RentedObjectService {
     }
 
     @Override
-    public List<RentedObjectDetailsDto> getRentedObjectsDetails(Long apartmentId) {
+    public List<RentedObjectDetailsDto> getRentedObjectsDetails(Long apartmentId, Boolean active) {
         Long userId = userService.getLoggedUser().getId();
-        List<RentedObject> rentedObjects = rentedObjectRepository.findRentedObjectsWithDetailsForUser(userId, apartmentId);
+        List<RentedObject> rentedObjects = rentedObjectRepository.findRentedObjectsWithDetailsForUser(userId, apartmentId, active);
 
         return rentedObjects.stream()
                 .map(this::mapToDetailsDto)
