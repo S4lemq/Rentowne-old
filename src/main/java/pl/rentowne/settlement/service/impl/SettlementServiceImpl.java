@@ -101,7 +101,8 @@ public class SettlementServiceImpl implements SettlementService {
             BigDecimal totalSum = electricResult.add(waterResult)
                     .add(leaseAgreement.getCompensationAmount())
                     .add(leaseAgreement.getInternetFee())
-                    .add(leaseAgreement.getRentAmount());
+                    .add(leaseAgreement.getRentAmount())
+                    .add(gasResult);
 
             // Logi dla standardowych logów aplikacji
             log.info("Rozliczenie obiektu o id: {}", rentedObjectId);

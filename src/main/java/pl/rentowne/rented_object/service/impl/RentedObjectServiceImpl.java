@@ -106,6 +106,7 @@ public class RentedObjectServiceImpl implements RentedObjectService {
         if (compensationAmount != null) totalAmount = totalAmount.add(compensationAmount);
         if (internetFee != null) totalAmount = totalAmount.add(internetFee);
         if (rentAmount != null) totalAmount = totalAmount.add(rentAmount);
+        if (gasDeposit != null) totalAmount = totalAmount.add(gasDeposit);
 
         // Suma = czynsz + internet + gaz + prąd + woda
         BigDecimal sum = BigDecimal.ZERO;
