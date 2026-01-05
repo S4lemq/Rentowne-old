@@ -29,13 +29,14 @@ public final class PdfDocumentBuilder implements AutoCloseable {
 
     private static final float LABEL_WIDTH_RATIO = 0.35f;
     private static final float ROW_SPACING_FACTOR = 0.3f;
+    private static final float TABLE_CELL_PADDING = 3f;
+    private static final float CELL_TEXT_Y_OFFSET = 0.75f;
     private static final float IMAGE_BOTTOM_MARGIN = 10f;
     private static final float HORIZONTAL_LINE_MARGIN = 10f;
     private static final float PARAGRAPH_SPACING_FACTOR = 0.5f;
 
     private final PDDocument document;
     private final PdfTextHelper textHelper;
-    private final PdfTableRenderer tableRenderer;
 
     @Getter(AccessLevel.PACKAGE)
     private final PdfMargins margins;
@@ -326,7 +327,19 @@ public final class PdfDocumentBuilder implements AutoCloseable {
     public PdfDocumentBuilder createTable(@NonNull final PdfTableConfig config, @NonNull final List<List<String>> rows) {
         ensurePageExists();
 
-        tableRenderer.renderTable(config, rows, createRenderContext());
+        final float tableWidth = pageSize.getWidth() - margins.left() - margins.right();
+        final float[] columnWidths = calculateColumnWidths(config, tableWidth);
+
+        // Dodaj nagłówki jeśli są
+        config.getHeaders().ifPresent(headers -> addTableRow(headers, columnWidths, config.headerConfig()));
+
+        // Dodaj wiersze danych
+        for (final List<String> row : rows) {
+            addTableRow(row, columnWidths, config.cellConfig());
+        }
+
+        // Odstęp po tabeli
+        currentY -= textHelper.calculateLineHeight(config.cellConfig());
 
         return this;
     }
@@ -340,9 +353,7 @@ public final class PdfDocumentBuilder implements AutoCloseable {
      */
     @NonNull
     public PdfDocumentBuilder addTableHeaders(@NonNull final List<String> headers, @NonNull final float[] columnWidths) {
-        ensurePageExists();
-
-        tableRenderer.renderHeaders(headers, columnWidths, createRenderContext());
+        addTableRow(headers, columnWidths, PdfFontConfig.TABLE_HEADER);
         return this;
     }
 
@@ -607,17 +618,88 @@ public final class PdfDocumentBuilder implements AutoCloseable {
         }
     }
 
-    @NonNull
-    private PdfTableRenderer.RenderContext createRenderContext() {
-        final float tableWidth = pageSize.getWidth() - margins.left() - margins.right();
-        return new PdfTableRenderer.RenderContext(
-                tableWidth,
-                margins.left(),
-                () -> currentY,
-                y -> currentY = y,
-                this::getContentStream,
-                this::checkPageBreak
-        );
+    private float[] calculateColumnWidths(@NonNull final PdfTableConfig config, final float tableWidth) {
+        return config.getColumnWidths()
+                .map(widths -> {
+                    final float[] absoluteWidths = new float[widths.length];
+                    for (int i = 0; i < widths.length; i++) {
+                        absoluteWidths[i] = tableWidth * widths[i] / 100f;
+                    }
+                    return absoluteWidths;
+                })
+                .orElseGet(() -> {
+                    final float[] equalWidths = new float[config.columnCount()];
+                    final float width = tableWidth / config.columnCount();
+                    for (int i = 0; i < config.columnCount(); i++) {
+                        equalWidths[i] = width;
+                    }
+                    return equalWidths;
+                });
+    }
+
+    private void addTableRow(
+            @NonNull final List<String> cells,
+            @NonNull final float[] columnWidths,
+            @NonNull final PdfFontConfig fontConfig
+    ) {
+        final float lineHeight = textHelper.calculateLineHeight(fontConfig);
+        final float cellPadding = TABLE_CELL_PADDING;
+
+        // Oblicz liczbę linii dla każdej komórki i znajdź maksymalną
+        final List<List<String>> wrappedCells = new java.util.ArrayList<>();
+        int maxLines = 1;
+
+        for (int i = 0; i < cells.size() && i < columnWidths.length; i++) {
+            final String cellText = cells.get(i) != null ? cells.get(i) : "";
+            final float maxTextWidth = columnWidths[i] - (2 * cellPadding);
+            final List<String> lines = textHelper.wrapText(cellText, maxTextWidth, fontConfig);
+            wrappedCells.add(lines.isEmpty() ? List.of("") : lines);
+            maxLines = Math.max(maxLines, lines.size());
+        }
+
+        final float rowHeight = lineHeight * maxLines + (cellPadding * 2);
+
+        checkPageBreak(rowHeight);
+
+        final PDPageContentStream stream = getContentStream();
+
+        try {
+            float x = margins.left();
+
+            // Rysuj ramki komórek i tekst
+            for (int i = 0; i < wrappedCells.size() && i < columnWidths.length; i++) {
+                final float cellWidth = columnWidths[i];
+                final List<String> lines = wrappedCells.get(i);
+
+                // Ramka komórki
+                stream.addRect(x, currentY - rowHeight, cellWidth, rowHeight);
+                stream.stroke();
+
+                // Rysuj każdą linię tekstu
+                float textY = currentY - cellPadding - lineHeight * CELL_TEXT_Y_OFFSET;
+                for (final String line : lines) {
+                    final float textWidth = textHelper.calculateTextWidth(line, fontConfig);
+
+                    // Pierwsza kolumna wyrównana do lewej, pozostałe wycentrowane
+                    final float textX;
+                    if (i == 0) {
+                        textX = x + cellPadding;
+                    } else {
+                        textX = x + (cellWidth - textWidth) / 2;
+                    }
+
+                    textHelper.writeText(stream, line, textX, textY, fontConfig);
+                    textY -= lineHeight;
+                }
+
+                x += cellWidth;
+            }
+
+            currentY -= rowHeight;
+
+        } catch (final IOException e) {
+            throw PdfGenerationException.error(PdfErrorCode.TABLE_ROW_CREATION_ERROR, e);
+        }
     }
 
     private float calculateImageXPosition(final float imageWidth, @NonNull final TextAlignment alignment) {
