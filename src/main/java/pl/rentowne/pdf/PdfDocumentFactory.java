@@ -50,8 +50,9 @@ public class PdfDocumentFactory {
         try (final PDDocument document = new PDDocument()) {
             final Map<FontStyle, PDFont> fonts = fontProvider.loadFonts(document);
             final PdfTextHelper textHelper = new PdfTextHelper(fonts);
+            final PdfTableRenderer tableRenderer = new PdfTableRenderer(textHelper);
 
-            try (final PdfDocumentBuilder builder = new PdfDocumentBuilder(document, textHelper, margins, pageSize)) {
+            try (final PdfDocumentBuilder builder = new PdfDocumentBuilder(document, textHelper, tableRenderer, margins, pageSize)) {
                 builderConsumer.accept(builder);
                 return builder.build();
             }
