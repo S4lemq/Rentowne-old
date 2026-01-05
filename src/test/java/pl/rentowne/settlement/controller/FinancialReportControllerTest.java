@@ -11,8 +11,8 @@ import org.springframework.data.domain.AuditorAware;
 import org.springframework.test.context.jdbc.Sql;
 import org.springframework.test.web.reactive.server.WebTestClient;
 import pl.rentowne.IntegrationTest;
-import pl.rentowne.config.TestSecurityConfig;
-import pl.rentowne.config.WithMockRentowneUser;
+import pl.rentowne.TestSecurityConfig;
+import pl.rentowne.WithMockRentowneUser;
 import pl.rentowne.util.Clock;
 import pl.rentowne.util.FixedClock;
 

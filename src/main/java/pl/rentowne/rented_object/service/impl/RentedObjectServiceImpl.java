@@ -78,18 +78,20 @@ public class RentedObjectServiceImpl implements RentedObjectService {
     @Override
     public List<RentedObjectDetailsDto> getRentedObjectsDetails(Long apartmentId, Boolean active) {
         Long userId = userService.getLoggedUser().getId();
-        List<RentedObject> rentedObjects = rentedObjectRepository.findRentedObjectsWithDetailsForUser(userId, apartmentId, active);
+        List<Tenant> tenants = tenantRepository.findTenantsWithDetailsForUser(userId, apartmentId, active);
 
-        return rentedObjects.stream()
+        return tenants.stream()
                 .map(this::mapToDetailsDto)
                 .collect(Collectors.toList());
     }
 
-    private RentedObjectDetailsDto mapToDetailsDto(RentedObject rentedObject) {
-        Long tenantId = rentedObject.getTenant().getId();
-        Settlement latestSettlement = settlementRepository.findLatestByRentedObjectId(rentedObject.getId(), tenantId);
+    private RentedObjectDetailsDto mapToDetailsDto(Tenant tenant) {
+        Long tenantId = tenant.getId();
+        Long rentedObjectId = tenant.getRentedObject().getId();
+        Settlement latestSettlement = settlementRepository.findLatestByRentedObjectId(rentedObjectId, tenantId);
 
-        String tenantFullName = rentedObject.getTenant().getFirstname() + " " + rentedObject.getTenant().getLastname();
+        String tenantFullName = tenant.getFirstname() + " " + tenant.getLastname();
+        String rentedObjectName = tenant.getRentedObject().getRentedObjectName();
 
         BigDecimal rentAmount = latestSettlement != null ? latestSettlement.getRentAmount() : null;
         BigDecimal internetFee = latestSettlement != null ? latestSettlement.getInternetFee() : null;
@@ -99,41 +101,14 @@ public class RentedObjectServiceImpl implements RentedObjectService {
         BigDecimal compensationAmount = latestSettlement != null ? latestSettlement.getCompensationAmount() : null;
         LocalDateTime lastSettlementDate = latestSettlement != null ? latestSettlement.getSettlementDate() : null;
 
-        // Oblicz totalAmount jako sumę wszystkich składników
-        BigDecimal totalAmount = BigDecimal.ZERO;
-        if (electricityAmount != null) totalAmount = totalAmount.add(electricityAmount);
-        if (waterAmount != null) totalAmount = totalAmount.add(waterAmount);
-        if (compensationAmount != null) totalAmount = totalAmount.add(compensationAmount);
-        if (internetFee != null) totalAmount = totalAmount.add(internetFee);
-        if (rentAmount != null) totalAmount = totalAmount.add(rentAmount);
-        if (gasDeposit != null) totalAmount = totalAmount.add(gasDeposit);
-
-        // Suma = czynsz + internet + gaz + prąd + woda
-        BigDecimal sum = BigDecimal.ZERO;
-        if (rentAmount != null) sum = sum.add(rentAmount);
-        if (internetFee != null) sum = sum.add(internetFee);
-        if (gasDeposit != null) sum = sum.add(gasDeposit);
-        if (electricityAmount != null) sum = sum.add(electricityAmount);
-        if (waterAmount != null) sum = sum.add(waterAmount);
-
-        // Zysk = odstępne * 0.915
-        BigDecimal profit = null;
-        if (compensationAmount != null) {
-            profit = compensationAmount.multiply(new BigDecimal("0.915")).setScale(2, RoundingMode.HALF_UP);
-        }
-
-        // Sprawdź czy istnieje rozliczenie z bieżącego miesiąca
-        boolean hasCurrentMonthSettlement = false;
-        if (latestSettlement != null && latestSettlement.getSettlementDate() != null) {
-            LocalDateTime now = LocalDateTime.now();
-            LocalDateTime settlementDate = latestSettlement.getSettlementDate();
-            hasCurrentMonthSettlement = settlementDate.getYear() == now.getYear()
-                    && settlementDate.getMonthValue() == now.getMonthValue();
-        }
+        BigDecimal totalAmount = sumAmounts(electricityAmount, waterAmount, compensationAmount, internetFee, rentAmount, gasDeposit);
+        BigDecimal sum = sumAmounts(rentAmount, internetFee, gasDeposit, electricityAmount, waterAmount);
+        BigDecimal profit = calculateProfit(compensationAmount);
+        boolean hasCurrentMonthSettlement = checkCurrentMonthSettlement(latestSettlement);
 
         return new RentedObjectDetailsDto(
-                rentedObject.getId(),
-                rentedObject.getRentedObjectName(),
+                rentedObjectId,
+                rentedObjectName,
                 tenantFullName,
                 tenantId,
                 formatPolishDate(lastSettlementDate),
@@ -150,14 +125,42 @@ public class RentedObjectServiceImpl implements RentedObjectService {
         );
     }
 
+    private BigDecimal sumAmounts(BigDecimal... amounts) {
+        BigDecimal sum = BigDecimal.ZERO;
+        for (BigDecimal amount : amounts) {
+            if (amount != null) {
+                sum = sum.add(amount);
+            }
+        }
+        return sum;
+    }
+
+    private BigDecimal calculateProfit(BigDecimal compensationAmount) {
+        if (compensationAmount == null) {
+            return null;
+        }
+        return compensationAmount.multiply(new BigDecimal("0.915")).setScale(2, RoundingMode.HALF_UP);
+    }
+
+    private boolean checkCurrentMonthSettlement(Settlement latestSettlement) {
+        if (latestSettlement == null || latestSettlement.getSettlementDate() == null) {
+            return false;
+        }
+        LocalDateTime now = LocalDateTime.now();
+        LocalDateTime settlementDate = latestSettlement.getSettlementDate();
+        return settlementDate.getYear() == now.getYear()
+                && settlementDate.getMonthValue() == now.getMonthValue();
+    }
+
     @Override
     public boolean hasGasDeposit(Long rentedObjectId) {
-        RentedObject rentedObject = rentedObjectRepository.findById(rentedObjectId).orElse(null);
-        if (rentedObject == null || rentedObject.getTenant() == null) {
+        // Pobierz aktywnego tenanta bez lazy loading całego RentedObject (unikamy problemu z duplikatami w OneToOne)
+        Tenant tenant = tenantRepository.getTenantByRentedObjectId(rentedObjectId);
+        if (tenant == null) {
             return false;
         }
 
-        Long tenantId = rentedObject.getTenant().getId();
+        Long tenantId = tenant.getId();
         Settlement latestSettlement = settlementRepository.findLatestByRentedObjectId(rentedObjectId, tenantId);
 
         return latestSettlement != null

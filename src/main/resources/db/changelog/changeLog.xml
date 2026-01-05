@@ -63,5 +63,6 @@
     <include file="db/changelog/ddl-scripts/059-modify_meter_reading_precision.xml"/>
     <include file="db/changelog/ddl-scripts/060-add_proration_description_to_settlement.xml"/>
     <include file="db/changelog/ddl-scripts/061-make_address_id_nullable_in_tenant.xml"/>
+    <include file="db/changelog/ddl-scripts/062-add_active_column_to_tenant.xml"/>
 
 </databaseChangeLog>

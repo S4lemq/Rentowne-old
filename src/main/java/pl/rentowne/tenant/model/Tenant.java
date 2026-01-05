@@ -66,6 +66,9 @@ public class Tenant extends BaseEntity {
     @Column(name = "PHONE_NUMBER", length = 20)
     private String phoneNumber;
 
+    @Column(name = "ACTIVE", nullable = false)
+    private boolean active = true;
+
     @OneToOne(fetch = FetchType.LAZY, cascade = CascadeType.ALL, orphanRemoval = true)
     @JoinColumn(name = "ADDRESS_ID")
     private Address address;

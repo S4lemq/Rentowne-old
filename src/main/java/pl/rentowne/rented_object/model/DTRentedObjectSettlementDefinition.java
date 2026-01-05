@@ -64,7 +64,8 @@ public class DTRentedObjectSettlementDefinition implements DTDefinition {
                 new DTColumnDefinition("tenantName",
                         tenant.firstname,
                         jpaQuery -> jpaQuery
-                                .leftJoin(tenant).on(rentedObject.id.eq(tenant.rentedObject().id))),
+                                .leftJoin(tenant).on(rentedObject.id.eq(tenant.rentedObject().id)
+                                        .and(tenant.active.eq(true)))),
                 new DTColumnDefinition("tenantSurname", tenant.lastname),
                 new DTColumnDefinition("lastSettlementDate", rentedObject.lastSettlementDate, true),
                 new DTColumnDefinition("lastSettlementTotalAmount", rentedObject.lastSettlementTotalAmount, true),

@@ -50,7 +50,8 @@ public class TenantRepositoryImpl extends BaseRepositoryImpl<Tenant, Long> imple
     @Override
     public Tenant getTenantByEmail(String loggedEmail) {
         return queryFactory.selectFrom(tenant)
-                .where(tenant.email.eq(loggedEmail))
+                .where(tenant.email.eq(loggedEmail)
+                        .and(tenant.active.eq(true)))
                 .fetchOne();
     }
 
@@ -58,7 +59,8 @@ public class TenantRepositoryImpl extends BaseRepositoryImpl<Tenant, Long> imple
     public Long getRentedObjectIdByTenantEmail(String email) {
         return queryFactory.select(tenant.rentedObject().id)
                 .from(tenant)
-                .where(tenant.email.eq(email))
+                .where(tenant.email.eq(email)
+                        .and(tenant.active.eq(true)))
                 .fetchOne();
     }
 
@@ -66,7 +68,7 @@ public class TenantRepositoryImpl extends BaseRepositoryImpl<Tenant, Long> imple
     public Tenant getTenantByRentedObjectId(Long rentedObjectId) {
         return queryFactory.selectFrom(tenant)
                 .where(tenant.rentedObject().id.eq(rentedObjectId)
-                        .and(tenant.leaseAgreement().isContractActive.eq(true)))
+                        .and(tenant.active.eq(true)))
                 .fetchOne();
     }
 }

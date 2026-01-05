@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="utf-8"?>
+<databaseChangeLog
+        xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-3.1.xsd">
+
+    <changeSet id="062-1" author="rentowne">
+        <addColumn tableName="TENANT">
+            <column name="ACTIVE" type="BOOLEAN" defaultValueBoolean="true">
+                <constraints nullable="false"/>
+            </column>
+        </addColumn>
+        <comment>Dodanie kolumny ACTIVE do tabeli TENANT - oznacza czy najem jest aktywny</comment>
+    </changeSet>
+
+    <changeSet id="062-2" author="rentowne">
+        <sql>
+            UPDATE TENANT t
+            SET ACTIVE = FALSE
+            WHERE EXISTS (
+                SELECT 1 FROM LEASE_AGREEMENT la
+                WHERE la.LEASE_AGREEMENT_ID = t.LEASE_AGREEMENT_ID
+                AND la.IS_CONTRACT_ACTIVE = FALSE
+            )
+        </sql>
+        <comment>Ustawienie ACTIVE na false dla najemców z nieaktywnymi umowami</comment>
+    </changeSet>
+
+</databaseChangeLog>
+

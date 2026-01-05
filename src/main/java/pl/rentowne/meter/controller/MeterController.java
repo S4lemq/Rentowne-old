@@ -19,7 +19,7 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import pl.rentowne.common.controler.AbstractController;
-import pl.rentowne.housing_provider.model.ProviderType;
+import pl.rentowne.meter.model.MeterType;
 import pl.rentowne.meter.model.dto.ApartmentMeterDto;
 import pl.rentowne.meter.model.dto.MeterDto;
 import pl.rentowne.meter.model.dto.MeterListDto;
@@ -140,9 +140,9 @@ public class MeterController extends AbstractController {
     public ResponseEntity<Page<MeterListDto>> getMetersList(
             @PageableDefault(size = 20, sort = "id", direction = Sort.Direction.ASC) Pageable pageable,
             @Parameter(description = "ID mieszkania do filtrowania") @RequestParam(required = false) Long apartmentId,
-            @Parameter(description = "Typ dostawcy świadczeń do filtrowania") @RequestParam(required = false) ProviderType providerType,
+            @Parameter(description = "Typ dostawcy świadczeń do filtrowania") @RequestParam(required = false) MeterType meterType,
             @Parameter(description = "Tekst do wyszukiwania w nazwie mieszkania lub obiektu") @RequestParam(required = false) String searchText) {
-        return new ResponseEntity<>(meterService.getMetersList(pageable, apartmentId, providerType, searchText), HttpStatus.OK);
+        return new ResponseEntity<>(meterService.getMetersList(pageable, apartmentId, meterType, searchText), HttpStatus.OK);
     }
 
     @Operation(

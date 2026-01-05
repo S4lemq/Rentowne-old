@@ -20,6 +20,7 @@ import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
+import org.hibernate.annotations.Where;
 import pl.rentowne.apartment.model.Apartment;
 import pl.rentowne.common.model.BaseEntity;
 import pl.rentowne.meter.model.Meter;
@@ -78,6 +79,7 @@ public class RentedObject extends BaseEntity {
     private List<Settlement> settlements;
 
     @OneToOne(mappedBy = "rentedObject")
+    @Where(clause = "ACTIVE = true")
     private Tenant tenant;
 
     public RentedObject(Long id) {
