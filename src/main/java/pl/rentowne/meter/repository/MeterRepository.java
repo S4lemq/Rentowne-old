@@ -17,8 +17,20 @@ import java.util.List;
  */
 public interface MeterRepository extends JpaRepository<Meter, Long>, MeterRepositoryCustom {
 
-    @Query("SELECT meter FROM Meter meter WHERE meter.id = :id")
+    @Query("""
+            SELECT m FROM Meter m
+            LEFT JOIN FETCH m.apartment ma
+            WHERE m.id = :id
+            """)
     Meter getMeterDtoById(@Param("id") Long id);
+
+    @Query("""
+            SELECT a.apartmentName
+            FROM RentedObject ro
+            JOIN ro.apartment a
+            WHERE ro.id = :rentedObjectId
+            """)
+    String getApartmentNameByRentedObjectId(@Param("rentedObjectId") Long rentedObjectId);
 
     @Query("""
             SELECT m

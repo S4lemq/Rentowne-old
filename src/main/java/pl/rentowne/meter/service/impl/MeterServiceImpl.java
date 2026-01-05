@@ -55,16 +55,18 @@ public class MeterServiceImpl implements MeterService {
         Meter meter = meterRepository.getMeterDtoById(id);
 
         if (meter.getRentedObject() != null) {
-            RentedObject rentedObject = meter.getRentedObject();
+            Long rentedObjectId = meter.getRentedObject().getId();
+            String apartmentName = meterRepository.getApartmentNameByRentedObjectId(rentedObjectId);
+
             return MeterDto.builder()
                     .id(meter.getId())
                     .name(meter.getName())
                     .meterType(meter.getMeterType())
                     .rentedObject(RentedObjectDto.builder()
-                            .id(rentedObject.getId())
+                            .id(rentedObjectId)
                             .build())
                     .apartment(ApartmentDto.builder()
-                            .apartmentName(rentedObject.getApartment().getApartmentName())
+                            .apartmentName(apartmentName)
                             .build())
                     .meterNumber(meter.getMeterNumber())
                     .initialMeterReading(meter.getInitialMeterReading())
