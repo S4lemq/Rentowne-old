@@ -142,6 +142,23 @@ public interface SettlementRepository extends JpaRepository<Settlement, Long>, S
     );
 
     /**
+     * Suma gasDeposit z Settlement dla danego Apartment w zakresie dat (według settlementDate)
+     * Sumuje po wszystkich RentedObjects należących do danego Apartment
+     */
+    @Query("""
+            select coalesce(sum(s.gasDeposit), 0)
+            from Settlement s
+            where s.rentedObject.apartment.id = :apartmentId
+            and s.settlementDate >= :dateFrom
+            and s.settlementDate <= :dateTo
+            """)
+    BigDecimal sumGasDepositByApartmentAndDateRange(
+            @Param("apartmentId") Long apartmentId,
+            @Param("dateFrom") LocalDateTime dateFrom,
+            @Param("dateTo") LocalDateTime dateTo
+    );
+
+    /**
      * Pobiera najnowsze rozliczenie dla danego obiektu wynajmowanego
      */
     @Query("""

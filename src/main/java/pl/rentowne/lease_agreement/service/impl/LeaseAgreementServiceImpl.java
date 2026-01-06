@@ -197,7 +197,6 @@ public class LeaseAgreementServiceImpl implements LeaseAgreementService {
 
         // Pobierz mieszkanie z umowy
         Long apartmentId = leaseAgreement.getTenant().getRentedObject().getApartment().getId();
-        Long rentedObjectId = leaseAgreement.getTenant().getRentedObject().getId();
 
         // Pobierz sumę z faktur za gaz w danym okresie
         BigDecimal invoicesTotal = invoiceRepository.sumGasAmountByApartmentAndDateRange(
@@ -211,9 +210,9 @@ public class LeaseAgreementServiceImpl implements LeaseAgreementService {
         LocalDateTime dateTimeFrom = request.getDateFrom().atStartOfDay();
         LocalDateTime dateTimeTo = request.getDateTo().atTime(23, 59, 59);
 
-        // Pobierz sumę zaliczek za gaz z Settlement w danym okresie
-        BigDecimal depositsTotal = settlementRepository.sumGasDepositByRentedObjectAndDateRange(
-                rentedObjectId,
+        // Pobierz sumę zaliczek za gaz z Settlement w danym okresie dla całego mieszkania
+        BigDecimal depositsTotal = settlementRepository.sumGasDepositByApartmentAndDateRange(
+                apartmentId,
                 dateTimeFrom,
                 dateTimeTo
         );
