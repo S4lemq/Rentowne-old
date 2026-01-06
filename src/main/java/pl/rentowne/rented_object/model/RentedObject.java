@@ -11,7 +11,6 @@ import jakarta.persistence.Index;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.OneToMany;
-import jakarta.persistence.OneToOne;
 import jakarta.persistence.SequenceGenerator;
 import jakarta.persistence.Table;
 import jakarta.persistence.UniqueConstraint;
@@ -20,7 +19,7 @@ import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
-import org.hibernate.annotations.Where;
+import org.hibernate.annotations.SQLRestriction;
 import pl.rentowne.apartment.model.Apartment;
 import pl.rentowne.common.model.BaseEntity;
 import pl.rentowne.meter.model.Meter;
@@ -78,12 +77,24 @@ public class RentedObject extends BaseEntity {
     @OneToMany(fetch = FetchType.LAZY, mappedBy = "rentedObject", cascade = CascadeType.PERSIST)
     private List<Settlement> settlements;
 
-    @OneToOne(mappedBy = "rentedObject")
-    @Where(clause = "ACTIVE = true")
-    private Tenant tenant;
+    @OneToMany(fetch = FetchType.LAZY, mappedBy = "rentedObject")
+    @SQLRestriction("ACTIVE = true")
+    private List<Tenant> tenants;
 
     public RentedObject(Long id) {
         this.id = id;
+    }
+
+    /**
+     * Zwraca aktywnego tenant'a (jeśli istnieje)
+     * @return aktywny tenant lub null
+     */
+    public Tenant getActiveTenant() {
+        if (tenants == null || tenants.isEmpty()) {
+            return null;
+        }
+        // @SQLRestriction powinno już filtrować tylko aktywnych, więc zwracamy pierwszego
+        return tenants.getFirst();
     }
 
     @Override

@@ -11,6 +11,7 @@ import pl.rentowne.apartment.repository.custom.ApartmentRepositoryCustom;
 import pl.rentowne.common.repository.impl.BaseRepositoryImpl;
 import pl.rentowne.housing_provider.model.QHousingProvider;
 import pl.rentowne.rented_object.model.QRentedObject;
+import pl.rentowne.rented_object.model.RentedObject;
 
 import java.util.List;
 import java.util.Optional;
@@ -40,14 +41,13 @@ public class ApartmentRepositoryImpl extends BaseRepositoryImpl<Apartment, Long>
 
     @Override
     public Optional<Apartment> findApartmentById(Long id) {
-        return Optional.ofNullable(
-                queryFactory.select(apartment)
-                        .from(apartment)
-                        .join(apartment.address(), address).fetchJoin()
-                        .join(apartment.rentedObjects, rentedObject).fetchJoin()
-                        .where(apartment.id.eq(id))
-                        .fetchOne()
-        );
+        Apartment result = queryFactory.select(apartment)
+                .from(apartment)
+                .join(apartment.address(), address).fetchJoin()
+                .where(apartment.id.eq(id))
+                .fetchOne();
+
+        return Optional.ofNullable(result);
     }
 
     @Override
@@ -57,6 +57,14 @@ public class ApartmentRepositoryImpl extends BaseRepositoryImpl<Apartment, Long>
                  .join(rentedObject).on(rentedObject.apartment().id.eq(apartment.id))
                  .where(rentedObject.id.eq(rentedObjectId))
                  .fetchOne();
+    }
+
+    @Override
+    public List<RentedObject> findRentedObjectsByApartmentId(Long apartmentId) {
+        return queryFactory.select(rentedObject)
+                .from(rentedObject)
+                .where(rentedObject.apartment().id.eq(apartmentId))
+                .fetch();
     }
 
     @Override

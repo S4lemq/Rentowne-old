@@ -40,6 +40,9 @@ public class ApartmentServiceImpl implements ApartmentService {
     @Override
     public ApartmentDto getApartment(Long id) throws RentowneNotFoundException {
         Apartment apartment = apartmentRepository.findApartmentById(id).orElseThrow(() -> new RentowneNotFoundException(id));
+        List<RentedObject> rentedObjects = apartmentRepository.findRentedObjectsByApartmentId(id);
+        apartment.setRentedObjects(new HashSet<>(rentedObjects));
+
         return ApartmentDto.asDto(apartment);
     }
 

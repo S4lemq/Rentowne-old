@@ -30,8 +30,9 @@ public interface MeterReadingRepository extends JpaRepository<MeterReading, Long
             from MeterReading mr
             join mr.meter m
             left join m.rentedObject ro
-            left join ro.tenant t on t.active = true
+            left join ro.tenants t
             where m.id = :meterId
+            and (t is null or t.active = true)
             order by mr.readingDate desc
             """)
     List<PrevMeterReadingDto> findPrevMeterReading(@Param("meterId") Long meterId);

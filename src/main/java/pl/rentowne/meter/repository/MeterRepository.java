@@ -19,7 +19,8 @@ public interface MeterRepository extends JpaRepository<Meter, Long>, MeterReposi
 
     @Query("""
             SELECT m FROM Meter m
-            LEFT JOIN FETCH m.apartment ma
+            LEFT JOIN FETCH m.apartment a
+            LEFT JOIN FETCH m.rentedObject ro
             WHERE m.id = :id
             """)
     Meter getMeterDtoById(@Param("id") Long id);

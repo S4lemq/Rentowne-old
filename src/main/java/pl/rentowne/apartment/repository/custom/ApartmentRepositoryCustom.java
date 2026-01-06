@@ -3,6 +3,7 @@ package pl.rentowne.apartment.repository.custom;
 import pl.rentowne.apartment.model.Apartment;
 import pl.rentowne.apartment.model.dto.ApartmentDto;
 import pl.rentowne.exception.RentowneNotFoundException;
+import pl.rentowne.rented_object.model.RentedObject;
 
 import java.util.List;
 import java.util.Optional;
@@ -26,6 +27,14 @@ public interface ApartmentRepositoryCustom {
      * @return id mieszkania
      */
     Long getApartmentIdByRentedObject(Long rentedObjectId);
+
+    /**
+     * Pobiera podstawowe informacje o RentedObject dla danego Apartment
+     * bez ładowania tenant'ów aby uniknąć problemów z duplikatami
+     * @param apartmentId id mieszkania
+     * @return lista obiektów do wynajęcia
+     */
+    List<RentedObject> findRentedObjectsByApartmentId(Long apartmentId);
 
     /**
      * Pobiera obiekty do wynajęcia danego mieszkania po fladze wynajęcia obiektów
