@@ -236,14 +236,27 @@ class PdfController {
                         )
                         .addSpace(30)
                         // Sekcja: Osoby odpowiedzialne i Komisja inwentaryzacyjna
-                        .createNumberedList(
+                        .createLabeledNumberedList(
                                 "Osoby odpowiedzialne za stan sprawdzanych wartości",
-                                List.of(new StringRow("222222"))
+                                List.of(new StringRow("222222")),
+                                PdfDocumentBuilder.ListLayout.BLOCK,
+                                PdfFontConfig.TABLE_HEADER,
+                                PdfFontConfig.DEFAULT
                         )
                         .addSpace(20)
                         .createTextLine("Komisja inwentaryzacyjna", PdfFontConfig.TABLE_HEADER, TextAlignment.LEFT)
-                        .createLabelValueRow("Przewodniczący:", "1. Anna Testowa 403611")
-                        .createLabelValueRow("Członkowie:", "2. Anna Testowa 403613")
+                        .createLabeledNumberedList(
+                                "Przewodniczący:",
+                                List.of(new StringRow("Anna Testowa 403611"))
+                        )
+                        .createLabeledNumberedList(
+                                "Członkowie:",
+                                List.of(
+                                        new StringRow("Anna Testowa 403613"),
+                                        new StringRow("Adam Nowak 403614"),
+                                        new StringRow("Szymon Kowal 403615")
+                                )
+                        )
                         .addSpace(40)
                         // Tekst końcowy
                         .createTextLine("Stwierdzone stany są zgodne/niezgodne z księgami banku.", PdfFontConfig.DEFAULT, TextAlignment.CENTER)

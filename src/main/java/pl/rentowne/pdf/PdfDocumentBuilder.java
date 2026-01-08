@@ -317,66 +317,154 @@ public final class PdfDocumentBuilder implements AutoCloseable {
     }
 
     /**
-     * Tworzy listę numerowaną z nagłówkiem.
-     * Przykład wyniku:
-     * <pre>
-     * Osoby odpowiedzialne za stan sprawdzanych wartości
-     * 1. 403607
-     * 2. 334323
-     * 3. 324232
-     * </pre>
-     *
-     * @param header     nagłówek listy (wyświetlany pogrubioną czcionką)
-     * @param rows       elementy listy implementujące {@link PdfTableRow}
-     * @return ten builder
+     * Układ listy numerowanej z etykietą.
      */
-    @NonNull
-    public PdfDocumentBuilder createNumberedList(@NonNull final String header,
-                                                  @NonNull final List<? extends PdfTableRow> rows) {
-        return createNumberedList(header, rows, PdfFontConfig.TABLE_HEADER, PdfFontConfig.DEFAULT);
+    public enum ListLayout {
+        /**
+         * Lista w linii - etykieta i pierwszy element w tej samej linii.
+         * <pre>
+         * Członkowie: 1. Anna Testowa
+         *             2. Adam Nowak
+         *             3. Szymon Kowal
+         * </pre>
+         */
+        INLINE,
+
+        /**
+         * Lista blokowa - lista pod etykietą.
+         * <pre>
+         * Członkowie:
+         * 1. Anna Testowa
+         * 2. Adam Nowak
+         * 3. Szymon Kowal
+         * </pre>
+         */
+        BLOCK
     }
 
     /**
-     * Tworzy listę numerowaną z nagłówkiem i niestandardowymi konfiguracjami czcionek.
+     * Tworzy listę numerowaną z etykietą (domyślnie układ INLINE).
      *
-     * @param header       nagłówek listy
-     * @param rows         elementy listy implementujące {@link PdfTableRow}
-     * @param headerConfig konfiguracja czcionki dla nagłówka
-     * @param itemConfig   konfiguracja czcionki dla elementów listy
+     * @param label etykieta wyświetlana przed listą
+     * @param rows  elementy listy implementujące {@link PdfTableRow}
      * @return ten builder
      */
     @NonNull
-    public PdfDocumentBuilder createNumberedList(
-            @NonNull final String header,
+    public PdfDocumentBuilder createLabeledNumberedList(
+            @NonNull final String label,
+            @NonNull final List<? extends PdfTableRow> rows
+    ) {
+        return createLabeledNumberedList(label, rows, ListLayout.INLINE, PdfFontConfig.DEFAULT, PdfFontConfig.TABLE_HEADER);
+    }
+
+    /**
+     * Tworzy listę numerowaną z etykietą i określonym układem.
+     *
+     * @param label  etykieta wyświetlana przed listą
+     * @param rows   elementy listy implementujące {@link PdfTableRow}
+     * @param layout układ listy (INLINE lub BLOCK)
+     * @return ten builder
+     */
+    @NonNull
+    public PdfDocumentBuilder createLabeledNumberedList(
+            @NonNull final String label,
             @NonNull final List<? extends PdfTableRow> rows,
-            @NonNull final PdfFontConfig headerConfig,
+            @NonNull final ListLayout layout
+    ) {
+        return createLabeledNumberedList(label, rows, layout, PdfFontConfig.DEFAULT, PdfFontConfig.TABLE_HEADER);
+    }
+
+    /**
+     * Tworzy listę numerowaną z etykietą i niestandardowymi konfiguracjami czcionek (domyślnie układ INLINE).
+     *
+     * @param label       etykieta wyświetlana przed listą
+     * @param rows        elementy listy implementujące {@link PdfTableRow}
+     * @param labelConfig konfiguracja czcionki dla etykiety
+     * @param itemConfig  konfiguracja czcionki dla elementów listy
+     * @return ten builder
+     */
+    @NonNull
+    public PdfDocumentBuilder createLabeledNumberedList(
+            @NonNull final String label,
+            @NonNull final List<? extends PdfTableRow> rows,
+            @NonNull final PdfFontConfig labelConfig,
             @NonNull final PdfFontConfig itemConfig
     ) {
+        return createLabeledNumberedList(label, rows, ListLayout.INLINE, labelConfig, itemConfig);
+    }
+
+    /**
+     * Tworzy listę numerowaną z etykietą, określonym układem i niestandardowymi konfiguracjami czcionek.
+     *
+     * @param label       etykieta wyświetlana przed listą
+     * @param rows        elementy listy implementujące {@link PdfTableRow}
+     * @param layout      układ listy (INLINE lub BLOCK)
+     * @param labelConfig konfiguracja czcionki dla etykiety
+     * @param itemConfig  konfiguracja czcionki dla elementów listy
+     * @return ten builder
+     */
+    @NonNull
+    public PdfDocumentBuilder createLabeledNumberedList(
+            @NonNull final String label,
+            @NonNull final List<? extends PdfTableRow> rows,
+            @NonNull final ListLayout layout,
+            @NonNull final PdfFontConfig labelConfig,
+            @NonNull final PdfFontConfig itemConfig
+    ) {
+        if (rows.isEmpty()) {
+            return this;
+        }
+
         ensurePageExists();
 
         try {
-            // Nagłówek listy
-            final float lineHeight = textHelper.calculateLineHeight(headerConfig);
-            checkPageBreak(lineHeight);
+            final float lineHeight = Math.max(
+                    textHelper.calculateLineHeight(labelConfig),
+                    textHelper.calculateLineHeight(itemConfig)
+            );
+            final float contentWidth = pageSize.getWidth() - margins.left() - margins.right();
+            final float valueX = margins.left() + (contentWidth * LABEL_WIDTH_RATIO);
 
-            final PDPageContentStream stream = getContentStream();
-            textHelper.writeText(stream, header, margins.left(), currentY, headerConfig);
-            currentY -= lineHeight;
+            if (layout == ListLayout.INLINE) {
+                // INLINE: etykieta i pierwszy element w tej samej linii
+                checkPageBreak(lineHeight);
+                final PDPageContentStream stream = getContentStream();
 
-            // Elementy listy
-            final float itemLineHeight = textHelper.calculateLineHeight(itemConfig);
-            int itemNumber = 1;
-            for (final PdfTableRow row : rows) {
-                checkPageBreak(itemLineHeight);
-                final String itemText = String.join(" ", row.toTableRow());
-                final String numberedItem = itemNumber + ". " + itemText;
-                textHelper.writeText(getContentStream(), numberedItem, margins.left(), currentY, itemConfig);
-                currentY -= itemLineHeight;
-                itemNumber++;
+                // Etykieta
+                textHelper.writeText(stream, label, margins.left(), currentY, labelConfig);
+
+                // Pierwszy element obok etykiety
+                final String firstItem = "1. " + String.join(" ", rows.get(0).toTableRow());
+                textHelper.writeText(stream, firstItem, valueX, currentY, itemConfig);
+                currentY -= lineHeight;
+
+                // Pozostałe elementy wyrównane do pierwszego
+                for (int i = 1; i < rows.size(); i++) {
+                    checkPageBreak(lineHeight);
+                    final String numberedItem = (i + 1) + ". " + String.join(" ", rows.get(i).toTableRow());
+                    textHelper.writeText(getContentStream(), numberedItem, valueX, currentY, itemConfig);
+                    currentY -= lineHeight;
+                }
+            } else {
+                // BLOCK: lista pod etykietą
+                checkPageBreak(lineHeight);
+                final PDPageContentStream stream = getContentStream();
+
+                // Etykieta
+                textHelper.writeText(stream, label, margins.left(), currentY, labelConfig);
+                currentY -= lineHeight;
+
+                // Wszystkie elementy pod etykietą
+                for (int i = 0; i < rows.size(); i++) {
+                    checkPageBreak(lineHeight);
+                    final String numberedItem = (i + 1) + ". " + String.join(" ", rows.get(i).toTableRow());
+                    textHelper.writeText(getContentStream(), numberedItem, margins.left(), currentY, itemConfig);
+                    currentY -= lineHeight;
+                }
             }
 
             // Odstęp po liście
-            currentY -= itemLineHeight * PARAGRAPH_SPACING_FACTOR;
+            currentY -= lineHeight * ROW_SPACING_FACTOR;
 
         } catch (final IOException e) {
             throw PdfGenerationException.error(PdfErrorCode.PARAGRAPH_CREATION_ERROR, e);
