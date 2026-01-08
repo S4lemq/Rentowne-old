@@ -24,6 +24,43 @@ class PdfController {
 
     private final PdfDocumentFactory pdfDocumentFactory;
 
+    // --- Dedykowane rekordy dla tabel ---
+
+    record SampleTableRow(String lp, String name, String value, String status) implements PdfTableRow {
+        @Override
+        public List<String> toTableRow() {
+            return List.of(lp, name, value, status);
+        }
+    }
+
+    record CurrencyRow(String type, String symbol, String name, String value) implements PdfTableRow {
+        @Override
+        public List<String> toTableRow() {
+            return List.of(type, symbol, name, value);
+        }
+    }
+
+    record FormRow(String registry, String form, String amount) implements PdfTableRow {
+        @Override
+        public List<String> toTableRow() {
+            return List.of(registry, form, amount);
+        }
+    }
+
+    record DepositRow(String depositType, String amount) implements PdfTableRow {
+        @Override
+        public List<String> toTableRow() {
+            return List.of(depositType, amount);
+        }
+    }
+
+    record StringRow(String value) implements PdfTableRow {
+        @Override
+        public List<String> toTableRow() {
+            return List.of(value);
+        }
+    }
+
     /**
      * Generuje przykładowy dokument PDF.
      *
@@ -57,9 +94,9 @@ class PdfController {
                         .createTable(
                                 PdfTableConfig.withHeaders(List.of("Lp.", "Nazwa", "Wartość", "Status")),
                                 List.of(
-                                        List.of("1", "Element A", "100.00 PLN", "Aktywny"),
-                                        List.of("2", "Element B", "250.50 PLN", "Oczekujący"),
-                                        List.of("3", "Element C", "75.00 PLN", "Zakończony")
+                                        new SampleTableRow("1", "Element A", "100.00 PLN", "Aktywny"),
+                                        new SampleTableRow("2", "Element B", "250.50 PLN", "Oczekujący"),
+                                        new SampleTableRow("3", "Element C", "75.00 PLN", "Zakończony")
                                 )
                         )
                         .addSpace(10)
@@ -149,19 +186,19 @@ class PdfController {
                                         PdfFontConfig.DEFAULT
                                 ),
                                 List.of(
-                                        List.of("S", "AUD", "Dolar australijski", "0,00"),
-                                        List.of("S", "CAD", "Dolar kanadyjski", "0,00"),
-                                        List.of("S", "CHF", "Frank szwajcarski", "0,00"),
-                                        List.of("S", "CZK", "Korona czeska", "0,00"),
-                                        List.of("S", "DKK", "Korona duńska", "0,00"),
-                                        List.of("S", "EUR", "UGW", "0,00"),
-                                        List.of("S", "GBP", "Funt brytyjski", "0,00"),
-                                        List.of("S", "HUF", "Forint węgierski", "0,00"),
-                                        List.of("S", "JPY", "Jen japoński", "0,00"),
-                                        List.of("S", "NOK", "Korona norweska", "0,00"),
-                                        List.of("S", "PLN", "Złoty polski", "14 567,56"),
-                                        List.of("S", "SEK", "Korona szwedzka", "0,00"),
-                                        List.of("S", "USD", "Dolar amerykański", "0,00")
+                                        new CurrencyRow("S", "AUD", "Dolar australijski", "0,00"),
+                                        new CurrencyRow("S", "CAD", "Dolar kanadyjski", "0,00"),
+                                        new CurrencyRow("S", "CHF", "Frank szwajcarski", "0,00"),
+                                        new CurrencyRow("S", "CZK", "Korona czeska", "0,00"),
+                                        new CurrencyRow("S", "DKK", "Korona duńska", "0,00"),
+                                        new CurrencyRow("S", "EUR", "UGW", "0,00"),
+                                        new CurrencyRow("S", "GBP", "Funt brytyjski", "0,00"),
+                                        new CurrencyRow("S", "HUF", "Forint węgierski", "0,00"),
+                                        new CurrencyRow("S", "JPY", "Jen japoński", "0,00"),
+                                        new CurrencyRow("S", "NOK", "Korona norweska", "0,00"),
+                                        new CurrencyRow("S", "PLN", "Złoty polski", "14 567,56"),
+                                        new CurrencyRow("S", "SEK", "Korona szwedzka", "0,00"),
+                                        new CurrencyRow("S", "USD", "Dolar amerykański", "0,00")
                                 )
                         )
                         // --- Strona 2 ---
@@ -176,8 +213,8 @@ class PdfController {
                                         PdfFontConfig.DEFAULT
                                 ),
                                 List.of(
-                                        List.of("czeki", "czeki", "4"),
-                                        List.of("Razem", "", "4")
+                                        new FormRow("czeki", "czeki", "4"),
+                                        new FormRow("Razem", "", "4")
                                 )
                         )
                         .addSpace(20)
@@ -191,17 +228,18 @@ class PdfController {
                                         PdfFontConfig.DEFAULT
                                 ),
                                 List.of(
-                                        List.of("Depozyty rzeczowe zewnętrzne", "1"),
-                                        List.of("Depozyty wewnętrzne innych jednostek organizacyjnych Banku (bez umów kredytowych i ich zabezpieczeń)", "2"),
-                                        List.of("Kasety i skrytki sejfowe", "1"),
-                                        List.of("Inne depozyty przechowywane w kasach/skarbcach (bez umów kredytowych i ich zabezpieczeń)", "3")
+                                        new DepositRow("Depozyty rzeczowe zewnętrzne", "1"),
+                                        new DepositRow("Depozyty wewnętrzne innych jednostek organizacyjnych Banku (bez umów kredytowych i ich zabezpieczeń)", "2"),
+                                        new DepositRow("Kasety i skrytki sejfowe", "1"),
+                                        new DepositRow("Inne depozyty przechowywane w kasach/skarbcach (bez umów kredytowych i ich zabezpieczeń)", "3")
                                 )
                         )
                         .addSpace(30)
                         // Sekcja: Osoby odpowiedzialne i Komisja inwentaryzacyjna
-                        .createTextLine("Osoby odpowiedzialne za stan", PdfFontConfig.TABLE_HEADER, TextAlignment.LEFT)
-                        .createTextLine("sprawdzanych wartości", PdfFontConfig.TABLE_HEADER, TextAlignment.LEFT)
-                        .createTextLine("1. 222222", PdfFontConfig.DEFAULT, TextAlignment.LEFT)
+                        .createNumberedList(
+                                "Osoby odpowiedzialne za stan sprawdzanych wartości",
+                                List.of(new StringRow("222222"))
+                        )
                         .addSpace(20)
                         .createTextLine("Komisja inwentaryzacyjna", PdfFontConfig.TABLE_HEADER, TextAlignment.LEFT)
                         .createLabelValueRow("Przewodniczący:", "1. Anna Testowa 403611")

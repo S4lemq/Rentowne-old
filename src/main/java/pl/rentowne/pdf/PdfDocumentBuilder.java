@@ -317,6 +317,75 @@ public final class PdfDocumentBuilder implements AutoCloseable {
     }
 
     /**
+     * Tworzy listę numerowaną z nagłówkiem.
+     * Przykład wyniku:
+     * <pre>
+     * Osoby odpowiedzialne za stan sprawdzanych wartości
+     * 1. 403607
+     * 2. 334323
+     * 3. 324232
+     * </pre>
+     *
+     * @param header     nagłówek listy (wyświetlany pogrubioną czcionką)
+     * @param rows       elementy listy implementujące {@link PdfTableRow}
+     * @return ten builder
+     */
+    @NonNull
+    public PdfDocumentBuilder createNumberedList(@NonNull final String header,
+                                                  @NonNull final List<? extends PdfTableRow> rows) {
+        return createNumberedList(header, rows, PdfFontConfig.TABLE_HEADER, PdfFontConfig.DEFAULT);
+    }
+
+    /**
+     * Tworzy listę numerowaną z nagłówkiem i niestandardowymi konfiguracjami czcionek.
+     *
+     * @param header       nagłówek listy
+     * @param rows         elementy listy implementujące {@link PdfTableRow}
+     * @param headerConfig konfiguracja czcionki dla nagłówka
+     * @param itemConfig   konfiguracja czcionki dla elementów listy
+     * @return ten builder
+     */
+    @NonNull
+    public PdfDocumentBuilder createNumberedList(
+            @NonNull final String header,
+            @NonNull final List<? extends PdfTableRow> rows,
+            @NonNull final PdfFontConfig headerConfig,
+            @NonNull final PdfFontConfig itemConfig
+    ) {
+        ensurePageExists();
+
+        try {
+            // Nagłówek listy
+            final float lineHeight = textHelper.calculateLineHeight(headerConfig);
+            checkPageBreak(lineHeight);
+
+            final PDPageContentStream stream = getContentStream();
+            textHelper.writeText(stream, header, margins.left(), currentY, headerConfig);
+            currentY -= lineHeight;
+
+            // Elementy listy
+            final float itemLineHeight = textHelper.calculateLineHeight(itemConfig);
+            int itemNumber = 1;
+            for (final PdfTableRow row : rows) {
+                checkPageBreak(itemLineHeight);
+                final String itemText = String.join(" ", row.toTableRow());
+                final String numberedItem = itemNumber + ". " + itemText;
+                textHelper.writeText(getContentStream(), numberedItem, margins.left(), currentY, itemConfig);
+                currentY -= itemLineHeight;
+                itemNumber++;
+            }
+
+            // Odstęp po liście
+            currentY -= itemLineHeight * PARAGRAPH_SPACING_FACTOR;
+
+        } catch (final IOException e) {
+            throw PdfGenerationException.error(PdfErrorCode.PARAGRAPH_CREATION_ERROR, e);
+        }
+
+        return this;
+    }
+
+    /**
      * Tworzy tabelę na podstawie konfiguracji i danych obiektów implementujących {@link PdfTableRow}.
      * Ta metoda automatycznie konwertuje obiekty na wiersze tabeli używając {@link PdfTableRow#toTableRow()}.
      *
@@ -327,14 +396,6 @@ public final class PdfDocumentBuilder implements AutoCloseable {
     @NonNull
     public PdfDocumentBuilder createTable(@NonNull final PdfTableConfig config,
                                           @NonNull final List<? extends PdfTableRow> rows) {
-        final List<List<String>> stringRows = rows.stream()
-                .map(PdfTableRow::toTableRow)
-                .toList();
-        return createTableInternal(config, stringRows);
-    }
-
-    @NonNull
-    private PdfDocumentBuilder createTableInternal(@NonNull final PdfTableConfig config, @NonNull final List<List<String>> rows) {
         ensurePageExists();
 
         final float tableWidth = pageSize.getWidth() - margins.left() - margins.right();
@@ -344,8 +405,8 @@ public final class PdfDocumentBuilder implements AutoCloseable {
         config.getHeaders().ifPresent(headers -> addTableRow(headers, columnWidths, config.headerConfig()));
 
         // Dodaj wiersze danych
-        for (final List<String> row : rows) {
-            addTableRow(row, columnWidths, config.cellConfig());
+        for (final PdfTableRow row : rows) {
+            addTableRow(row.toTableRow(), columnWidths, config.cellConfig());
         }
 
         // Odstęp po tabeli
