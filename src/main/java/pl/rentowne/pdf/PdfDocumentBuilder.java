@@ -317,14 +317,24 @@ public final class PdfDocumentBuilder implements AutoCloseable {
     }
 
     /**
-     * Tworzy tabelę na podstawie konfiguracji i danych.
+     * Tworzy tabelę na podstawie konfiguracji i danych obiektów implementujących {@link PdfTableRow}.
+     * Ta metoda automatycznie konwertuje obiekty na wiersze tabeli używając {@link PdfTableRow#toTableRow()}.
      *
      * @param config konfiguracja tabeli
-     * @param rows   wiersze danych (każdy wiersz to lista wartości komórek)
+     * @param rows   lista obiektów implementujących {@link PdfTableRow}
      * @return ten builder
      */
     @NonNull
-    public PdfDocumentBuilder createTable(@NonNull final PdfTableConfig config, @NonNull final List<List<String>> rows) {
+    public PdfDocumentBuilder createTable(@NonNull final PdfTableConfig config,
+                                          @NonNull final List<? extends PdfTableRow> rows) {
+        final List<List<String>> stringRows = rows.stream()
+                .map(PdfTableRow::toTableRow)
+                .toList();
+        return createTableInternal(config, stringRows);
+    }
+
+    @NonNull
+    private PdfDocumentBuilder createTableInternal(@NonNull final PdfTableConfig config, @NonNull final List<List<String>> rows) {
         ensurePageExists();
 
         final float tableWidth = pageSize.getWidth() - margins.left() - margins.right();
