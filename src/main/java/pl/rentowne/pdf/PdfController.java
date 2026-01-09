@@ -140,6 +140,8 @@ class PdfController {
                                 .build())
                         .addPage()
                         .createTopLeftText("22-08-2025, 08:12")
+                        .addSpace(10)
+                        .createTopLeftText("Wykonał: Anna Nowak")
                         .addLogo(logoBytes, 80f, 40f, TextAlignment.LEFT)
                         .createTopRightText("Załącznik nr 3a")
                         .addSpace(20)

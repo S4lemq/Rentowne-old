@@ -137,12 +137,14 @@ public final class PdfDocumentBuilder implements AutoCloseable {
         ensurePageExists();
 
         try {
+            final float lineHeight = textHelper.calculateLineHeight(fontConfig);
+            checkPageBreak(lineHeight);
+
             final PDPageContentStream stream = getContentStream();
             final float x = margins.left();
-            final float y = pageSize.getHeight() - margins.top();
 
-            textHelper.writeText(stream, text, x, y, fontConfig);
-            currentY = y - textHelper.calculateLineHeight(fontConfig);
+            textHelper.writeText(stream, text, x, currentY, fontConfig);
+            currentY -= lineHeight;
 
         } catch (final IOException e) {
             throw PdfGenerationException.error(PdfErrorCode.PARAGRAPH_CREATION_ERROR, e);
