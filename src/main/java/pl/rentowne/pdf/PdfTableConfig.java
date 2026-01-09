@@ -17,7 +17,7 @@ import java.util.Optional;
  */
 public record PdfTableConfig(
         int columnCount,
-        @Nullable float[] columnWidths,
+        @Nullable List<Float> columnWidths,
         @Nullable List<String> headers,
         @NonNull PdfFontConfig headerConfig,
         @NonNull PdfFontConfig cellConfig
@@ -56,13 +56,12 @@ public record PdfTableConfig(
 
     /**
      * Zwraca opcjonalne szerokości kolumn.
-     * Zwraca kopię defensywną tablicy.
      *
      * @return szerokości kolumn lub empty
      */
     @NonNull
-    public Optional<float[]> getColumnWidths() {
-        return Optional.ofNullable(columnWidths).map(float[]::clone);
+    public Optional<List<Float>> getColumnWidths() {
+        return Optional.ofNullable(columnWidths);
     }
 
     /**

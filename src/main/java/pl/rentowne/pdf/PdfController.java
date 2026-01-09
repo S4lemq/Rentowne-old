@@ -182,7 +182,7 @@ class PdfController {
                         .createTable(
                                 new PdfTableConfig(
                                         4,
-                                        new float[]{12f, 18f, 28f, 42f},
+                                        List.of(12f, 18f, 28f, 42f),
                                         List.of("Typ waluty", "Symbol waluty", "Nazwa waluty", "Wartość środków pieniężnych"),
                                         PdfFontConfig.TABLE_HEADER,
                                         PdfFontConfig.DEFAULT
@@ -209,7 +209,7 @@ class PdfController {
                         .createTable(
                                 new PdfTableConfig(
                                         3,
-                                        new float[]{30f, 50f, 20f},
+                                        List.of(30f, 50f, 20f),
                                         List.of("Wg rejestru", "Druki ścisłego zarachowania", "Stan (szt.)"),
                                         PdfFontConfig.TABLE_HEADER,
                                         PdfFontConfig.DEFAULT
@@ -224,7 +224,7 @@ class PdfController {
                         .createTable(
                                 new PdfTableConfig(
                                         2,
-                                        new float[]{85f, 15f},
+                                        List.of(85f, 15f),
                                         List.of("Depozyty", "Stan (szt.)"),
                                         PdfFontConfig.TABLE_HEADER,
                                         PdfFontConfig.DEFAULT

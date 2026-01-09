@@ -8,6 +8,7 @@ import org.springframework.lang.NonNull;
  * @param content  zawartość PDF jako tablica bajtów
  * @param filename nazwa pliku
  */
+@SuppressWarnings("java:S6218") // byte[] używane ze względu na wydajność
 public record PdfDocumentResponse(
         @NonNull byte[] content,
         @NonNull String filename

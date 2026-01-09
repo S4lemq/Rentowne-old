@@ -782,9 +782,9 @@ public final class PdfDocumentBuilder implements AutoCloseable {
     private float[] calculateColumnWidths(@NonNull final PdfTableConfig config, final float tableWidth) {
         return config.getColumnWidths()
                 .map(widths -> {
-                    final float[] absoluteWidths = new float[widths.length];
-                    for (int i = 0; i < widths.length; i++) {
-                        absoluteWidths[i] = tableWidth * widths[i] / 100f;
+                    final float[] absoluteWidths = new float[widths.size()];
+                    for (int i = 0; i < widths.size(); i++) {
+                        absoluteWidths[i] = tableWidth * widths.get(i) / 100f;
                     }
                     return absoluteWidths;
                 })
