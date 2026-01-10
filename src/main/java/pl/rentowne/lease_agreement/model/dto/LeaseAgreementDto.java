@@ -25,7 +25,6 @@ public class LeaseAgreementDto {
     private BigDecimal compensationAmount; //kwota odstępnego
     private BigDecimal internetFee; //kwota za internet
     private BigDecimal gasDeposit; //opłata za gaz
-    private BigDecimal includedWaterMeters; //ilość m^3 wliczonej wody
     private BigDecimal initialEnergyMeterReading; //początkowy odczyt energii
     private BigDecimal initialWaterMeterReading; //początkowy odczyt wody
     private BigDecimal initialGasMeterReading; //początkowy odczyt gazu
@@ -38,11 +37,10 @@ public class LeaseAgreementDto {
     private BigDecimal gasChargeAmount; //kwota obciążenia za gaz przy zakończeniu umowy
 
     @QueryProjection
-    public LeaseAgreementDto(BigDecimal rentAmount, BigDecimal compensationAmount, BigDecimal internetFee, BigDecimal includedWaterMeters, BigDecimal gasDeposit) {
+    public LeaseAgreementDto(BigDecimal rentAmount, BigDecimal compensationAmount, BigDecimal internetFee, BigDecimal gasDeposit) {
         this.rentAmount = rentAmount;
         this.compensationAmount = compensationAmount;
         this.internetFee = internetFee;
-        this.includedWaterMeters = includedWaterMeters;
         this.gasDeposit = gasDeposit;
     }
 
@@ -58,7 +56,6 @@ public class LeaseAgreementDto {
                 .compensationAmount(dto.compensationAmount)
                 .internetFee(dto.internetFee)
                 .gasDeposit(dto.gasDeposit)
-                .includedWaterMeters(dto.includedWaterMeters)
                 .initialEnergyMeterReading(dto.initialEnergyMeterReading)
                 .initialWaterMeterReading(dto.initialWaterMeterReading)
                 .initialGasMeterReading(dto.initialGasMeterReading)
@@ -84,7 +81,6 @@ public class LeaseAgreementDto {
                 .compensationAmount(entity.getCompensationAmount())
                 .internetFee(entity.getInternetFee())
                 .gasDeposit(entity.getGasDeposit())
-                .includedWaterMeters(entity.getIncludedWaterMeters())
                 .initialEnergyMeterReading(entity.getInitialEnergyMeterReading())
                 .initialWaterMeterReading(entity.getInitialWaterMeterReading())
                 .initialGasMeterReading(entity.getInitialGasMeterReading())

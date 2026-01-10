@@ -73,9 +73,6 @@ public class LeaseAgreement extends BaseEntity {
     @Column(name = "GAS_DEPOSIT")
     private BigDecimal gasDeposit; //opłata za gaz
 
-    @Column(name = "INCLUDED_WATER_METERS", nullable = false)
-    private BigDecimal includedWaterMeters; //ilość m^3 wliczonej wody
-
     @Column(name = "INITIAL_ENERGY_METER_READING", nullable = false)
     private BigDecimal initialEnergyMeterReading; //początkowy odczyt energii
 

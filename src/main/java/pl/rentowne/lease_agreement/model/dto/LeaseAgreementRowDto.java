@@ -17,7 +17,6 @@ public class LeaseAgreementRowDto implements DTRow {
     private BigDecimal rentAmount; //kwota czynszu
     private BigDecimal internetFee; //kwota za internet
     private BigDecimal gasDeposit; //opłata za gaz
-    private BigDecimal includedWaterMeters; //ilość m^3 wliczonej wody
     private LocalDateTime startContractDate; //od kiedy najem
     private LocalDateTime endContractDate; //do kiedy najem
     private BigDecimal deposit; //kaucja
@@ -27,7 +26,7 @@ public class LeaseAgreementRowDto implements DTRow {
     private Long leaseAgreementId;
 
     @QueryProjection
-    public LeaseAgreementRowDto(Long tenantId, String fullName, String apartment, String rentedObject, BigDecimal compensationAmount, BigDecimal rentAmount, BigDecimal internetFee, BigDecimal gasDeposit, BigDecimal includedWaterMeters, LocalDateTime startContractDate, LocalDateTime endContractDate, BigDecimal deposit, BigDecimal depositPaid, BigDecimal returnedDepositAmount, boolean isContractActive, Long leaseAgreementId) {
+    public LeaseAgreementRowDto(Long tenantId, String fullName, String apartment, String rentedObject, BigDecimal compensationAmount, BigDecimal rentAmount, BigDecimal internetFee, BigDecimal gasDeposit, LocalDateTime startContractDate, LocalDateTime endContractDate, BigDecimal deposit, BigDecimal depositPaid, BigDecimal returnedDepositAmount, boolean isContractActive, Long leaseAgreementId) {
         this.tenantId = tenantId;
         this.fullName = fullName;
         this.apartment = apartment;
@@ -36,7 +35,6 @@ public class LeaseAgreementRowDto implements DTRow {
         this.rentAmount = rentAmount;
         this.internetFee = internetFee;
         this.gasDeposit = gasDeposit;
-        this.includedWaterMeters = includedWaterMeters;
         this.startContractDate = startContractDate;
         this.endContractDate = endContractDate;
         this.deposit = deposit;

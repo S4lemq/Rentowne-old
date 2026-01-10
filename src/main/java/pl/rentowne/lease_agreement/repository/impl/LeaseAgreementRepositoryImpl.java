@@ -16,7 +16,7 @@ public class LeaseAgreementRepositoryImpl extends BaseRepositoryImpl<LeaseAgreem
     private static final QTenant tenant = QTenant.tenant;
     private static final QLeaseAgreement leaseAgreement = QLeaseAgreement.leaseAgreement;
     private static final QLeaseAgreementDto leaseAgreementDto = new QLeaseAgreementDto(leaseAgreement.rentAmount,
-            leaseAgreement.compensationAmount, leaseAgreement.internetFee, leaseAgreement.includedWaterMeters, leaseAgreement.gasDeposit);
+            leaseAgreement.compensationAmount, leaseAgreement.internetFee, leaseAgreement.gasDeposit);
 
     public LeaseAgreementRepositoryImpl(EntityManager entityManager) {
         super(LeaseAgreement.class, entityManager);
