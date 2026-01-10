@@ -48,4 +48,18 @@ public class SettlementController {
             @RequestParam Long tenantId) {
         return new ResponseEntity<>(settlementService.getSettlements(pageable, rentedObjectId, tenantId), HttpStatus.OK);
     }
+
+    @Operation(
+            summary = "Sprawdza czy najemca ma jakieś rozliczenia",
+            description = "Metoda sprawdza czy dla danego najemcy istnieją jakiekolwiek rozliczenia (Settlement)",
+            responses = {
+                    @ApiResponse(responseCode = "200", description = "Sprawdzenie powiodło się", content = @Content(mediaType = "application/json")),
+                    @ApiResponse(responseCode = "400", description = "Niepoprawne dane wejściowe"),
+                    @ApiResponse(responseCode = "500", description = "Wewnętrzny błąd serwera")
+            }
+    )
+    @GetMapping("/api/settlements/tenant/{tenantId}/exists")
+    public ResponseEntity<Boolean> existsSettlementsByTenant(@PathVariable Long tenantId) {
+        return new ResponseEntity<>(settlementService.existsSettlementsByTenantId(tenantId), HttpStatus.OK);
+    }
 }

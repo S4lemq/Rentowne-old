@@ -754,4 +754,10 @@ public class SettlementServiceImpl implements SettlementService {
         Page<Settlement> settlementsPage = settlementRepository.findAllByRentedObjectIdAndTenantId(pageable, rentedObjectId, tenantId);
         return settlementsPage.map(settlementMapper::toListDto);
     }
+
+    @Override
+    @Transactional(readOnly = true)
+    public boolean existsSettlementsByTenantId(Long tenantId) {
+        return settlementRepository.existsByTenantId(tenantId);
+    }
 }

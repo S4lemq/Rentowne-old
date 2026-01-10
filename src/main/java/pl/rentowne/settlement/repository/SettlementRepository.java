@@ -171,4 +171,16 @@ public interface SettlementRepository extends JpaRepository<Settlement, Long>, S
             """)
     Settlement findLatestByRentedObjectId(@Param("rentedObjectId") Long rentedObjectId,
                                           @Param("tenantId") Long tenantId);
+
+    /**
+     * Sprawdza czy istnieją jakieś rozliczenia dla danego najemcy
+     * @param tenantId id najemcy
+     * @return true jeśli istnieje co najmniej jedno rozliczenie, false w przeciwnym razie
+     */
+    @Query("""
+            select case when count(s) > 0 then true else false end
+            from Settlement s
+            where s.tenant.id = :tenantId
+            """)
+    boolean existsByTenantId(@Param("tenantId") Long tenantId);
 }

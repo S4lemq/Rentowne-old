@@ -40,4 +40,11 @@ public interface SettlementService {
      * @return koszty i zużycie mediów
      */
     UtilityCostsDto calculateUtilityCostsOnly(Long rentedObjectId);
+
+    /**
+     * Sprawdza czy istnieją jakieś rozliczenia dla danego najemcy
+     * @param tenantId id najemcy
+     * @return true jeśli istnieje co najmniej jedno rozliczenie, false w przeciwnym razie
+     */
+    boolean existsSettlementsByTenantId(Long tenantId);
 }
