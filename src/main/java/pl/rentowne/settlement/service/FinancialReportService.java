@@ -13,6 +13,7 @@ import pl.rentowne.settlement.model.dto.ApartmentFinancialDetailDto;
 import pl.rentowne.settlement.model.dto.MonthlyFinancialDetailDto;
 import pl.rentowne.settlement.model.dto.MonthlyFinancialReportDto;
 import pl.rentowne.settlement.model.dto.MonthlyFinancialSummaryDto;
+import pl.rentowne.settlement.model.dto.YearlyFinancialReportDto;
 import pl.rentowne.settlement.repository.SettlementRepository;
 
 import java.math.BigDecimal;
@@ -39,12 +40,12 @@ public class FinancialReportService {
     private final ApartmentRepository apartmentRepository;
 
     @Transactional(readOnly = true)
-    public List<MonthlyFinancialReportDto> getMonthlyFinancialReport() {
+    public YearlyFinancialReportDto getMonthlyFinancialReport() {
         return getMonthlyFinancialReport(null);
     }
 
     @Transactional(readOnly = true)
-    public List<MonthlyFinancialReportDto> getMonthlyFinancialReport(Integer year) {
+    public YearlyFinancialReportDto getMonthlyFinancialReport(Integer year) {
         log.info("Generowanie raportu finansowego miesięcznego" + (year != null ? " dla roku " + year : ""));
 
         // Zbierz wszystkie unikalne miesiące z Settlement i Invoice
@@ -59,6 +60,8 @@ public class FinancialReportService {
 
         List<MonthlyFinancialReportDto> reports = new ArrayList<>();
         BigDecimal cumulativeNetIncome = BigDecimal.ZERO;
+        BigDecimal yearlyTotalRevenue = BigDecimal.ZERO;
+        BigDecimal yearlyTotalCosts = BigDecimal.ZERO;
 
         for (LocalDate month : months) {
             int yearValue = month.getYear();
@@ -83,6 +86,10 @@ public class FinancialReportService {
             // Suma dochodu narastająco
             cumulativeNetIncome = cumulativeNetIncome.add(netIncome);
 
+            // Sumuj roczne przychody i koszty
+            yearlyTotalRevenue = yearlyTotalRevenue.add(totalRevenue);
+            yearlyTotalCosts = yearlyTotalCosts.add(totalCosts);
+
             MonthlyFinancialReportDto report = MonthlyFinancialReportDto.builder()
                     .month(month)
                     .totalRevenue(totalRevenue)
@@ -95,7 +102,12 @@ public class FinancialReportService {
         }
 
         log.info("Wygenerowano raport finansowy dla {} miesięcy", reports.size());
-        return reports;
+
+        return YearlyFinancialReportDto.builder()
+                .months(reports)
+                .yearlyTotalRevenue(yearlyTotalRevenue)
+                .yearlyTotalCosts(yearlyTotalCosts)
+                .build();
     }
 
     @Transactional(readOnly = true)
