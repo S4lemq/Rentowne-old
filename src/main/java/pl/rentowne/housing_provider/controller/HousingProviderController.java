@@ -20,9 +20,11 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import pl.rentowne.common.controler.AbstractController;
 import pl.rentowne.exception.RentowneBusinessException;
+import pl.rentowne.housing_provider.model.dto.HousingProviderApartmentDto;
 import pl.rentowne.housing_provider.model.dto.HousingProviderBasicDto;
 import pl.rentowne.housing_provider.model.dto.HousingProviderDto;
 import pl.rentowne.housing_provider.model.dto.HousingProviderListDto;
+import pl.rentowne.housing_provider.model.dto.HousingProviderWithAssignmentDto;
 import pl.rentowne.housing_provider.service.HousingProviderService;
 
 import java.util.List;
@@ -110,6 +112,38 @@ public class HousingProviderController extends AbstractController {
             @Parameter(description = "ID mieszkania do filtrowania") @RequestParam(required = false) Long apartmentId,
             @Parameter(description = "Tekst do wyszukiwania w nazwie dostawcy lub mieszkania") @RequestParam(required = false) String searchText) {
         return new ResponseEntity<>(housingProviderService.getHousingProvidersList(pageable, apartmentId, searchText), HttpStatus.OK);
+    }
+
+    @Operation(
+            summary = "Pobiera dostawców świadczeń dla konkretnego mieszkania",
+            description = "Metoda służy do pobrania paginowanej listy dostawców świadczeń przypisanych do wybranego mieszkania zalogowanego użytkownika",
+            responses = {
+                    @ApiResponse(responseCode = "200", description = "Lista dostawców została pobrana pomyślnie"),
+                    @ApiResponse(responseCode = "400", description = "Niepoprawne dane wejściowe"),
+                    @ApiResponse(responseCode = "500", description = "Wewnętrzny błąd serwera")
+            }
+    )
+    @GetMapping("/api/apartments/{apartmentId}/housing-providers")
+    public ResponseEntity<Page<HousingProviderApartmentDto>> getHousingProvidersForApartment(
+            @PageableDefault(size = 20, sort = "name", direction = Sort.Direction.ASC) Pageable pageable,
+            @Parameter(description = "ID mieszkania", required = true) @PathVariable Long apartmentId) {
+        return new ResponseEntity<>(housingProviderService.getHousingProvidersForApartment(pageable, apartmentId), HttpStatus.OK);
+    }
+
+    @Operation(
+            summary = "Pobiera wszystkich dostawców z informacją o przypisaniu do mieszkania",
+            description = "Metoda służy do pobrania paginowanej listy wszystkich dostawców użytkownika z flagą określającą czy są przypisani do wybranego mieszkania. Używane w oknie wyboru dostawców.",
+            responses = {
+                    @ApiResponse(responseCode = "200", description = "Lista dostawców została pobrana pomyślnie"),
+                    @ApiResponse(responseCode = "400", description = "Niepoprawne dane wejściowe"),
+                    @ApiResponse(responseCode = "500", description = "Wewnętrzny błąd serwera")
+            }
+    )
+    @GetMapping("/api/apartments/{apartmentId}/housing-providers/all-with-assignment")
+    public ResponseEntity<Page<HousingProviderWithAssignmentDto>> getAllProvidersWithAssignmentStatus(
+            @PageableDefault(size = 100, sort = "name", direction = Sort.Direction.ASC) Pageable pageable,
+            @Parameter(description = "ID mieszkania", required = true) @PathVariable Long apartmentId) {
+        return new ResponseEntity<>(housingProviderService.getAllProvidersWithAssignmentStatus(pageable, apartmentId), HttpStatus.OK);
     }
 
 }

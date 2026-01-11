@@ -7,7 +7,9 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import pl.rentowne.housing_provider.model.HousingProvider;
+import pl.rentowne.housing_provider.model.dto.HousingProviderApartmentDto;
 import pl.rentowne.housing_provider.model.dto.HousingProviderListDto;
+import pl.rentowne.housing_provider.model.dto.HousingProviderWithAssignmentDto;
 import pl.rentowne.housing_provider.repository.custom.HousingProviderRepositoryCustom;
 
 import java.util.List;
@@ -69,4 +71,49 @@ public interface HousingProviderRepository extends JpaRepository<HousingProvider
                                                          @Param("userAccountId") Long userAccountId,
                                                          @Param("apartmentId") Long apartmentId,
                                                          @Param("searchText") String searchText);
+
+    /**
+     * Pobiera dostawców świadczeń przypisanych do konkretnego mieszkania
+     * @param pageable obiekt paginacji
+     * @param userAccountId id użytkownika
+     * @param apartmentId id mieszkania
+     * @return paginowana lista dostawców dla mieszkania
+     */
+    @Query("""
+            SELECT new pl.rentowne.housing_provider.model.dto.HousingProviderApartmentDto(
+                hp.id,
+                hp.name,
+                hp.type,
+                hp.tax
+            )
+            FROM HousingProvider hp
+            JOIN hp.apartments a
+            WHERE hp.user.id = :userAccountId
+            AND a.id = :apartmentId
+            """)
+    Page<HousingProviderApartmentDto> getHousingProvidersForApartment(Pageable pageable,
+                                                                       @Param("userAccountId") Long userAccountId,
+                                                                       @Param("apartmentId") Long apartmentId);
+
+    /**
+     * Pobiera wszystkich dostawców użytkownika z informacją czy są przypisani do mieszkania
+     * @param pageable obiekt paginacji
+     * @param userAccountId id użytkownika
+     * @param apartmentId id mieszkania
+     * @return paginowana lista dostawców z flagą przypisania
+     */
+    @Query("""
+            SELECT new pl.rentowne.housing_provider.model.dto.HousingProviderWithAssignmentDto(
+                hp.id,
+                hp.name,
+                hp.type,
+                hp.tax,
+                CASE WHEN EXISTS (SELECT 1 FROM hp.apartments a WHERE a.id = :apartmentId) THEN true ELSE false END
+            )
+            FROM HousingProvider hp
+            WHERE hp.user.id = :userAccountId
+            """)
+    Page<HousingProviderWithAssignmentDto> getAllProvidersWithAssignmentStatus(Pageable pageable,
+                                                                                @Param("userAccountId") Long userAccountId,
+                                                                                @Param("apartmentId") Long apartmentId);
 }

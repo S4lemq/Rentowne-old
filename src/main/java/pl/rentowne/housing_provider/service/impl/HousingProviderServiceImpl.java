@@ -7,9 +7,11 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import pl.rentowne.exception.RentowneBusinessException;
 import pl.rentowne.housing_provider.model.HousingProvider;
+import pl.rentowne.housing_provider.model.dto.HousingProviderApartmentDto;
 import pl.rentowne.housing_provider.model.dto.HousingProviderBasicDto;
 import pl.rentowne.housing_provider.model.dto.HousingProviderDto;
 import pl.rentowne.housing_provider.model.dto.HousingProviderListDto;
+import pl.rentowne.housing_provider.model.dto.HousingProviderWithAssignmentDto;
 import pl.rentowne.housing_provider.repository.HousingProviderRepository;
 import pl.rentowne.housing_provider.service.HousingProviderService;
 import pl.rentowne.provider_field.model.ProviderField;
@@ -175,6 +177,20 @@ public class HousingProviderServiceImpl implements HousingProviderService {
     public Page<HousingProviderListDto> getHousingProvidersList(Pageable pageable, Long apartmentId, String searchText) {
         Long userAccountId = userService.getLoggedUser().getId();
         return housingProviderRepository.getHousingProvidersList(pageable, userAccountId, apartmentId, searchText);
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public Page<HousingProviderApartmentDto> getHousingProvidersForApartment(Pageable pageable, Long apartmentId) {
+        Long userAccountId = userService.getLoggedUser().getId();
+        return housingProviderRepository.getHousingProvidersForApartment(pageable, userAccountId, apartmentId);
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public Page<HousingProviderWithAssignmentDto> getAllProvidersWithAssignmentStatus(Pageable pageable, Long apartmentId) {
+        Long userAccountId = userService.getLoggedUser().getId();
+        return housingProviderRepository.getAllProvidersWithAssignmentStatus(pageable, userAccountId, apartmentId);
     }
 
 }

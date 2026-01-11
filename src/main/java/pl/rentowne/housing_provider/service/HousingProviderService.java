@@ -3,9 +3,11 @@ package pl.rentowne.housing_provider.service;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import pl.rentowne.exception.RentowneBusinessException;
+import pl.rentowne.housing_provider.model.dto.HousingProviderApartmentDto;
 import pl.rentowne.housing_provider.model.dto.HousingProviderBasicDto;
 import pl.rentowne.housing_provider.model.dto.HousingProviderDto;
 import pl.rentowne.housing_provider.model.dto.HousingProviderListDto;
+import pl.rentowne.housing_provider.model.dto.HousingProviderWithAssignmentDto;
 
 import java.util.List;
 
@@ -45,4 +47,20 @@ public interface HousingProviderService {
      * @return paginowana lista dostawców
      */
     Page<HousingProviderListDto> getHousingProvidersList(Pageable pageable, Long apartmentId, String searchText);
+
+    /**
+     * Pobiera dostawców świadczeń przypisanych do konkretnego mieszkania
+     * @param pageable obiekt paginacji
+     * @param apartmentId id mieszkania
+     * @return paginowana lista dostawców dla mieszkania
+     */
+    Page<HousingProviderApartmentDto> getHousingProvidersForApartment(Pageable pageable, Long apartmentId);
+
+    /**
+     * Pobiera wszystkich dostawców użytkownika z informacją czy są przypisani do mieszkania
+     * @param pageable obiekt paginacji
+     * @param apartmentId id mieszkania
+     * @return paginowana lista dostawców z flagą przypisania
+     */
+    Page<HousingProviderWithAssignmentDto> getAllProvidersWithAssignmentStatus(Pageable pageable, Long apartmentId);
 }
