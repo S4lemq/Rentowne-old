@@ -42,7 +42,9 @@ public class TenantServiceImpl implements TenantService {
     public Long addTenantAndLeaseAgreement(TenantDto tenantDto) throws RentowneBusinessException {
         Long rentedObjectId = tenantDto.getRentedObjectDto().getId();
         apartmentService.updateRentedFlagOnApartment(rentedObjectId);
-        Long tenantId = tenantRepository.save(TenantDto.asEntity(tenantDto)).getId();
+        Tenant tenant = TenantDto.asEntity(tenantDto);
+        tenant.setActive(true);
+        Long tenantId = tenantRepository.save(tenant).getId();
         LocalDateTime currentReadingDate = tenantDto.getLeaseAgreementDto().getStartContractDate();
 
         processMeterReading(tenantDto.getLeaseAgreementDto().getInitialWaterMeterReading(), MeterType.WATER_COLD, rentedObjectId, currentReadingDate);

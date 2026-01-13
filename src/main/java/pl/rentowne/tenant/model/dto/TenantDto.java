@@ -35,7 +35,6 @@ public class TenantDto {
                 .address(dto.addressDto != null ? AddressDto.asEntity(dto.addressDto) : null)
                 .leaseAgreement(LeaseAgreementDto.asEntity(dto.getLeaseAgreementDto()))
                 .rentedObject(new RentedObject(dto.getRentedObjectDto().getId()))
-                .active(true)
                 .build();
     }
 
