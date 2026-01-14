@@ -246,7 +246,7 @@ public final class PdfDocumentBuilder implements AutoCloseable {
     }
 
     /**
-     * Tworzy pojedynczą linię tekstu bez zawijania i z minimalnym odstępem.
+     * Tworzy linię tekstu z automatycznym zawijaniem gdy się nie mieści.
      *
      * @param text       tekst do wyświetlenia
      * @param fontConfig konfiguracja czcionki
@@ -263,13 +263,16 @@ public final class PdfDocumentBuilder implements AutoCloseable {
 
         try {
             final float lineHeight = textHelper.calculateLineHeight(fontConfig);
-            checkPageBreak(lineHeight);
+            final float contentWidth = pageSize.getWidth() - margins.left() - margins.right();
 
-            final PDPageContentStream stream = getContentStream();
-            final float x = textHelper.calculateXPosition(text, fontConfig, alignment, pageSize, margins);
-            textHelper.writeText(stream, text, x, currentY, fontConfig);
-
-            currentY -= lineHeight;
+            final List<String> lines = textHelper.wrapText(text, contentWidth, fontConfig);
+            for (final String line : lines) {
+                checkPageBreak(lineHeight);
+                final PDPageContentStream stream = getContentStream();
+                final float x = textHelper.calculateXPosition(line, fontConfig, alignment, pageSize, margins);
+                textHelper.writeText(stream, line, x, currentY, fontConfig);
+                currentY -= lineHeight;
+            }
 
         } catch (final IOException e) {
             throw PdfGenerationException.error(PdfErrorCode.PARAGRAPH_CREATION_ERROR, e);
@@ -592,7 +595,7 @@ public final class PdfDocumentBuilder implements AutoCloseable {
 
     /**
      * Tworzy wiersz z etykietą i wartością z niestandardowymi konfiguracjami czcionek.
-     * Obsługuje wartości wieloliniowe (rozdzielone przez \n).
+     * Obsługuje wartości wieloliniowe (rozdzielone przez \n) oraz automatyczne zawijanie tekstu.
      *
      * @param label       etykieta
      * @param value       wartość (może zawierać \n dla wielu linii)
@@ -615,9 +618,25 @@ public final class PdfDocumentBuilder implements AutoCloseable {
                     textHelper.calculateLineHeight(valueConfig)
             );
 
-            // Podziel wartość na linie
-            final String[] valueLines = value.split("\n");
-            final float totalHeight = lineHeight * valueLines.length;
+            // Oblicz pozycję X dla wartości
+            final float contentWidth = pageSize.getWidth() - margins.left() - margins.right();
+            final float valueX = margins.left() + (contentWidth * LABEL_WIDTH_RATIO);
+            final float valueMaxWidth = contentWidth - (contentWidth * LABEL_WIDTH_RATIO);
+
+            // Podziel wartość na linie (ręczne podziały przez \n + automatyczne zawijanie)
+            final String[] manualLines = value.split("\n");
+            final List<String> allValueLines = new java.util.ArrayList<>();
+
+            for (final String manualLine : manualLines) {
+                final List<String> wrappedLines = textHelper.wrapText(manualLine, valueMaxWidth, valueConfig);
+                if (wrappedLines.isEmpty()) {
+                    allValueLines.add("");
+                } else {
+                    allValueLines.addAll(wrappedLines);
+                }
+            }
+
+            final float totalHeight = lineHeight * allValueLines.size();
 
             checkPageBreak(totalHeight);
             final PDPageContentStream stream = getContentStream();
@@ -626,11 +645,9 @@ public final class PdfDocumentBuilder implements AutoCloseable {
             textHelper.writeText(stream, label, margins.left(), currentY, labelConfig);
 
             // Wartość z przesunięciem proporcjonalnym do szerokości strony (może być wieloliniowa)
-            final float contentWidth = pageSize.getWidth() - margins.left() - margins.right();
-            final float valueX = margins.left() + (contentWidth * LABEL_WIDTH_RATIO);
             float valueY = currentY;
 
-            for (final String line : valueLines) {
+            for (final String line : allValueLines) {
                 textHelper.writeText(stream, line, valueX, valueY, valueConfig);
                 valueY -= lineHeight;
             }
