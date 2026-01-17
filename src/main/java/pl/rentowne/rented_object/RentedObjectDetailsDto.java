@@ -1,11 +1,11 @@
 package pl.rentowne.rented_object;
 
+import lombok.Builder;
+
 import java.math.BigDecimal;
 
-/**
- * DTO zawierające szczegółowe informacje o obiekcie do wynajęcia wraz z danymi rozliczenia
- */
-public record RentedObjectDetailsDto(
+@Builder
+record RentedObjectDetailsDto(
         Long id,
         String objectName, // obiekt
         String tenantFullName, // imię i nazwisko

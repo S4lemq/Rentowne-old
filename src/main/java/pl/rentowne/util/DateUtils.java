@@ -62,4 +62,22 @@ public class DateUtils {
         }
         return formattedDate;
     }
+
+    public static String getPolishMonthName(final int month) {
+        return switch (month) {
+            case 1 -> "stycznia";
+            case 2 -> "lutego";
+            case 3 -> "marca";
+            case 4 -> "kwietnia";
+            case 5 -> "maja";
+            case 6 -> "czerwca";
+            case 7 -> "lipca";
+            case 8 -> "sierpnia";
+            case 9 -> "września";
+            case 10 -> "października";
+            case 11 -> "listopada";
+            case 12 -> "grudnia";
+            default -> "";
+        };
+    }
 }

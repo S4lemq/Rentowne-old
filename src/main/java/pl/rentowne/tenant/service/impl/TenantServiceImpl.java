@@ -41,7 +41,7 @@ public class TenantServiceImpl implements TenantService {
     @Override
     @Transactional
     public Long addTenantAndLeaseAgreement(TenantDto tenantDto) throws RentowneBusinessException {
-        Long rentedObjectId = tenantDto.getRentedObjectDto().getId();
+        Long rentedObjectId = tenantDto.getRentedObjectDto().id();
         apartmentService.updateRentedFlagOnApartment(rentedObjectId);
         Tenant tenant = TenantDto.asEntity(tenantDto);
         tenant.setActive(true);
@@ -100,7 +100,7 @@ public class TenantServiceImpl implements TenantService {
     }
 
     private void secondUpdateFlags(TenantDto dto) {
-        Long rentedObjectId = dto.getRentedObjectDto().getId();
+        Long rentedObjectId = dto.getRentedObjectDto().id();
         rentedObjectRepository.updateRentedFlag(rentedObjectId, true);
         Long apartmentId = dto.getApartment().id();
         List<Long> ids = rentedObjectRepository.findByApartmentIdAndIsRented(apartmentId, false)

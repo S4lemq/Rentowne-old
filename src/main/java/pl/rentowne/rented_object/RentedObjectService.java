@@ -27,9 +27,9 @@ public interface RentedObjectService {
     void deleteAll(List<RentedObject> toDelete);
 
     /**
-     * Pobiera wszystkie dto'sy obiektów do wynajęcia wraz z licznikami po id mieszkania
+     * Pobiera wszystkie dto obiektów do wynajęcia wraz z licznikami po id mieszkania
      * @param apartmentId id mieszkania
-     * @return {@link List< RentedObjectDto }
+     * @return lista obiektów RentedObjectDto
     */
     List<RentedObjectDto> getAllRentedObjectDtosWithMeters(Long apartmentId);
 

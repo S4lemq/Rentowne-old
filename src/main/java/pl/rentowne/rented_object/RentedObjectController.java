@@ -40,7 +40,7 @@ class RentedObjectController extends AbstractController {
     )
     @GetMapping(value = "/api/apartments/{id}/rented-objects/all")
     ResponseEntity<List<RentedObjectDto>> getAllRentedObjectsByApartmentAndAdditionalRentedObject(@PathVariable final Long id,
-                                                                                                  @RequestParam(name = "rentedObjectId", required = false) final Long rentedObjectId) throws RentowneBusinessException {
+                                                                                                   @RequestParam(name = "rentedObjectId", required = false) final Long rentedObjectId) throws RentowneBusinessException {
         return ResponseEntity.ok(rentedObjectService.getAllByApartmentAndOptionalRentedObject(id, rentedObjectId));
     }
 
@@ -52,6 +52,16 @@ class RentedObjectController extends AbstractController {
     ResponseEntity<List<RentedObjectDetailsDto>> getRentedObjectsDetails(@RequestParam(name = "apartmentId", required = false) final Long apartmentId,
                                                                          @RequestParam(name = "active") final Boolean active) {
         return ResponseEntity.ok(rentedObjectService.getRentedObjectsDetails(apartmentId, active));
+    }
+
+    @Operation(
+            summary = "Pobiera obiekty do wynajęcia wraz z licznikami",
+            description = "Metoda zwracająca obiekty do wynajęcia z licznikami po id mieszkania"
+
+    )
+    @GetMapping(value = "/api/apartments/{id}/rented-objects/meters")
+    ResponseEntity<List<RentedObjectDto>> getRentedObjectsWithMeters(@PathVariable final Long id) {
+        return ResponseEntity.ok(rentedObjectService.getAllRentedObjectDtosWithMeters(id));
     }
 
     @Operation(

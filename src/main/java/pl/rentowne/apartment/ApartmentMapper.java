@@ -5,13 +5,18 @@ import lombok.NoArgsConstructor;
 import lombok.NonNull;
 import org.springframework.lang.Nullable;
 import pl.rentowne.address.AddressMapper;
-import pl.rentowne.rented_object.RentedObjectDto;
+import pl.rentowne.rented_object.RentedObject;
 import pl.rentowne.user.model.User;
 
-@NoArgsConstructor(access = AccessLevel.PRIVATE)
-public class ApartmentMapper {
+import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
+import java.util.stream.Collectors;
 
-    public static ApartmentDto toDto(@NonNull Apartment apartment) {
+@NoArgsConstructor(access = AccessLevel.PRIVATE)
+class ApartmentMapper {
+
+    public static ApartmentDto toDto(@NonNull final Apartment apartment) {
         return ApartmentDto.builder()
             .id(apartment.getId())
             .apartmentName(apartment.getApartmentName())
@@ -22,19 +27,19 @@ public class ApartmentMapper {
             .pinned(apartment.isPinned())
             .addressDto(AddressMapper.toDto(apartment.getAddress()))
             .rentedObjectDtos(apartment.getRentedObjects().stream()
-                .map(RentedObjectDto::asDtoWithoutMeters)
+                .map(ApartmentMapper::toDto)
                 .toList())
             .build();
     }
 
-    public static ApartmentDto toBasicDto(@NonNull Apartment apartment) {
+    public static ApartmentDto toBasicDto(@NonNull final Apartment apartment) {
         return ApartmentDto.builder()
             .id(apartment.getId())
             .apartmentName(apartment.getApartmentName())
             .build();
     }
 
-    public static Apartment toEntity(@NonNull ApartmentDto dto, @Nullable Long apartmentId, @NonNull Long userId) {
+    public static Apartment toEntity(@NonNull final ApartmentDto dto, @Nullable final Long apartmentId, @NonNull final Long userId) {
         return Apartment.builder()
             .id(apartmentId)
             .apartmentName(dto.apartmentName())
@@ -45,5 +50,27 @@ public class ApartmentMapper {
             .user(new User(userId))
             .address(AddressMapper.toEntity(dto.addressDto()))
             .build();
+    }
+
+    public static RentedObjectDto toDto(@NonNull final RentedObject rentedObject) {
+        return new RentedObjectDto(
+                rentedObject.getId(),
+                rentedObject.getRentedObjectName()
+        );
+    }
+
+    public static Set<RentedObject> toRentedObjectEntities(@NonNull final ApartmentDto apartmentDto, @NonNull final Long apartmentId) {
+        final List<RentedObjectDto> rentedObjectDtos = apartmentDto.rentedObjectDtos();
+        if (rentedObjectDtos == null || rentedObjectDtos.isEmpty()) {
+            return new HashSet<>();
+        }
+
+        return rentedObjectDtos.stream()
+            .map(dto -> RentedObject.builder()
+                .rentedObjectName(dto.rentedObjectName())
+                .isRented(false)
+                .apartment(new Apartment(apartmentId))
+                .build())
+            .collect(Collectors.toSet());
     }
 }

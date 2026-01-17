@@ -2,6 +2,7 @@ package pl.rentowne.rented_object;
 
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.jpa.repository.EntityGraph;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
@@ -11,17 +12,24 @@ import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.List;
 
-/**
- * Repozytorium wynajętych obiektów
- */
 public interface RentedObjectRepository extends JpaRepository<RentedObject, Long> {
 
-    @Query("SELECT ro FROM RentedObject ro LEFT JOIN FETCH ro.meters WHERE ro.apartment.id = :apartmentId")
-    List<RentedObject> findByApartmentIdWithMeters(@Param("apartmentId") Long apartmentId);
+    @EntityGraph(attributePaths = "meters")
+    List<RentedObject> findByApartmentId(Long apartmentId);
 
     @Modifying
-    @Query("UPDATE RentedObject ro SET ro.lastSettlementDate = NULL, ro.lastSettlementTotalAmount = NULL WHERE ro.id = (SELECT s.rentedObject.id FROM Settlement s WHERE s.id = :settlementId)")
+    @Query("""
+    UPDATE RentedObject ro
+    SET ro.lastSettlementDate = NULL,
+        ro.lastSettlementTotalAmount = NULL
+    WHERE ro.id = (
+        SELECT s.rentedObject.id
+        FROM Settlement s
+        WHERE s.id = :settlementId
+    )
+    """)
     void clearLastSettlementData(@Param("settlementId") Long settlementId);
+
 
     @Query("SELECT ro.apartment.id FROM RentedObject ro WHERE ro.id = :rentedObjectId")
     Long findApartmentIdByRentedObjectId(@Param("rentedObjectId") Long rentedObjectId);
@@ -31,50 +39,26 @@ public interface RentedObjectRepository extends JpaRepository<RentedObject, Long
 
     List<RentedObject> findByApartmentIdAndIsRented(Long apartmentId, boolean isRented);
 
-    /**
-     * Pobiera wszystkie obiekty do wynajęcia po id mieszkania
-     * @param apartmentId id mieszkania
-     * @return lista encji obiektów do wynajęcia
-     */
-    @Query("SELECT ro FROM RentedObject ro WHERE ro.apartment.id = :apartmentId")
-    List<RentedObject> getAllByApartmentId(@Param("apartmentId") Long apartmentId);
+    List<RentedObject> findAllByApartmentId(Long apartmentId);
 
-    /**
-     * Pobiera wszystkie obiekty do wynajęcia danego użytkownika
-     * @param userId id użytkownika
-     * @return lista obiektów do wynajęcia
-     */
     @Query("""
-            SELECT new pl.rentowne.rented_object.RentedObjectDto(ro.id, ro.rentedObjectName)
-            FROM RentedObject ro
+            SELECT ro FROM RentedObject ro
             JOIN ro.apartment a
             JOIN a.user u
             WHERE u.id = :userId
             """)
-    List<RentedObjectDto> getAllRentedObjectDtos(@Param("userId") Long userId);
+    List<RentedObject> findAllByLoggedUser(@Param("userId") Long userId);
 
-    /**
-     * Aktualizuje flagę czy wynajęte
-     * @param rentedObjectId id obiektu do wynajęcia
-     * @param flag flaga
-     */
     @Modifying
     @Query("UPDATE RentedObject ro SET ro.isRented = :flag WHERE ro.id = :rentedObjectId")
     void updateRentedFlag(@Param("rentedObjectId") Long rentedObjectId, @Param("flag") boolean flag);
 
-    /**
-     * Pobiera wszystkie obiekty do wynajęcia po id mieszkania i opcjonalnie pobiera jeszcze dany obiekt po drugim parametrze
-     * @param apartmentId id mieszkania
-     * @param rentedObjectId id obiektu opcjonalnego
-     * @return lista obiektów do wynajęcia
-     */
     @Query("""
-            SELECT new pl.rentowne.rented_object.RentedObjectDto(ro.id, ro.rentedObjectName)
-            FROM RentedObject ro
+            SELECT ro FROM RentedObject ro
             WHERE (ro.apartment.id = :apartmentId AND ro.isRented = false)
             OR (:rentedObjectId IS NOT NULL AND ro.id = :rentedObjectId)
             """)
-    List<RentedObjectDto> getAllByApartmentAndOptionalRentedObject(@Param("apartmentId") Long apartmentId, @Param("rentedObjectId") Long rentedObjectId);
+    List<RentedObject> getAllByApartmentAndOptionalRentedObject(@Param("apartmentId") Long apartmentId, @Param("rentedObjectId") Long rentedObjectId);
 
     @Modifying
     @Query("UPDATE RentedObject ro SET ro.lastSettlementDate = :settlementDate, ro.lastSettlementTotalAmount = :totalSum WHERE ro.id = :rentedObjectId")

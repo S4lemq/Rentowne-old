@@ -3,14 +3,13 @@ package pl.rentowne.apartment;
 import lombok.Builder;
 import org.springframework.lang.Nullable;
 import pl.rentowne.address.AddressDto;
-import pl.rentowne.rented_object.RentedObjectDto;
 
 import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.util.List;
 
 @Builder
-public record ApartmentDto(
+record ApartmentDto(
     @Nullable Long id,
     @Nullable String apartmentName,
     @Nullable BigInteger leasesNumber,

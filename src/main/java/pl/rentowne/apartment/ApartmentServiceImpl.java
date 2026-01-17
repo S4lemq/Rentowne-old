@@ -9,7 +9,6 @@ import pl.rentowne.exception.RentowneNotFoundException;
 import pl.rentowne.housing_provider.model.HousingProvider;
 import pl.rentowne.housing_provider.repository.HousingProviderRepository;
 import pl.rentowne.rented_object.RentedObject;
-import pl.rentowne.rented_object.RentedObjectDto;
 import pl.rentowne.rented_object.RentedObjectRepository;
 import pl.rentowne.rented_object.RentedObjectService;
 import pl.rentowne.user.service.UserService;
@@ -32,7 +31,7 @@ public class ApartmentServiceImpl implements ApartmentService {
     @Override
     @Transactional(readOnly = true)
     public ApartmentDto getApartment(final Long id) throws RentowneNotFoundException {
-        final Apartment apartment = apartmentRepository.findByIdWithRentedObjects(id).orElseThrow(() -> new RentowneNotFoundException(id));
+        final Apartment apartment = apartmentRepository.findWithRentedObjectsById(id).orElseThrow(() -> new RentowneNotFoundException(id));
         return ApartmentMapper.toDto(apartment);
     }
 
@@ -44,7 +43,7 @@ public class ApartmentServiceImpl implements ApartmentService {
         final Long loggedUserId = userService.getLoggedUser().getId();
         final Long savedApartmentId = apartmentRepository.saveAndFlush(ApartmentMapper.toEntity(apartmentDto, null, loggedUserId)).getId();
 
-        final Set<RentedObject> rentedObjects = mapToRentedObjectEntities(apartmentDto, savedApartmentId);
+        final Set<RentedObject> rentedObjects = ApartmentMapper.toRentedObjectEntities(apartmentDto, savedApartmentId);
         rentedObjectService.saveAll(rentedObjects);
         return savedApartmentId;
     }
@@ -81,7 +80,7 @@ public class ApartmentServiceImpl implements ApartmentService {
     @Override
     @Transactional
     public void addHousingProviders(final ApartmentHousingProviderRequest dto) throws RentowneNotFoundException {
-        final Apartment apartment = apartmentRepository.getApartmentWithHousingProviders(dto.apartmentId());
+        final Apartment apartment = apartmentRepository.findWithHousingProvidersById(dto.apartmentId()).orElseThrow(() -> new RentowneNotFoundException(dto.apartmentId()));
         final List<HousingProvider> housingProvidersFromRequest = housingProviderRepository.findAllById(dto.housingProviderIds());
         final Set<HousingProvider> currentHousingProviders = apartment.getHousingProviders();
 
@@ -120,7 +119,7 @@ public class ApartmentServiceImpl implements ApartmentService {
 
 
     private void loadRentedObjects(final Apartment apartment) {
-        final List<RentedObject> rentedObjects = rentedObjectRepository.getAllByApartmentId(apartment.getId());
+        final List<RentedObject> rentedObjects = rentedObjectRepository.findAllByApartmentId(apartment.getId());
         apartment.setRentedObjects(new HashSet<>(rentedObjects));
     }
 
@@ -132,7 +131,7 @@ public class ApartmentServiceImpl implements ApartmentService {
 
         final Set<String> uniqueNames = new HashSet<>();
         for (final RentedObjectDto dto : rentedObjectDtos) {
-            if (!uniqueNames.add(dto.getRentedObjectName())) {
+            if (!uniqueNames.add(dto.rentedObjectName())) {
                 throw new RentowneBusinessException(RentowneErrorCode.NON_UNIQUE_RENTED_OBJECT_NAME);
             }
         }
@@ -186,7 +185,7 @@ public class ApartmentServiceImpl implements ApartmentService {
             return;
         }
 
-        final Set<RentedObject> rentedObjects = mapToRentedObjectEntities(apartmentDto, apartmentId);
+        final Set<RentedObject> rentedObjects = ApartmentMapper.toRentedObjectEntities(apartmentDto, apartmentId);
         final List<RentedObject> rentedObjectsFromDB = rentedObjectService.getAllByApartmentId(apartmentId);
 
         final Set<String> namesFromRequest = rentedObjects.stream()
@@ -207,20 +206,5 @@ public class ApartmentServiceImpl implements ApartmentService {
 
         rentedObjectService.deleteAll(toDelete);
         rentedObjectService.saveAll(new HashSet<>(toAdd));
-    }
-
-    private Set<RentedObject> mapToRentedObjectEntities(final ApartmentDto apartmentDto, final Long apartmentId) {
-        final List<RentedObjectDto> rentedObjectDtos = apartmentDto.rentedObjectDtos();
-        if (rentedObjectDtos == null || rentedObjectDtos.isEmpty()) {
-            return new HashSet<>();
-        }
-
-        return rentedObjectDtos.stream()
-            .map(dto -> RentedObject.builder()
-                .rentedObjectName(dto.getRentedObjectName())
-                .isRented(false)
-                .apartment(new Apartment(apartmentId))
-                .build())
-            .collect(Collectors.toSet());
     }
 }

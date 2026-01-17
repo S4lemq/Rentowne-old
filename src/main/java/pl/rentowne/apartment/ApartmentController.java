@@ -17,7 +17,6 @@ import org.springframework.web.bind.annotation.RestController;
 import pl.rentowne.common.controler.AbstractController;
 import pl.rentowne.exception.RentowneBusinessException;
 import pl.rentowne.exception.RentowneNotFoundException;
-import pl.rentowne.rented_object.RentedObjectDto;
 import pl.rentowne.rented_object.RentedObjectService;
 import pl.rentowne.user.service.UserService;
 
@@ -60,16 +59,6 @@ class ApartmentController extends AbstractController {
     ResponseEntity<ApartmentDto> updateApartment(@RequestBody final ApartmentDto apartmentDto, @PathVariable final Long id) throws RentowneBusinessException {
         apartmentService.updateApartment(apartmentDto, id);
         return ResponseEntity.ok(apartmentService.getApartment(id));
-    }
-
-    @Operation(
-        summary = "Pobiera obiekty do wynajęcia wraz z licznikami",
-        description = "Metoda zwracająca obiekty do wynajęcia z licznikami po id mieszkania"
-
-    )
-    @GetMapping(value = "/api/apartments/{id}/rented-objects/meters")
-    ResponseEntity<List<RentedObjectDto>> getRentedObjectsWithMeters(@PathVariable final Long id) {
-        return ResponseEntity.ok(rentedObjectService.getAllRentedObjectDtosWithMeters(id));
     }
 
     @GetMapping(value = "/api/apartments/all-by-logged-user")
