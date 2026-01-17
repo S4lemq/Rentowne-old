@@ -1,4 +1,4 @@
-package pl.rentowne.rented_object;
+package pl.rentowne.settlement;
 
 import lombok.Builder;
 import lombok.Getter;
