@@ -9,7 +9,6 @@ import org.springframework.data.repository.query.Param;
 import pl.rentowne.settlement.model.Settlement;
 import pl.rentowne.settlement.model.SettlementStatus;
 import pl.rentowne.settlement.model.dto.SettlementDateAmountDto;
-import pl.rentowne.settlement.model.dto.SettlementExportDto;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
@@ -186,32 +185,6 @@ public interface SettlementRepository extends JpaRepository<Settlement, Long> {
             where s.tenant.id = :tenantId
             """)
     boolean existsByTenantId(@Param("tenantId") Long tenantId);
-
-    /**
-     * Pobiera dane rozliczenia obiektu
-     * @param from od podanej daty
-     * @param to do podanej daty
-     * @param rentedObjectId id obiektu do wynajęcia
-     * @return lista danych do eksportu
-     */
-    @Query("""
-            SELECT new pl.rentowne.settlement.model.dto.SettlementExportDto(
-                s.settlementDate, la.compensationAmount, la.rentAmount, la.internetFee, la.gasDeposit,
-                s.electricityAmount, s.waterAmount, s.totalAmount
-            )
-            FROM Settlement s
-            JOIN RentedObject ro ON s.rentedObject.id = ro.id
-            JOIN Tenant t ON ro.id = t.rentedObject.id
-            JOIN LeaseAgreement la ON t.leaseAgreement.id = la.id
-            WHERE s.settlementDate BETWEEN :from AND :to
-            AND ro.id = :rentedObjectId
-            ORDER BY s.settlementDate ASC
-            """)
-    List<SettlementExportDto> getSettlementByDateAndRentedObjectId(
-            @Param("from") LocalDateTime from,
-            @Param("to") LocalDateTime to,
-            @Param("rentedObjectId") Long rentedObjectId
-    );
 
     /**
      * Pobiera dane rozliczeń danego użytkownika

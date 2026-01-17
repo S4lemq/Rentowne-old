@@ -76,24 +76,10 @@ public interface RentedObjectRepository extends JpaRepository<RentedObject, Long
             """)
     List<RentedObjectDto> getAllByApartmentAndOptionalRentedObject(@Param("apartmentId") Long apartmentId, @Param("rentedObjectId") Long rentedObjectId);
 
-    /**
-     * Aktualizuje w obiekcie ostatnią datę rozliczenia oraz kwotę całkowitą do zapłaty przez najemcę
-     *
-     * @param rentedObjectId id obiektu do wynajęcia
-     * @param totalSum       kwota całkowita do zapłaty przez najemcę
-     * @param settlementDate data rozliczenia
-     */
     @Modifying
     @Query("UPDATE RentedObject ro SET ro.lastSettlementDate = :settlementDate, ro.lastSettlementTotalAmount = :totalSum WHERE ro.id = :rentedObjectId")
     void updateSettlement(@Param("rentedObjectId") Long rentedObjectId, @Param("totalSum") BigDecimal totalSum, @Param("settlementDate") LocalDateTime settlementDate);
 
-    /**
-     * Pobiera listę rozliczeń obiektów do wynajęcia do tabeli (Page)
-     * @param pageable informacje o stronicowaniu
-     * @param userId id użytkownika
-     * @param searchText filtr: tekst wyszukiwania
-     * @return strona z listą rozliczeń
-     */
     @Query("""
             SELECT new pl.rentowne.rented_object.RentedObjectSettlementRowDto(
                 ro.id, a.apartmentName, ro.rentedObjectName,
@@ -122,15 +108,4 @@ public interface RentedObjectRepository extends JpaRepository<RentedObject, Long
             @Param("userId") Long userId,
             @Param("searchText") String searchText
     );
-
-    /**
-     * Zwraca wiersz po id
-     *
-     * @param id id
-     * @return encja
-     * @throws IllegalArgumentException gdy nie znaleziono
-     */
-    default RentedObject findByIdMandatory(Long id) throws IllegalArgumentException {
-        return findById(id).orElseThrow(() -> new IllegalArgumentException("Entity not found with id " + id));
-    }
 }
