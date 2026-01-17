@@ -127,7 +127,7 @@ class PdfTemplateController {
      * Tworzy dane do szablonu z listą mieszkań.
      */
     private ApartmentListTemplateDto createApartmentListData(Authentication authentication) throws RentowneBusinessException {
-        List<ApartmentDto> apartments = apartmentService.getAllApartmentsByLoggedUser();
+        List<ApartmentDto> apartments = apartmentService.getAllFullApartmentsByLoggedUser();
 
         List<ApartmentListTemplateDto.ApartmentItemDto> apartmentItems = new java.util.ArrayList<>();
         int ordinalNumber = 1;

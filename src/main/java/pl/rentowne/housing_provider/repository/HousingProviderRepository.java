@@ -10,7 +10,6 @@ import pl.rentowne.housing_provider.model.HousingProvider;
 import pl.rentowne.housing_provider.model.dto.HousingProviderApartmentDto;
 import pl.rentowne.housing_provider.model.dto.HousingProviderListDto;
 import pl.rentowne.housing_provider.model.dto.HousingProviderWithAssignmentDto;
-import pl.rentowne.housing_provider.repository.custom.HousingProviderRepositoryCustom;
 
 import java.util.List;
 import java.util.Optional;
@@ -19,7 +18,7 @@ import java.util.Set;
 /**
  * Repozytorium dostawców świadczeń
  */
-public interface HousingProviderRepository extends JpaRepository<HousingProvider, Long>, HousingProviderRepositoryCustom {
+public interface HousingProviderRepository extends JpaRepository<HousingProvider, Long> {
 
     @Query("SELECT hp FROM HousingProvider hp LEFT JOIN FETCH hp.providerFields WHERE hp.id = :id")
     HousingProvider getHousingById(@Param("id")Long id);

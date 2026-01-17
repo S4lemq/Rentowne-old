@@ -1,5 +1,6 @@
 package pl.rentowne.apartment.service;
 
+import pl.rentowne.apartment.model.dto.ApartmentBasicDto;
 import pl.rentowne.apartment.model.dto.ApartmentDto;
 import pl.rentowne.apartment.model.dto.ApartmentHousingProviderRequest;
 import pl.rentowne.exception.RentowneBusinessException;
@@ -55,7 +56,7 @@ public interface ApartmentService {
      * @param apartmentId id mieszkania
      * @return lista mieszkań
      */
-    List<ApartmentDto> getAllApartmentsByLoggedUserAndApartment(Long apartmentId) throws RentowneBusinessException;
+    List<ApartmentBasicDto> getAllApartmentsByLoggedUserAndApartment(Long apartmentId) throws RentowneBusinessException;
 
     /**
      * Aktualizuje flagę czy wynajęte
@@ -95,5 +96,12 @@ public interface ApartmentService {
      * @return lista mieszkań
      * @throws RentowneBusinessException wyjątek biznesowy
      */
-    List<ApartmentDto> getAllApartmentsByLoggedUser() throws RentowneBusinessException;
+    List<ApartmentBasicDto> getAllApartmentsByLoggedUser() throws RentowneBusinessException;
+
+    /**
+     * Pobiera wszystkie mieszkania zalogowanego użytkownika z pełnymi danymi (do generowania PDF)
+     * @return lista mieszkań z pełnymi danymi
+     * @throws RentowneBusinessException wyjątek biznesowy
+     */
+    List<ApartmentDto> getAllFullApartmentsByLoggedUser() throws RentowneBusinessException;
 }

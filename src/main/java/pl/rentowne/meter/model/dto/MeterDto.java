@@ -1,6 +1,5 @@
 package pl.rentowne.meter.model.dto;
 
-import com.querydsl.core.annotations.QueryProjection;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
@@ -27,7 +26,6 @@ public class MeterDto {
     private LocalDateTime installationDate;
     private boolean distributeReadings;
 
-    @QueryProjection
     public MeterDto(Long id) {
         this.id = id;
     }

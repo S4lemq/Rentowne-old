@@ -1,6 +1,5 @@
 package pl.rentowne.apartment.model.dto;
 
-import com.querydsl.core.annotations.QueryProjection;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
@@ -49,11 +48,5 @@ public class ApartmentDto {
                 .id(apartment.getId())
                 .apartmentName(apartment.getApartmentName())
                 .build();
-    }
-
-    @QueryProjection
-    public ApartmentDto(Long id, String apartmentName) {
-        this.id = id;
-        this.apartmentName = apartmentName;
     }
 }

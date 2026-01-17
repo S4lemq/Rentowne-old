@@ -1,6 +1,5 @@
 package pl.rentowne.lease_agreement.model.dto;
 
-import com.querydsl.core.annotations.QueryProjection;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
@@ -36,7 +35,6 @@ public class LeaseAgreementDto {
     private BigDecimal chargeAmount; //kwota obciążenia przy zakończeniu umowy
     private BigDecimal gasChargeAmount; //kwota obciążenia za gaz przy zakończeniu umowy
 
-    @QueryProjection
     public LeaseAgreementDto(BigDecimal rentAmount, BigDecimal compensationAmount, BigDecimal internetFee, BigDecimal gasDeposit) {
         this.rentAmount = rentAmount;
         this.compensationAmount = compensationAmount;

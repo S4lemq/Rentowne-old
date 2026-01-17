@@ -8,14 +8,14 @@ import org.springframework.data.repository.query.Param;
 import pl.rentowne.meter.model.Meter;
 import pl.rentowne.meter.model.MeterType;
 import pl.rentowne.meter.model.dto.MeterListDto;
-import pl.rentowne.meter.repository.cutom.MeterRepositoryCustom;
+import pl.rentowne.meter_reading.model.dto.MeterReadingDto;
 
 import java.util.List;
 
 /**
  * Repozytorium liczników
  */
-public interface MeterRepository extends JpaRepository<Meter, Long>, MeterRepositoryCustom {
+public interface MeterRepository extends JpaRepository<Meter, Long> {
 
     @Query("""
             SELECT m FROM Meter m
@@ -82,4 +82,47 @@ public interface MeterRepository extends JpaRepository<Meter, Long>, MeterReposi
     List<Meter> findDistributedMetersByApartmentAndType(@Param("apartmentId") Long apartmentId,
                                                          @Param("meterType") pl.rentowne.meter.model.MeterType meterType);
 
+    /**
+     * Pobiera stany i id licznika, które nie zostały rozliczone dla danego obiektu do wynajęcia i typu licznika
+     * @param rentedObjectId id obiektu
+     * @param meterType typ licznika
+     * @return stan i id licznika
+     */
+    @Query("""
+            SELECT new pl.rentowne.meter_reading.model.dto.MeterReadingDto(mr.id, mr.consumption)
+            FROM Meter m
+            JOIN MeterReading mr ON mr.meter.id = m.id
+            WHERE m.rentedObject.id = :rentedObjectId
+            AND m.meterType = :meterType
+            AND mr.settled = false
+            """)
+    List<MeterReadingDto> getConsumptionAndIdByRentedObjectAndMeterType(
+            @Param("rentedObjectId") Long rentedObjectId,
+            @Param("meterType") MeterType meterType
+    );
+
+    /**
+     * Pobiera id liczników danego obiektu do wynajęcia
+     * @param rentedObjectId obiektu do wynajęcia
+     * @return lista id liczników
+     */
+    @Query("""
+            SELECT m.id
+            FROM Meter m
+            WHERE m.rentedObject.id = :rentedObjectId
+            AND (m.meterType = pl.rentowne.meter.model.MeterType.ELECTRIC
+                OR m.meterType = pl.rentowne.meter.model.MeterType.WATER_COLD)
+            """)
+    List<Long> findMeterCountByRentedObject(@Param("rentedObjectId") Long rentedObjectId);
+
+    /**
+     * Zwraca wiersz po id
+     *
+     * @param id id
+     * @return encja
+     * @throws IllegalArgumentException gdy nie znaleziono
+     */
+    default Meter findByIdMandatory(Long id) throws IllegalArgumentException {
+        return findById(id).orElseThrow(() -> new IllegalArgumentException("Entity not found with id " + id));
+    }
 }

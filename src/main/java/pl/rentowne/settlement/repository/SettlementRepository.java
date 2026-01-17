@@ -3,10 +3,13 @@ package pl.rentowne.settlement.repository;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import pl.rentowne.settlement.model.Settlement;
-import pl.rentowne.settlement.repository.custom.SettlementRepositoryCustom;
+import pl.rentowne.settlement.model.SettlementStatus;
+import pl.rentowne.settlement.model.dto.SettlementDateAmountDto;
+import pl.rentowne.settlement.model.dto.SettlementExportDto;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
@@ -15,7 +18,7 @@ import java.util.List;
 /**
  * Repozytorium odczytów stanu licznika
  */
-public interface SettlementRepository extends JpaRepository<Settlement, Long>, SettlementRepositoryCustom {
+public interface SettlementRepository extends JpaRepository<Settlement, Long> {
 
     @Query("select s.rentedObject.apartment.id from Settlement s where s.id = :settlementId")
     Long getApartmentIdBySettlementId(@Param("settlementId") Long settlementId);
@@ -183,4 +186,100 @@ public interface SettlementRepository extends JpaRepository<Settlement, Long>, S
             where s.tenant.id = :tenantId
             """)
     boolean existsByTenantId(@Param("tenantId") Long tenantId);
+
+    /**
+     * Pobiera dane rozliczenia obiektu
+     * @param from od podanej daty
+     * @param to do podanej daty
+     * @param rentedObjectId id obiektu do wynajęcia
+     * @return lista danych do eksportu
+     */
+    @Query("""
+            SELECT new pl.rentowne.settlement.model.dto.SettlementExportDto(
+                s.settlementDate, la.compensationAmount, la.rentAmount, la.internetFee, la.gasDeposit,
+                s.electricityAmount, s.waterAmount, s.totalAmount
+            )
+            FROM Settlement s
+            JOIN RentedObject ro ON s.rentedObject.id = ro.id
+            JOIN Tenant t ON ro.id = t.rentedObject.id
+            JOIN LeaseAgreement la ON t.leaseAgreement.id = la.id
+            WHERE s.settlementDate BETWEEN :from AND :to
+            AND ro.id = :rentedObjectId
+            ORDER BY s.settlementDate ASC
+            """)
+    List<SettlementExportDto> getSettlementByDateAndRentedObjectId(
+            @Param("from") LocalDateTime from,
+            @Param("to") LocalDateTime to,
+            @Param("rentedObjectId") Long rentedObjectId
+    );
+
+    /**
+     * Pobiera dane rozliczeń danego użytkownika
+     * @param userId id zalogowanego użytkownika
+     * @return lista rozliczeń
+     */
+    @Query("""
+            SELECT new pl.rentowne.settlement.model.dto.SettlementDateAmountDto(
+                s.rentedObject.id, s.settlementDate, s.totalAmount
+            )
+            FROM Settlement s
+            JOIN RentedObject ro ON s.rentedObject.id = ro.id
+            JOIN Apartment a ON ro.apartment.id = a.id
+            WHERE a.user.id = :userId
+            """)
+    List<SettlementDateAmountDto> getDataForStatistics(@Param("userId") Long userId);
+
+    /**
+     * Pobiera id ostatniego rozliczenia
+     * @param tenantId id najemcy
+     * @return id ostatniego rozliczenia
+     */
+    @Query("""
+            SELECT s.id
+            FROM Settlement s
+            JOIN RentedObject ro ON s.rentedObject.id = ro.id
+            JOIN Tenant t ON ro.id = t.rentedObject.id
+            WHERE t.id = :tenantId
+            ORDER BY s.id DESC
+            LIMIT 1
+            """)
+    Long getLastSettlementByTenantId(@Param("tenantId") Long tenantId);
+
+    /**
+     * Aktualizuje status rozliczenia i hash
+     *
+     * @param settlementId     id rozliczenia
+     * @param settlementStatus status
+     * @param orderHash hash rozliczenia
+     */
+    @Modifying
+    @Query("UPDATE Settlement s SET s.settlementStatus = :settlementStatus, s.hash = :orderHash WHERE s.id = :settlementId")
+    void updateStatusAndHash(
+            @Param("settlementId") Long settlementId,
+            @Param("settlementStatus") SettlementStatus settlementStatus,
+            @Param("orderHash") String orderHash
+    );
+
+    /**
+     * Aktualizuje status rozliczenia
+     * @param orderHash hash rozliczenia
+     * @param settlementStatus status
+     */
+    @Modifying
+    @Query("UPDATE Settlement s SET s.settlementStatus = :settlementStatus WHERE s.hash = :orderHash")
+    void updateStatus(
+            @Param("orderHash") String orderHash,
+            @Param("settlementStatus") SettlementStatus settlementStatus
+    );
+
+    /**
+     * Zwraca wiersz po id
+     *
+     * @param id id
+     * @return encja
+     * @throws IllegalArgumentException gdy nie znaleziono
+     */
+    default Settlement findByIdMandatory(Long id) throws IllegalArgumentException {
+        return findById(id).orElseThrow(() -> new IllegalArgumentException("Entity not found with id " + id));
+    }
 }

@@ -5,6 +5,8 @@ import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.DeleteMapping;
@@ -12,11 +14,14 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import pl.rentowne.common.controler.AbstractController;
 import pl.rentowne.exception.RentowneBusinessException;
 import pl.rentowne.meter_reading.model.dto.MeterReadingDto;
+import pl.rentowne.meter_reading.model.dto.MeterReadingRowDto;
 import pl.rentowne.meter_reading.model.dto.PrevMeterReadingDto;
+import pl.rentowne.meter_reading.repository.MeterReadingRepository;
 import pl.rentowne.meter_reading.service.MeterReadingService;
 
 @RestController
@@ -25,6 +30,7 @@ import pl.rentowne.meter_reading.service.MeterReadingService;
 public class MeterReadingController extends AbstractController {
 
     private final MeterReadingService meterReadingService;
+    private final MeterReadingRepository meterReadingRepository;
 
     @Operation(
             summary = "Zapisuje stan licznika",
@@ -89,5 +95,23 @@ public class MeterReadingController extends AbstractController {
     public ResponseEntity<Void> deleteMeterReading(@PathVariable Long id) throws RentowneBusinessException {
         meterReadingService.deleteMeterReading(id);
         return new ResponseEntity<>(HttpStatus.NO_CONTENT);
+    }
+
+    @Operation(
+            summary = "Pobiera listę odczytów liczników z paginacją",
+            description = "Metoda zwracająca stronicowaną listę odczytów dla konkretnego licznika",
+            responses = {
+                    @ApiResponse(responseCode = "200", description = "Sukces"),
+                    @ApiResponse(responseCode = "400", description = "Niepoprawne dane wejściowe"),
+                    @ApiResponse(responseCode = "500", description = "Wewnętrzny błąd serwera")
+            }
+    )
+    @GetMapping("/api/meter-readings/list")
+    public ResponseEntity<Page<MeterReadingRowDto>> getMeterReadingsList(
+            Pageable pageable,
+            @RequestParam Long meterId
+    ) {
+        Page<MeterReadingRowDto> meterReadings = meterReadingRepository.getMeterReadingsList(pageable, meterId);
+        return ResponseEntity.ok(meterReadings);
     }
 }

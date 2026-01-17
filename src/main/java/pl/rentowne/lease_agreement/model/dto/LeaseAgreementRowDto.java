@@ -1,14 +1,14 @@
 package pl.rentowne.lease_agreement.model.dto;
 
-import com.querydsl.core.annotations.QueryProjection;
+import lombok.AllArgsConstructor;
 import lombok.Getter;
-import pl.rentowne.data_table.dt_definition.DTRow;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 
 @Getter
-public class LeaseAgreementRowDto implements DTRow {
+@AllArgsConstructor
+public class LeaseAgreementRowDto {
     private Long tenantId;
     private String fullName;
     private String apartment;
@@ -24,23 +24,4 @@ public class LeaseAgreementRowDto implements DTRow {
     private BigDecimal returnedDepositAmount; //zwrócona kaucja
     private boolean isContractActive; //czy umowa jest aktywna
     private Long leaseAgreementId;
-
-    @QueryProjection
-    public LeaseAgreementRowDto(Long tenantId, String fullName, String apartment, String rentedObject, BigDecimal compensationAmount, BigDecimal rentAmount, BigDecimal internetFee, BigDecimal gasDeposit, LocalDateTime startContractDate, LocalDateTime endContractDate, BigDecimal deposit, BigDecimal depositPaid, BigDecimal returnedDepositAmount, boolean isContractActive, Long leaseAgreementId) {
-        this.tenantId = tenantId;
-        this.fullName = fullName;
-        this.apartment = apartment;
-        this.rentedObject = rentedObject;
-        this.compensationAmount = compensationAmount;
-        this.rentAmount = rentAmount;
-        this.internetFee = internetFee;
-        this.gasDeposit = gasDeposit;
-        this.startContractDate = startContractDate;
-        this.endContractDate = endContractDate;
-        this.deposit = deposit;
-        this.depositPaid = depositPaid;
-        this.returnedDepositAmount = returnedDepositAmount;
-        this.isContractActive = isContractActive;
-        this.leaseAgreementId = leaseAgreementId;
-    }
 }

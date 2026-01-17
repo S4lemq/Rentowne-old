@@ -5,6 +5,8 @@ import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -18,8 +20,11 @@ import pl.rentowne.exception.RentowneBusinessException;
 import pl.rentowne.rented_object.model.dto.CalculateRequestDto;
 import pl.rentowne.rented_object.model.dto.RentedObjectDetailsDto;
 import pl.rentowne.rented_object.model.dto.RentedObjectDto;
+import pl.rentowne.rented_object.model.dto.RentedObjectSettlementRowDto;
+import pl.rentowne.rented_object.repository.RentedObjectRepository;
 import pl.rentowne.rented_object.service.RentedObjectService;
 import pl.rentowne.settlement.service.SettlementService;
+import pl.rentowne.user.service.UserService;
 
 import java.util.List;
 
@@ -30,6 +35,8 @@ public class RentedObjectController extends AbstractController {
 
     private final RentedObjectService rentedObjectService;
     private final SettlementService settlementService;
+    private final RentedObjectRepository rentedObjectRepository;
+    private final UserService userService;
 
     @Operation(
             summary = "Pobiera wszystkie obiekty do wynajęcia dla zalogowanego użytkownika",
@@ -105,5 +112,26 @@ public class RentedObjectController extends AbstractController {
             @PathVariable Long rentedObjectId,
             @RequestParam String settlementDate) {
         return ResponseEntity.ok(rentedObjectService.checkProrationSuggestion(rentedObjectId, settlementDate));
+    }
+
+    @Operation(
+            summary = "Pobiera listę obiektów do wynajęcia z rozliczeniami (paginowana)",
+            description = "Metoda zwracająca stronicowaną listę obiektów do wynajęcia zalogowanego użytkownika z możliwością wyszukiwania",
+            responses = {
+                    @ApiResponse(responseCode = "200", description = "Sukces"),
+                    @ApiResponse(responseCode = "400", description = "Niepoprawne dane wejściowe"),
+                    @ApiResponse(responseCode = "500", description = "Wewnętrzny błąd serwera")
+            }
+    )
+    @GetMapping("/api/rented-objects/settlements-list")
+    public ResponseEntity<Page<RentedObjectSettlementRowDto>> getRentedObjectSettlementsList(
+            Pageable pageable,
+            @RequestParam(required = false) String searchText
+    ) throws RentowneBusinessException {
+        Long userId = userService.getLoggedUser().getId();
+        Page<RentedObjectSettlementRowDto> rentedObjects = rentedObjectRepository.getRentedObjectSettlementsList(
+                pageable, userId, searchText
+        );
+        return ResponseEntity.ok(rentedObjects);
     }
 }

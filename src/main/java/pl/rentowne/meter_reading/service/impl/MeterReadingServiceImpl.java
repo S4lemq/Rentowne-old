@@ -36,7 +36,7 @@ public class MeterReadingServiceImpl implements MeterReadingService {
     public MeterReadingDto getCurrentAndPreviousReading(Long meterId, Long id) {
 
         MeterReading currentReading = meterReadingRepository.getMeterReadingById(id);
-        MeterReading previousReading = meterReadingRepository.getPreviousMeterReading(currentReading, meterId);
+        MeterReading previousReading = meterReadingRepository.getPreviousMeterReading(currentReading.getReadingDate(), meterId);
 
         return MeterReadingDto.builder()
                 .id(currentReading.getId())

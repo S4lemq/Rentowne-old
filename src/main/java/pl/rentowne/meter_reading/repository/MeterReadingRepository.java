@@ -1,5 +1,7 @@
 package pl.rentowne.meter_reading.repository;
 
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
@@ -7,8 +9,8 @@ import org.springframework.data.repository.query.Param;
 import pl.rentowne.meter.model.MeterType;
 import pl.rentowne.meter_reading.model.MeterReading;
 import pl.rentowne.meter_reading.model.dto.MeterReadingDto;
+import pl.rentowne.meter_reading.model.dto.MeterReadingRowDto;
 import pl.rentowne.meter_reading.model.dto.PrevMeterReadingDto;
-import pl.rentowne.meter_reading.repository.custom.MeterReadingRepositoryCustom;
 
 import java.math.BigDecimal;
 import java.util.List;
@@ -17,7 +19,7 @@ import java.util.Set;
 /**
  * Repozytorium odczytów stanu licznika
  */
-public interface MeterReadingRepository extends JpaRepository<MeterReading, Long>, MeterReadingRepositoryCustom {
+public interface MeterReadingRepository extends JpaRepository<MeterReading, Long> {
 
     @Modifying
     @Query("update MeterReading m set m.settled = false, m.settlement.id = null where m.settlement.id = :id")
@@ -170,4 +172,98 @@ public interface MeterReadingRepository extends JpaRepository<MeterReading, Long
             where m.id in :meterReadingIds
     """)
     void unsetDistributedReadingsSettled(List<Long> meterReadingIds);
+
+    /**
+     * Pobiera stan licznika po id stanu licznika
+     * @param id id stanu licznika
+     * @return odczyt licznika
+     */
+    @Query("SELECT mr FROM MeterReading mr WHERE mr.id = :id")
+    MeterReading getMeterReadingById(@Param("id") Long id);
+
+    /**
+     * Pobiera poprzedni stan licznika po aktualnym odczycie i id licznika
+     * @param readingDate data aktualnego odczytu
+     * @param meterId id licznika
+     * @return odczyt licznika
+     */
+    @Query("""
+            SELECT mr FROM MeterReading mr
+            WHERE mr.meter.id = :meterId
+            AND mr.readingDate < :readingDate
+            ORDER BY mr.readingDate DESC
+            LIMIT 1
+            """)
+    MeterReading getPreviousMeterReading(@Param("readingDate") java.time.LocalDateTime readingDate, @Param("meterId") Long meterId);
+
+    /**
+     * Pobiera odczyt licznika po id licznika
+     * @param meterId id licznika
+     * @return odczyt licznika
+     */
+    @Query("""
+            SELECT mr FROM MeterReading mr
+            WHERE mr.meter.id = :meterId
+            ORDER BY mr.readingDate DESC
+            LIMIT 1
+            """)
+    MeterReading getMeterReadingByMeter(@Param("meterId") Long meterId);
+
+    /**
+     * Aktualizuje flagę czy rozliczono na odczytach liczników oraz ustawia id rozliczenia
+     *
+     * @param meterReadingIds id odczytów liczników
+     * @param settlementId id rozliczenia
+     */
+    @Modifying
+    @Query("UPDATE MeterReading mr SET mr.settled = true, mr.settlement.id = :settlementId WHERE mr.id IN :meterReadingIds")
+    void updateSettled(@Param("meterReadingIds") List<Long> meterReadingIds, @Param("settlementId") Long settlementId);
+
+    /**
+     * Pobiera id licznika, odczyt oraz datę odczytu
+     * @param rentedObjectId id obiektu do wynajęcia
+     * @param type typ licznika
+     * @return id licznika, odczyt oraz data odczytu
+     */
+    @Query("""
+            SELECT new pl.rentowne.meter_reading.model.dto.MeterReadingDto(mr.currentReading, new pl.rentowne.meter.model.dto.MeterDto(m.id), mr.readingDate)
+            FROM Meter m
+            LEFT JOIN MeterReading mr ON mr.meter.id = m.id
+            WHERE m.meterType = :type
+            AND m.rentedObject.id = :rentedObjectId
+            ORDER BY mr.readingDate DESC
+            LIMIT 1
+            """)
+    MeterReadingDto getMeterIdReadingValueAndDate(@Param("rentedObjectId") Long rentedObjectId, @Param("type") MeterType type);
+
+    /**
+     * Pobiera listę odczytów liczników do tabeli (Page)
+     * @param pageable informacje o stronicowaniu
+     * @param meterId id licznika
+     * @return strona z listą odczytów liczników
+     */
+    @Query("""
+            SELECT new pl.rentowne.meter_reading.model.dto.MeterReadingRowDto(
+                mr.id, mr.currentReading, mr.readingDate, mr.consumption, mr.settled, m.meterType
+            )
+            FROM MeterReading mr
+            JOIN mr.meter m
+            WHERE m.id = :meterId
+            ORDER BY mr.readingDate DESC
+            """)
+    Page<MeterReadingRowDto> getMeterReadingsList(
+            Pageable pageable,
+            @Param("meterId") Long meterId
+    );
+
+    /**
+     * Zwraca wiersz po id
+     *
+     * @param id id
+     * @return encja
+     * @throws IllegalArgumentException gdy nie znaleziono
+     */
+    default MeterReading findByIdMandatory(Long id) throws IllegalArgumentException {
+        return findById(id).orElseThrow(() -> new IllegalArgumentException("Entity not found with id " + id));
+    }
 }

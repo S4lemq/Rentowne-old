@@ -6,6 +6,8 @@ import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.DeleteMapping;
@@ -16,14 +18,18 @@ import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
+import pl.rentowne.apartment.model.dto.ApartmentBasicDto;
 import pl.rentowne.apartment.model.dto.ApartmentDto;
 import pl.rentowne.apartment.model.dto.ApartmentHousingProviderRequest;
+import pl.rentowne.apartment.model.dto.ApartmentRowDto;
+import pl.rentowne.apartment.repository.ApartmentRepository;
 import pl.rentowne.apartment.service.ApartmentService;
 import pl.rentowne.common.controler.AbstractController;
 import pl.rentowne.exception.RentowneBusinessException;
 import pl.rentowne.exception.RentowneNotFoundException;
 import pl.rentowne.rented_object.model.dto.RentedObjectDto;
 import pl.rentowne.rented_object.service.RentedObjectService;
+import pl.rentowne.user.service.UserService;
 
 import java.util.List;
 
@@ -34,6 +40,8 @@ public class ApartmentController extends AbstractController {
 
     private final ApartmentService apartmentService;
     private final RentedObjectService rentedObjectService;
+    private final ApartmentRepository apartmentRepository;
+    private final UserService userService;
 
     @Operation(
             summary = "Pobiera mieszkanie",
@@ -113,7 +121,7 @@ public class ApartmentController extends AbstractController {
     }
 
     @GetMapping(value = "/api/apartments/all-by-logged-user")
-    public ResponseEntity<List<ApartmentDto>> getAllApartmentsByLoggedUser(
+    public ResponseEntity<List<ApartmentBasicDto>> getAllApartmentsByLoggedUser(
             @RequestParam(name = "apartmentId", required = false) Long apartmentId
     ) throws RentowneBusinessException {
         return ResponseEntity.ok(apartmentService.getAllApartmentsByLoggedUserAndApartment(apartmentId));
@@ -129,7 +137,7 @@ public class ApartmentController extends AbstractController {
             }
     )
     @GetMapping(value = "/api/apartments/my-apartments")
-    public ResponseEntity<List<ApartmentDto>> getMyApartments() throws RentowneBusinessException {
+    public ResponseEntity<List<ApartmentBasicDto>> getMyApartments() throws RentowneBusinessException {
         return ResponseEntity.ok(apartmentService.getAllApartmentsByLoggedUser());
     }
 
@@ -163,6 +171,29 @@ public class ApartmentController extends AbstractController {
     public ResponseEntity<Void> pinApartment(@RequestParam boolean isPinned, @PathVariable long id) {
         apartmentService.pinApartment(isPinned, id);
         return new ResponseEntity<>(HttpStatus.OK);
+    }
+
+    @Operation(
+            summary = "Pobiera listę mieszkań z paginacją",
+            description = "Metoda zwracająca stronicowaną listę mieszkań zalogowanego użytkownika z możliwością filtrowania",
+            responses = {
+                    @ApiResponse(responseCode = "200", description = "Sukces", content = @Content(mediaType = "application/json")),
+                    @ApiResponse(responseCode = "400", description = "Niepoprawne dane wejściowe"),
+                    @ApiResponse(responseCode = "500", description = "Wewnętrzny błąd serwera")
+            }
+    )
+    @GetMapping("/api/apartments/list")
+    public ResponseEntity<Page<ApartmentRowDto>> getApartmentsList(
+            Pageable pageable,
+            @RequestParam(required = false) String apartmentName,
+            @RequestParam(required = false) Boolean isRented,
+            @RequestParam(required = false) String searchText
+    ) throws RentowneBusinessException {
+        Long userId = userService.getLoggedUser().getId();
+        Page<ApartmentRowDto> apartments = apartmentRepository.getApartmentsList(
+                pageable, userId, apartmentName, isRented, searchText
+        );
+        return ResponseEntity.ok(apartments);
     }
 
 }

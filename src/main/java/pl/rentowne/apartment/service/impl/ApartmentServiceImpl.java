@@ -5,6 +5,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import pl.rentowne.address.model.Address;
 import pl.rentowne.apartment.model.Apartment;
+import pl.rentowne.apartment.model.dto.ApartmentBasicDto;
 import pl.rentowne.apartment.model.dto.ApartmentDto;
 import pl.rentowne.apartment.model.dto.ApartmentHousingProviderRequest;
 import pl.rentowne.apartment.repository.ApartmentRepository;
@@ -83,7 +84,7 @@ public class ApartmentServiceImpl implements ApartmentService {
     }
 
     @Override
-    public List<ApartmentDto> getAllApartmentsByLoggedUserAndApartment(Long apartmentId) throws RentowneBusinessException {
+    public List<ApartmentBasicDto> getAllApartmentsByLoggedUserAndApartment(Long apartmentId) throws RentowneBusinessException {
         Long loggedUser = userService.getLoggedUser().getId();
         return apartmentRepository.getAllApartmentsByLoggedUserAndApartment(loggedUser, apartmentId);
     }
@@ -153,11 +154,21 @@ public class ApartmentServiceImpl implements ApartmentService {
     }
 
     @Override
-    public List<ApartmentDto> getAllApartmentsByLoggedUser() throws RentowneBusinessException {
+    public List<ApartmentBasicDto> getAllApartmentsByLoggedUser() throws RentowneBusinessException {
         Long loggedUser = userService.getLoggedUser().getId();
-        List<Apartment> apartments = apartmentRepository.findAllByUserId(loggedUser);
+        return apartmentRepository.findAllBasicByUserId(loggedUser);
+    }
+
+    @Override
+    public List<ApartmentDto> getAllFullApartmentsByLoggedUser() throws RentowneBusinessException {
+        Long loggedUser = userService.getLoggedUser().getId();
+        List<Apartment> apartments = apartmentRepository.findAllWithAddressByUserId(loggedUser);
         return apartments.stream()
-                .map(ApartmentDto::asBasicDto)
+                .map(apartment -> {
+                    List<RentedObject> rentedObjects = apartmentRepository.findRentedObjectsByApartmentId(apartment.getId());
+                    apartment.setRentedObjects(new HashSet<>(rentedObjects));
+                    return ApartmentDto.asDto(apartment);
+                })
                 .toList();
     }
 

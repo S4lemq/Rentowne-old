@@ -66,8 +66,7 @@ public class AuthenticationService {
 
     @Transactional
     public AuthenticationResponse register(RegisterRequest request) throws RentowneBusinessException {
-        boolean isUserExistsByEmail = userRepository.isUserExistsByEmail(request.getEmail());
-        if (isUserExistsByEmail) {
+        if (userRepository.existsByEmail(request.getEmail())) {
             throw new RentowneBusinessException(RentowneErrorCode.USER_ALREADY_EXISTS, "email");
         }
 
