@@ -3,7 +3,7 @@ package pl.rentowne.invoice_parser;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
-import pl.rentowne.housing_provider.model.ProviderType;
+import pl.rentowne.housing_provider.ProviderType;
 
 import java.math.BigDecimal;
 import java.util.List;

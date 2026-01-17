@@ -19,7 +19,7 @@ import lombok.NoArgsConstructor;
 import lombok.Setter;
 import pl.rentowne.apartment.Apartment;
 import pl.rentowne.common.model.BaseEntity;
-import pl.rentowne.housing_provider.model.HousingProvider;
+import pl.rentowne.housing_provider.HousingProvider;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;

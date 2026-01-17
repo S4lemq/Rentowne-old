@@ -1,4 +1,4 @@
-package pl.rentowne.housing_provider.service.impl;
+package pl.rentowne.housing_provider;
 
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
@@ -6,14 +6,6 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import pl.rentowne.exception.RentowneBusinessException;
-import pl.rentowne.housing_provider.model.HousingProvider;
-import pl.rentowne.housing_provider.model.dto.HousingProviderApartmentDto;
-import pl.rentowne.housing_provider.model.dto.HousingProviderBasicDto;
-import pl.rentowne.housing_provider.model.dto.HousingProviderDto;
-import pl.rentowne.housing_provider.model.dto.HousingProviderListDto;
-import pl.rentowne.housing_provider.model.dto.HousingProviderWithAssignmentDto;
-import pl.rentowne.housing_provider.repository.HousingProviderRepository;
-import pl.rentowne.housing_provider.service.HousingProviderService;
 import pl.rentowne.provider_field.model.ProviderField;
 import pl.rentowne.provider_field.model.dto.ProviderFieldDto;
 import pl.rentowne.provider_field.repository.ProviderFieldRepository;

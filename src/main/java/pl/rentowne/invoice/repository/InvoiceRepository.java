@@ -5,7 +5,7 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
-import pl.rentowne.housing_provider.model.ProviderType;
+import pl.rentowne.housing_provider.ProviderType;
 import pl.rentowne.invoice.model.Invoice;
 import pl.rentowne.invoice.model.dto.InvoiceFilterDto;
 

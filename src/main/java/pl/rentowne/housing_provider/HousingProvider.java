@@ -1,4 +1,4 @@
-package pl.rentowne.housing_provider.model;
+package pl.rentowne.housing_provider;
 
 import jakarta.persistence.CascadeType;
 import jakarta.persistence.Column;
@@ -41,37 +41,37 @@ import java.util.Set;
 @NoArgsConstructor
 @AllArgsConstructor
 @Table(
-        name = "HOUSING_PROVIDER",
+        name = "housing_provider",
         uniqueConstraints = {
-                @UniqueConstraint(name = "PK_HOUSING_PROVIDER", columnNames = "HOUSING_PROVIDER_ID"),
+                @UniqueConstraint(name = "pk_housing_provider", columnNames = "housing_provider_id"),
         },
         indexes = {
-                @Index(name = "PK_HOUSING_PROVIDER", columnList = "HOUSING_PROVIDER_ID", unique = true),
+                @Index(name = "pk_housing_provider", columnList = "housing_provider_id", unique = true),
         }
 )
 public class HousingProvider extends BaseEntity {
 
     @Id
-    @SequenceGenerator(name = "housing_provider_seq", sequenceName = "HOUSING_PROVIDER_SEQ", allocationSize = 1)
+    @SequenceGenerator(name = "housing_provider_seq", sequenceName = "housing_provider_seq", allocationSize = 1)
     @GeneratedValue(strategy = GenerationType.SEQUENCE, generator = "housing_provider_seq")
-    @Column(name = "HOUSING_PROVIDER_ID", nullable = false)
+    @Column(name = "housing_provider_id", nullable = false)
     private Long id;
 
-    @Column(name = "NAME", nullable = false, length = 45)
+    @Column(name = "name", nullable = false, length = 45)
     private String name;
 
-    @Column(name = "TYPE", nullable = false, length = 30)
+    @Column(name = "type", nullable = false, length = 30)
     @Enumerated(EnumType.STRING)
     private ProviderType type;
 
-    @Column(name = "TAX")
+    @Column(name = "tax")
     private BigDecimal tax;
 
-    @Column(name = "CONVERSION_RATE")
+    @Column(name = "conversion_rate")
     private BigDecimal conversionRate;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "USER_ACCOUNT_ID")
+    @JoinColumn(name = "user_account_id")
     private User user;
 
     @OneToMany(fetch = FetchType.LAZY, mappedBy = "housingProvider", cascade = CascadeType.ALL)
@@ -79,13 +79,13 @@ public class HousingProvider extends BaseEntity {
 
     @ManyToMany(cascade = CascadeType.PERSIST, fetch = FetchType.LAZY)
     @JoinTable(
-            name = "APARTMENT_HOUSING_PROVIDER",
-            joinColumns = {@JoinColumn(name = "HOUSING_PROVIDER_ID")},
-            inverseJoinColumns = {@JoinColumn(name = "APARTMENT_ID")}
+            name = "apartment_housing_provider",
+            joinColumns = {@JoinColumn(name = "housing_provider_id")},
+            inverseJoinColumns = {@JoinColumn(name = "apartment_id")}
     )
     private Set<Apartment> apartments = new HashSet<>();
 
-    @Column(name = "RECURRING_PAYMENT", nullable = false)
+    @Column(name = "recurring_payment", nullable = false)
     private boolean recurringPayment = false;
 
     public void addApartment(Apartment apartment) {

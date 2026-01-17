@@ -3,7 +3,7 @@ package pl.rentowne.invoice_parser;
 import org.springframework.ai.chat.client.ChatClient;
 import org.springframework.ai.converter.BeanOutputConverter;
 import org.springframework.stereotype.Service;
-import pl.rentowne.housing_provider.model.ProviderType;
+import pl.rentowne.housing_provider.ProviderType;
 import pl.rentowne.provider_field.model.BillingMethod;
 
 import java.math.BigDecimal;

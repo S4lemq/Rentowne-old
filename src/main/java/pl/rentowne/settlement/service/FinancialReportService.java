@@ -6,7 +6,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import pl.rentowne.apartment.Apartment;
 import pl.rentowne.apartment.ApartmentRepository;
-import pl.rentowne.housing_provider.model.ProviderType;
+import pl.rentowne.housing_provider.ProviderType;
 import pl.rentowne.invoice.model.Invoice;
 import pl.rentowne.invoice.repository.InvoiceRepository;
 import pl.rentowne.settlement.model.dto.ApartmentFinancialDetailDto;

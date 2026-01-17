@@ -1,4 +1,4 @@
-package pl.rentowne.housing_provider.model;
+package pl.rentowne.housing_provider;
 
 /**
  * Typ dostawcy świadczeń

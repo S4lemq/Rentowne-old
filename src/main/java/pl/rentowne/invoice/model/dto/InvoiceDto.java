@@ -2,7 +2,7 @@ package pl.rentowne.invoice.model.dto;
 
 import lombok.Builder;
 import lombok.Getter;
-import pl.rentowne.housing_provider.model.ProviderType;
+import pl.rentowne.housing_provider.ProviderType;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;

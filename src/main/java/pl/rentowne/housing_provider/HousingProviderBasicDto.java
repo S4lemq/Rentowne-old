@@ -1,8 +1,7 @@
-package pl.rentowne.housing_provider.model.dto;
+package pl.rentowne.housing_provider;
 
 import lombok.Builder;
 import lombok.Getter;
-import pl.rentowne.housing_provider.model.ProviderType;
 
 @Getter
 @Builder

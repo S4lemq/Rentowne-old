@@ -1,13 +1,8 @@
-package pl.rentowne.housing_provider.service;
+package pl.rentowne.housing_provider;
 
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import pl.rentowne.exception.RentowneBusinessException;
-import pl.rentowne.housing_provider.model.dto.HousingProviderApartmentDto;
-import pl.rentowne.housing_provider.model.dto.HousingProviderBasicDto;
-import pl.rentowne.housing_provider.model.dto.HousingProviderDto;
-import pl.rentowne.housing_provider.model.dto.HousingProviderListDto;
-import pl.rentowne.housing_provider.model.dto.HousingProviderWithAssignmentDto;
 
 import java.util.List;
 

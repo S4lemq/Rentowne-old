@@ -6,9 +6,9 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 import pl.rentowne.exception.RentowneBusinessException;
 import pl.rentowne.exception.RentowneErrorCode;
-import pl.rentowne.housing_provider.model.HousingProvider;
-import pl.rentowne.housing_provider.model.ProviderType;
-import pl.rentowne.housing_provider.repository.HousingProviderRepository;
+import pl.rentowne.housing_provider.HousingProvider;
+import pl.rentowne.housing_provider.HousingProviderRepository;
+import pl.rentowne.housing_provider.ProviderType;
 import pl.rentowne.provider_field.model.ProviderField;
 import pl.rentowne.user.service.UserService;
 
