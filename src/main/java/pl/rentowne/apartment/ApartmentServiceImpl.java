@@ -8,10 +8,10 @@ import pl.rentowne.exception.RentowneErrorCode;
 import pl.rentowne.exception.RentowneNotFoundException;
 import pl.rentowne.housing_provider.model.HousingProvider;
 import pl.rentowne.housing_provider.repository.HousingProviderRepository;
-import pl.rentowne.rented_object.model.RentedObject;
-import pl.rentowne.rented_object.model.dto.RentedObjectDto;
-import pl.rentowne.rented_object.repository.RentedObjectRepository;
-import pl.rentowne.rented_object.service.RentedObjectService;
+import pl.rentowne.rented_object.RentedObject;
+import pl.rentowne.rented_object.RentedObjectDto;
+import pl.rentowne.rented_object.RentedObjectRepository;
+import pl.rentowne.rented_object.RentedObjectService;
 import pl.rentowne.user.service.UserService;
 
 import java.util.HashSet;

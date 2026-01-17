@@ -1,4 +1,4 @@
-package pl.rentowne.rented_object.model.dto;
+package pl.rentowne.rented_object;
 
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -6,7 +6,6 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 import pl.rentowne.meter.model.dto.MeterDto;
-import pl.rentowne.rented_object.model.RentedObject;
 
 import java.util.List;
 

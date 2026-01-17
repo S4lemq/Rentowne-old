@@ -1,8 +1,7 @@
-package pl.rentowne.rented_object.service.impl;
+package pl.rentowne.rented_object;
 
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
-import pl.rentowne.rented_object.service.RentedObjectSettlementExportService;
 import pl.rentowne.settlement.model.dto.SettlementExportDto;
 import pl.rentowne.settlement.repository.SettlementRepository;
 

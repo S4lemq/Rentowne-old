@@ -3,7 +3,7 @@ package pl.rentowne.apartment;
 import lombok.Builder;
 import org.springframework.lang.Nullable;
 import pl.rentowne.address.AddressDto;
-import pl.rentowne.rented_object.model.dto.RentedObjectDto;
+import pl.rentowne.rented_object.RentedObjectDto;
 
 import java.math.BigDecimal;
 import java.math.BigInteger;

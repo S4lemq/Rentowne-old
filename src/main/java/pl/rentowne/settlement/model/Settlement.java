@@ -20,7 +20,7 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 import pl.rentowne.common.model.BaseEntity;
-import pl.rentowne.rented_object.model.RentedObject;
+import pl.rentowne.rented_object.RentedObject;
 import pl.rentowne.tenant.model.Tenant;
 
 import java.math.BigDecimal;

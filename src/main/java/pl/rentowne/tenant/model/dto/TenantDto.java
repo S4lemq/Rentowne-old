@@ -7,8 +7,8 @@ import pl.rentowne.address.AddressMapper;
 import pl.rentowne.apartment.ApartmentDto;
 import pl.rentowne.apartment.ApartmentMapper;
 import pl.rentowne.lease_agreement.model.dto.LeaseAgreementDto;
-import pl.rentowne.rented_object.model.RentedObject;
-import pl.rentowne.rented_object.model.dto.RentedObjectDto;
+import pl.rentowne.rented_object.RentedObject;
+import pl.rentowne.rented_object.RentedObjectDto;
 import pl.rentowne.tenant.model.Tenant;
 
 @Getter

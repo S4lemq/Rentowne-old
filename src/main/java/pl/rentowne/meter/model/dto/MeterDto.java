@@ -6,7 +6,7 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import pl.rentowne.apartment.ApartmentDto;
 import pl.rentowne.meter.model.MeterType;
-import pl.rentowne.rented_object.model.dto.RentedObjectDto;
+import pl.rentowne.rented_object.RentedObjectDto;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;

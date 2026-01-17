@@ -1,4 +1,4 @@
-package pl.rentowne.rented_object.repository;
+package pl.rentowne.rented_object;
 
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -6,9 +6,6 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
-import pl.rentowne.rented_object.model.RentedObject;
-import pl.rentowne.rented_object.model.dto.RentedObjectDto;
-import pl.rentowne.rented_object.model.dto.RentedObjectSettlementRowDto;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
@@ -52,7 +49,7 @@ public interface RentedObjectRepository extends JpaRepository<RentedObject, Long
      * @return lista obiektów do wynajęcia
      */
     @Query("""
-            SELECT new pl.rentowne.rented_object.model.dto.RentedObjectDto(ro.id, ro.rentedObjectName)
+            SELECT new pl.rentowne.rented_object.RentedObjectDto(ro.id, ro.rentedObjectName)
             FROM RentedObject ro
             JOIN ro.apartment a
             JOIN a.user u
@@ -76,7 +73,7 @@ public interface RentedObjectRepository extends JpaRepository<RentedObject, Long
      * @return lista obiektów do wynajęcia
      */
     @Query("""
-            SELECT new pl.rentowne.rented_object.model.dto.RentedObjectDto(ro.id, ro.rentedObjectName)
+            SELECT new pl.rentowne.rented_object.RentedObjectDto(ro.id, ro.rentedObjectName)
             FROM RentedObject ro
             WHERE (ro.apartment.id = :apartmentId AND ro.isRented = false)
             OR (:rentedObjectId IS NOT NULL AND ro.id = :rentedObjectId)
@@ -102,7 +99,7 @@ public interface RentedObjectRepository extends JpaRepository<RentedObject, Long
      * @return strona z listą rozliczeń
      */
     @Query("""
-            SELECT new pl.rentowne.rented_object.model.dto.RentedObjectSettlementRowDto(
+            SELECT new pl.rentowne.rented_object.RentedObjectSettlementRowDto(
                 ro.id, a.apartmentName, ro.rentedObjectName,
                 t.firstname, t.lastname,
                 ro.lastSettlementDate, ro.lastSettlementTotalAmount,

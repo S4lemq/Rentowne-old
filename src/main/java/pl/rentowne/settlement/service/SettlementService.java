@@ -2,7 +2,7 @@ package pl.rentowne.settlement.service;
 
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
-import pl.rentowne.rented_object.model.dto.CalculateRequestDto;
+import pl.rentowne.rented_object.CalculateRequestDto;
 import pl.rentowne.settlement.model.dto.SettlementListDto;
 import pl.rentowne.settlement.model.dto.UtilityCostsDto;
 

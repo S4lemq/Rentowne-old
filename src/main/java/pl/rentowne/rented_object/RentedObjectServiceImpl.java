@@ -1,4 +1,4 @@
-package pl.rentowne.rented_object.service.impl;
+package pl.rentowne.rented_object;
 
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -6,12 +6,6 @@ import org.springframework.transaction.annotation.Transactional;
 import pl.rentowne.exception.RentowneBusinessException;
 import pl.rentowne.lease_agreement.model.LeaseAgreement;
 import pl.rentowne.meter.model.dto.MeterDto;
-import pl.rentowne.rented_object.model.RentedObject;
-import pl.rentowne.rented_object.model.dto.ProrationCheckResponseDto;
-import pl.rentowne.rented_object.model.dto.RentedObjectDetailsDto;
-import pl.rentowne.rented_object.model.dto.RentedObjectDto;
-import pl.rentowne.rented_object.repository.RentedObjectRepository;
-import pl.rentowne.rented_object.service.RentedObjectService;
 import pl.rentowne.settlement.model.Settlement;
 import pl.rentowne.settlement.repository.SettlementRepository;
 import pl.rentowne.tenant.model.Tenant;

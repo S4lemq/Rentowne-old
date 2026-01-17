@@ -1,4 +1,4 @@
-package pl.rentowne.rented_object.model.dto;
+package pl.rentowne.rented_object;
 
 import lombok.Getter;
 

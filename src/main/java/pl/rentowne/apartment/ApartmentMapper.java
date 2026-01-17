@@ -5,7 +5,7 @@ import lombok.NoArgsConstructor;
 import lombok.NonNull;
 import org.springframework.lang.Nullable;
 import pl.rentowne.address.AddressMapper;
-import pl.rentowne.rented_object.model.dto.RentedObjectDto;
+import pl.rentowne.rented_object.RentedObjectDto;
 import pl.rentowne.user.model.User;
 
 @NoArgsConstructor(access = AccessLevel.PRIVATE)

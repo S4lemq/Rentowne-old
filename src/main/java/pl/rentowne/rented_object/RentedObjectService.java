@@ -1,10 +1,6 @@
-package pl.rentowne.rented_object.service;
+package pl.rentowne.rented_object;
 
 import pl.rentowne.exception.RentowneBusinessException;
-import pl.rentowne.rented_object.model.RentedObject;
-import pl.rentowne.rented_object.model.dto.ProrationCheckResponseDto;
-import pl.rentowne.rented_object.model.dto.RentedObjectDetailsDto;
-import pl.rentowne.rented_object.model.dto.RentedObjectDto;
 
 import java.util.List;
 import java.util.Set;

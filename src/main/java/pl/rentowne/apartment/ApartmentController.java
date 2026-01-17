@@ -17,8 +17,8 @@ import org.springframework.web.bind.annotation.RestController;
 import pl.rentowne.common.controler.AbstractController;
 import pl.rentowne.exception.RentowneBusinessException;
 import pl.rentowne.exception.RentowneNotFoundException;
-import pl.rentowne.rented_object.model.dto.RentedObjectDto;
-import pl.rentowne.rented_object.service.RentedObjectService;
+import pl.rentowne.rented_object.RentedObjectDto;
+import pl.rentowne.rented_object.RentedObjectService;
 import pl.rentowne.user.service.UserService;
 
 import java.util.List;

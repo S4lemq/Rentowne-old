@@ -1,4 +1,4 @@
-package pl.rentowne.rented_object.model;
+package pl.rentowne.rented_object;
 
 import jakarta.persistence.CascadeType;
 import jakarta.persistence.Column;
@@ -39,36 +39,36 @@ import java.util.Set;
 @NoArgsConstructor
 @AllArgsConstructor
 @Table(
-        name = "RENTED_OBJECT",
+        name = "rented_object",
         uniqueConstraints = {
-                @UniqueConstraint(name = "PK_RENTED_OBJECT", columnNames = "RENTED_OBJECT_ID")
+                @UniqueConstraint(name = "pk_rented_object", columnNames = "rented_object_id")
         },
         indexes = {
-                @Index(name = "PK_RENTED_OBJECT", columnList = "RENTED_OBJECT_ID", unique = true)
+                @Index(name = "pk_rented_object", columnList = "rented_object_id", unique = true)
         }
 )
 public class RentedObject extends BaseEntity {
 
     @Id
-    @SequenceGenerator(name = "rented_object_seq", sequenceName = "RENTED_OBJECT_SEQ", allocationSize = 1)
+    @SequenceGenerator(name = "rented_object_seq", sequenceName = "rented_object_seq", allocationSize = 1)
     @GeneratedValue(strategy = GenerationType.SEQUENCE, generator = "rented_object_seq")
-    @Column(name = "RENTED_OBJECT_ID", nullable = false)
+    @Column(name = "rented_object_id", nullable = false)
     private Long id;
 
-    @Column(name = "RENTED_OBJECT_NAME", nullable = false, length = 60)
+    @Column(name = "rented_object_name", nullable = false, length = 60)
     private String rentedObjectName;
 
-    @Column(name = "IS_RENTED", nullable = false)
+    @Column(name = "is_rented", nullable = false)
     private boolean isRented;
 
-    @Column(name = "LAST_SETTLEMENT_DATE")
+    @Column(name = "last_settlement_date")
     private LocalDateTime lastSettlementDate;
 
-    @Column(name = "LAST_SETTLEMENT_TOTAL_AMOUNT")
+    @Column(name = "last_settlement_total_amount")
     private BigDecimal lastSettlementTotalAmount;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "APARTMENT_ID")
+    @JoinColumn(name = "apartment_id")
     private Apartment apartment;
 
     @OneToMany(fetch = FetchType.LAZY, mappedBy = "rentedObject")
@@ -83,18 +83,6 @@ public class RentedObject extends BaseEntity {
 
     public RentedObject(Long id) {
         this.id = id;
-    }
-
-    /**
-     * Zwraca aktywnego tenant'a (jeśli istnieje)
-     * @return aktywny tenant lub null
-     */
-    public Tenant getActiveTenant() {
-        if (tenants == null || tenants.isEmpty()) {
-            return null;
-        }
-        // @SQLRestriction powinno już filtrować tylko aktywnych, więc zwracamy pierwszego
-        return tenants.getFirst();
     }
 
     @Override

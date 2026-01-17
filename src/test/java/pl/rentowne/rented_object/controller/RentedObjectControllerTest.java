@@ -10,7 +10,7 @@ import org.springframework.test.web.reactive.server.WebTestClient;
 import pl.rentowne.IntegrationTest;
 import pl.rentowne.TestSecurityConfig;
 import pl.rentowne.WithMockRentowneUser;
-import pl.rentowne.rented_object.model.dto.CalculateRequestDto;
+import pl.rentowne.rented_object.CalculateRequestDto;
 import pl.rentowne.settlement.model.Settlement;
 import pl.rentowne.settlement.repository.SettlementRepository;
 

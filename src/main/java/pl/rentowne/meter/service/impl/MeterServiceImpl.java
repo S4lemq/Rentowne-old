@@ -17,8 +17,8 @@ import pl.rentowne.meter.model.dto.MeterDto;
 import pl.rentowne.meter.model.dto.MeterListDto;
 import pl.rentowne.meter.repository.MeterRepository;
 import pl.rentowne.meter.service.MeterService;
-import pl.rentowne.rented_object.model.RentedObject;
-import pl.rentowne.rented_object.model.dto.RentedObjectDto;
+import pl.rentowne.rented_object.RentedObject;
+import pl.rentowne.rented_object.RentedObjectDto;
 import pl.rentowne.user.service.UserService;
 
 import java.util.List;

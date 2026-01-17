@@ -23,7 +23,7 @@ import lombok.Setter;
 import pl.rentowne.address.Address;
 import pl.rentowne.common.model.BaseEntity;
 import pl.rentowne.lease_agreement.model.LeaseAgreement;
-import pl.rentowne.rented_object.model.RentedObject;
+import pl.rentowne.rented_object.RentedObject;
 import pl.rentowne.tenant_settlement.model.TenantSettlement;
 
 import java.util.List;

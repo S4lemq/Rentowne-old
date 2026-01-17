@@ -1,4 +1,4 @@
-package pl.rentowne.rented_object.service;
+package pl.rentowne.rented_object;
 
 import pl.rentowne.settlement.model.dto.SettlementExportDto;
 
