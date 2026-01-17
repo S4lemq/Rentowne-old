@@ -35,10 +35,12 @@ public interface ApartmentRepository extends JpaRepository<Apartment, Long> {
     void pinApartment(@Param("isPinned") boolean isPinned, @Param("id") Long id);
 
     @EntityGraph(attributePaths = {"housingProviders"})
-    Apartment getApartmentWithHousingProviders(Long apartmentId);
+    @Query("SELECT a FROM Apartment a WHERE a.id = :apartmentId")
+    Apartment getApartmentWithHousingProviders(@Param("apartmentId") Long apartmentId);
 
     @EntityGraph(attributePaths = {"rentedObjects"})
-    Optional<Apartment> findByIdWithRentedObjects(Long id);
+    @Query("SELECT a FROM Apartment a WHERE a.id = :id")
+    Optional<Apartment> findByIdWithRentedObjects(@Param("id") Long id);
 
     /**
      * Pobiera listę mieszkań do tabeli (Page)

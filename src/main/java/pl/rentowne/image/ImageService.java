@@ -1,10 +1,9 @@
-package pl.rentowne.apartment;
+package pl.rentowne.image;
 
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.io.FileSystemResourceLoader;
 import org.springframework.core.io.Resource;
 import org.springframework.stereotype.Service;
-import pl.rentowne.common.service.ImageService;
 import pl.rentowne.util.ExistingFileRenameUtils;
 import pl.rentowne.util.UploadedFilesNameUtils;
 
@@ -16,12 +15,12 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 
 @Service
-public class ImageServiceImpl implements ImageService {
+class ImageService {
 
     @Value("${application.uploadDir}")
     private String uploadDir;
 
-    public String uploadImage(String filename, InputStream inputStream) {
+    String uploadImage(String filename, InputStream inputStream) {
         createDirectoryIfNotExists(uploadDir);
 
         String newFileName = UploadedFilesNameUtils.slugifyFileName(filename);
@@ -36,7 +35,7 @@ public class ImageServiceImpl implements ImageService {
         return newFileName;
     }
 
-    public Resource serveFiles(String filename) {
+    Resource serveFiles(String filename) {
         FileSystemResourceLoader fileSystemResourceLoader = new FileSystemResourceLoader();
         return fileSystemResourceLoader.getResource(uploadDir + filename);
     }
