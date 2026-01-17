@@ -4,8 +4,8 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import pl.rentowne.apartment.model.Apartment;
-import pl.rentowne.apartment.repository.ApartmentRepository;
+import pl.rentowne.apartment.Apartment;
+import pl.rentowne.apartment.ApartmentRepository;
 import pl.rentowne.housing_provider.model.ProviderType;
 import pl.rentowne.invoice.model.Invoice;
 import pl.rentowne.invoice.repository.InvoiceRepository;
@@ -132,7 +132,7 @@ public class FinancialReportService {
         }
 
         // Pobierz informacje o mieszkaniach
-        List<Apartment> apartments = apartmentRepository.findByIdIn(new ArrayList<>(apartmentIds));
+        List<Apartment> apartments = apartmentRepository.findByIdInOrderByApartmentName(new ArrayList<>(apartmentIds));
 
         // Oblicz szczegóły dla każdego mieszkania
         List<ApartmentFinancialDetailDto> apartmentDetails = new ArrayList<>();

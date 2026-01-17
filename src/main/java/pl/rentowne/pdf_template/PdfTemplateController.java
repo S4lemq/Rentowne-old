@@ -9,8 +9,8 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
-import pl.rentowne.apartment.model.dto.ApartmentDto;
-import pl.rentowne.apartment.service.ApartmentService;
+import pl.rentowne.apartment.ApartmentDto;
+import pl.rentowne.apartment.ApartmentService;
 import pl.rentowne.exception.RentowneBusinessException;
 import pl.rentowne.pdf_template.dto.ApartmentListTemplateDto;
 import pl.rentowne.pdf_template.dto.InvoiceTemplateDto;
@@ -138,12 +138,12 @@ class PdfTemplateController {
 
             ApartmentListTemplateDto.ApartmentItemDto item = ApartmentListTemplateDto.ApartmentItemDto.builder()
                     .ordinalNumber(ordinalNumber++)
-                    .apartmentName(apartment.getApartmentName())
+                    .apartmentName(apartment.apartmentName())
                     .address(address)
-                    .area(apartment.getArea() != null ? apartment.getArea() : BigDecimal.ZERO)
-                    .leasesCount(apartment.getLeasesNumber() != null ? apartment.getLeasesNumber().intValue() : 0)
+                    .area(apartment.area() != null ? apartment.area() : BigDecimal.ZERO)
+                    .leasesCount(apartment.leasesNumber() != null ? apartment.leasesNumber().intValue() : 0)
                     .status(status)
-                    .imageName(apartment.getImage())
+                    .imageName(apartment.image())
                     .build();
 
             apartmentItems.add(item);
@@ -155,12 +155,12 @@ class PdfTemplateController {
         int availableApartments = totalApartments - rentedApartments;
 
         BigDecimal totalArea = apartments.stream()
-                .map(ApartmentDto::getArea)
+                .map(ApartmentDto::area)
                 .filter(java.util.Objects::nonNull)
                 .reduce(BigDecimal.ZERO, BigDecimal::add);
 
         long apartmentsWithArea = apartments.stream()
-                .map(ApartmentDto::getArea)
+                .map(ApartmentDto::area)
                 .filter(java.util.Objects::nonNull)
                 .count();
 
@@ -193,36 +193,36 @@ class PdfTemplateController {
      * Formatuje adres z DTO mieszkania.
      */
     private String formatAddress(ApartmentDto apartment) {
-        if (apartment.getAddressDto() == null) {
+        if (apartment.addressDto() == null) {
             return "Brak adresu";
         }
 
-        pl.rentowne.address.model.dto.AddressDto address = apartment.getAddressDto();
+        pl.rentowne.address.AddressDto address = apartment.addressDto();
         StringBuilder sb = new StringBuilder();
 
-        if (address.getStreetName() != null && !address.getStreetName().isEmpty()) {
-            sb.append(address.getStreetName());
+        if (address.streetName() != null && !address.streetName().isEmpty()) {
+            sb.append(address.streetName());
 
-            if (address.getBuildingNumber() != null && !address.getBuildingNumber().isEmpty()) {
-                sb.append(" ").append(address.getBuildingNumber());
+            if (address.buildingNumber() != null && !address.buildingNumber().isEmpty()) {
+                sb.append(" ").append(address.buildingNumber());
             }
 
-            if (address.getApartmentNumber() != null && !address.getApartmentNumber().isEmpty()) {
-                sb.append("/").append(address.getApartmentNumber());
+            if (address.apartmentNumber() != null && !address.apartmentNumber().isEmpty()) {
+                sb.append("/").append(address.apartmentNumber());
             }
         }
 
-        if (address.getZipCode() != null || address.getCityName() != null) {
+        if (address.zipCode() != null || address.cityName() != null) {
             if (!sb.isEmpty()) {
                 sb.append(", ");
             }
 
-            if (address.getZipCode() != null) {
-                sb.append(address.getZipCode()).append(" ");
+            if (address.zipCode() != null) {
+                sb.append(address.zipCode()).append(" ");
             }
 
-            if (address.getCityName() != null) {
-                sb.append(address.getCityName());
+            if (address.cityName() != null) {
+                sb.append(address.cityName());
             }
         }
 

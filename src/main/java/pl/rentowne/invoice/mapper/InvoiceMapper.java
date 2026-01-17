@@ -2,7 +2,7 @@ package pl.rentowne.invoice.mapper;
 
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
-import pl.rentowne.apartment.model.Apartment;
+import pl.rentowne.apartment.Apartment;
 import pl.rentowne.housing_provider.model.HousingProvider;
 import pl.rentowne.invoice.model.Invoice;
 import pl.rentowne.invoice.model.dto.InvoiceDto;

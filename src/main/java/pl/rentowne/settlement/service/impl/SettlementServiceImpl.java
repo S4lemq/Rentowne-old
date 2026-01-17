@@ -6,7 +6,7 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import pl.rentowne.apartment.service.ApartmentService;
+import pl.rentowne.apartment.ApartmentService;
 import pl.rentowne.housing_provider.model.HousingProvider;
 import pl.rentowne.housing_provider.model.ProviderType;
 import pl.rentowne.housing_provider.repository.HousingProviderRepository;

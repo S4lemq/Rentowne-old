@@ -5,8 +5,9 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import pl.rentowne.apartment.model.Apartment;
-import pl.rentowne.apartment.model.dto.ApartmentDto;
+import pl.rentowne.apartment.Apartment;
+import pl.rentowne.apartment.ApartmentDto;
+import pl.rentowne.apartment.ApartmentMapper;
 import pl.rentowne.exception.RentowneBusinessException;
 import pl.rentowne.exception.RentowneErrorCode;
 import pl.rentowne.meter.model.Meter;
@@ -42,7 +43,7 @@ public class MeterServiceImpl implements MeterService {
     @Override
     @Transactional
     public ApartmentMeterDto addApartmentMeter(ApartmentMeterDto meterDto) {
-        Apartment apartmentReference = new Apartment(meterDto.apartment().getId());
+        Apartment apartmentReference = new Apartment(meterDto.apartment().id());
 
         Meter meter = this.convertToEntityFromApartmentMeter(meterDto, apartmentReference);
         Meter savedMeter = meterRepository.save(meter);
@@ -66,7 +67,19 @@ public class MeterServiceImpl implements MeterService {
                             .id(rentedObjectId)
                             .build())
                     .apartment(ApartmentDto.builder()
+                            .id(null)
                             .apartmentName(apartmentName)
+                            .leasesNumber(null)
+                            .isRented(false)
+                            .area(null)
+                            .image(null)
+                            .pinned(false)
+                            .cityName(null)
+                            .streetName(null)
+                            .buildingNumber(null)
+                            .apartmentNumber(null)
+                            .addressDto(null)
+                            .rentedObjectDtos(null)
                             .build())
                     .meterNumber(meter.getMeterNumber())
                     .initialMeterReading(meter.getInitialMeterReading())
@@ -79,10 +92,7 @@ public class MeterServiceImpl implements MeterService {
                     .id(meter.getId())
                     .name(meter.getName())
                     .meterType(meter.getMeterType())
-                    .apartment(ApartmentDto.builder()
-                            .id(apartment.getId())
-                            .apartmentName(apartment.getApartmentName())
-                            .build())
+                    .apartment(ApartmentMapper.toBasicDto(apartment))
                     .meterNumber(meter.getMeterNumber())
                     .initialMeterReading(meter.getInitialMeterReading())
                     .installationDate(meter.getInstallationDate())
@@ -123,8 +133,8 @@ public class MeterServiceImpl implements MeterService {
         meterEntity.setInstallationDate(meter.installationDate());
         meterEntity.setDistributeReadings(meter.distributeReadings());
 
-        if (meter.apartment() != null && meter.apartment().getId() != null) {
-            meterEntity.setApartment(new Apartment(meter.apartment().getId()));
+        if (meter.apartment() != null && meter.apartment().id() != null) {
+            meterEntity.setApartment(new Apartment(meter.apartment().id()));
         }
 
         meterRepository.save(meterEntity);

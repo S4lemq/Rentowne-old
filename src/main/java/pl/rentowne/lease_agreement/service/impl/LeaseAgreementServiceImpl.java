@@ -4,7 +4,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import pl.rentowne.apartment.model.Apartment;
+import pl.rentowne.apartment.Apartment;
 import pl.rentowne.housing_provider.model.ProviderType;
 import pl.rentowne.invoice.repository.InvoiceRepository;
 import pl.rentowne.lease_agreement.model.LeaseAgreement;

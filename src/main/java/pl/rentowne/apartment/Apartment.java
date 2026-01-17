@@ -1,4 +1,4 @@
-package pl.rentowne.apartment.model;
+package pl.rentowne.apartment;
 
 import jakarta.persistence.CascadeType;
 import jakarta.persistence.Column;
@@ -21,7 +21,7 @@ import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
-import pl.rentowne.address.model.Address;
+import pl.rentowne.address.Address;
 import pl.rentowne.common.model.BaseEntity;
 import pl.rentowne.housing_provider.model.HousingProvider;
 import pl.rentowne.meter.model.Meter;
@@ -41,45 +41,45 @@ import java.util.Set;
 @NoArgsConstructor
 @AllArgsConstructor
 @Table(
-        name = "APARTMENT",
+        name = "apartment",
         uniqueConstraints = {
-                @UniqueConstraint(name = "PK_APARTMENT", columnNames = "APARTMENT_ID"),
-                @UniqueConstraint(name = "UK_APARTMENT_1", columnNames = "ADDRESS_ID")
+                @UniqueConstraint(name = "pk_apartment", columnNames = "apartment_id"),
+                @UniqueConstraint(name = "uk_apartment_1", columnNames = "address_id")
         },
         indexes = {
-                @Index(name = "PK_APARTMENT", columnList = "APARTMENT_ID", unique = true),
-                @Index(name = "UK_APARTMENT_1", columnList = "ADDRESS_ID", unique = true),
-                @Index(name = "I_APARTMENT_1", columnList = "APARTMENT_NAME"),
+                @Index(name = "pk_apartment", columnList = "apartment_id", unique = true),
+                @Index(name = "uk_apartment_1", columnList = "address_id", unique = true),
+                @Index(name = "i_apartment_1", columnList = "apartment_name"),
         }
 )
 public class Apartment extends BaseEntity {
 
     @Id
-    @SequenceGenerator(name = "apartment_seq", sequenceName = "APARTMENT_SEQ", allocationSize = 1)
+    @SequenceGenerator(name = "apartment_seq", sequenceName = "apartment_seq", allocationSize = 1)
     @GeneratedValue(strategy = GenerationType.SEQUENCE, generator = "apartment_seq")
-    @Column(name = "APARTMENT_ID", nullable = false)
+    @Column(name = "apartment_id", nullable = false)
     private Long id;
 
-    @Column(name = "APARTMENT_NAME", nullable = false, length = 60)
+    @Column(name = "apartment_name", nullable = false, length = 60)
     private String apartmentName;
 
-    @Column(name = "LEASES_NUMBER", nullable = false)
+    @Column(name = "leases_number", nullable = false)
     private BigInteger leasesNumber;
 
-    @Column(name = "AREA", nullable = false)
+    @Column(name = "area", nullable = false)
     private BigDecimal area;
 
-    @Column(name = "IS_RENTED", nullable = false)
+    @Column(name = "is_rented", nullable = false)
     private boolean isRented;
 
-    @Column(name = "IMAGE", length = 128)
+    @Column(name = "image", length = 128)
     private String image;
 
-    @Column(name = "PINNED", nullable = false)
+    @Column(name = "pinned", nullable = false)
     private boolean pinned;
 
-    @OneToOne(fetch = FetchType.LAZY, cascade = CascadeType.ALL, orphanRemoval = true)
-    @JoinColumn(name = "ADDRESS_ID", unique = true)
+    @OneToOne(cascade = CascadeType.ALL, orphanRemoval = true)
+    @JoinColumn(name = "address_id", unique = true)
     private Address address;
 
     @OneToMany(fetch = FetchType.LAZY, mappedBy = "apartment")
@@ -89,7 +89,7 @@ public class Apartment extends BaseEntity {
     private Set<Meter> meters;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "USER_ACCOUNT_ID")
+    @JoinColumn(name = "user_account_id")
     private User user;
 
     @ManyToMany(mappedBy = "apartments", fetch = FetchType.LAZY)

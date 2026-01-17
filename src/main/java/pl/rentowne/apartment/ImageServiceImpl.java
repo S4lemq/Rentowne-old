@@ -1,4 +1,4 @@
-package pl.rentowne.apartment.service.impl;
+package pl.rentowne.apartment;
 
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.io.FileSystemResourceLoader;

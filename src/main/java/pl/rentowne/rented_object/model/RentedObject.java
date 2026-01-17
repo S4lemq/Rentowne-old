@@ -20,7 +20,7 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 import org.hibernate.annotations.SQLRestriction;
-import pl.rentowne.apartment.model.Apartment;
+import pl.rentowne.apartment.Apartment;
 import pl.rentowne.common.model.BaseEntity;
 import pl.rentowne.meter.model.Meter;
 import pl.rentowne.settlement.model.Settlement;

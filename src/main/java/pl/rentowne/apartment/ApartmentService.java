@@ -1,8 +1,5 @@
-package pl.rentowne.apartment.service;
+package pl.rentowne.apartment;
 
-import pl.rentowne.apartment.model.dto.ApartmentBasicDto;
-import pl.rentowne.apartment.model.dto.ApartmentDto;
-import pl.rentowne.apartment.model.dto.ApartmentHousingProviderRequest;
 import pl.rentowne.exception.RentowneBusinessException;
 import pl.rentowne.exception.RentowneNotFoundException;
 
@@ -30,13 +27,6 @@ public interface ApartmentService {
     Long addApartment(ApartmentDto apartmentDto) throws RentowneBusinessException;
 
     /**
-     * pobiera id adresu mieszkania
-     * @param id id mieszkania
-     * @return id adresu mieszkania
-     */
-    Long getAddressId(Long id);
-
-    /**
      * aktualizuje dane mieszkania
      * @param apartmentDto dto mieszkania
      * @param apartmentId id mieszkania
@@ -56,7 +46,7 @@ public interface ApartmentService {
      * @param apartmentId id mieszkania
      * @return lista mieszkań
      */
-    List<ApartmentBasicDto> getAllApartmentsByLoggedUserAndApartment(Long apartmentId) throws RentowneBusinessException;
+    List<ApartmentDto> getAllApartmentsByLoggedUserAndApartment(Long apartmentId) throws RentowneBusinessException;
 
     /**
      * Aktualizuje flagę czy wynajęte
@@ -65,24 +55,11 @@ public interface ApartmentService {
     void updateRentedFlagOnApartment(Long rentedObjectId);
 
     /**
-     * Przypisuje dostawcę do mieszkania
-     * @param dto id mieszkania i list id dostawców
-     * @throws RentowneNotFoundException nie znaleziono dostawcy/mieszkania
-     */
-
-    /**
      * Przypisuje mieszkanie do dostawcy świadczeń
      * @param dto {@link ApartmentHousingProviderRequest} dto mieszkania i idków dostawców
      * @throws RentowneNotFoundException nie znaleziono mieszkania/dostawcy
      */
     void addHousingProviders(ApartmentHousingProviderRequest dto) throws RentowneNotFoundException;
-
-    /**
-     * zlicza ilość obiektów w mieszkaniu po id obiektu
-     * @param rentedObjectId id obiektu
-     * @return ilość obiektów w mieszkaniu
-     */
-    int getCountOfRentedObjectsInApartment(long rentedObjectId);
 
     /**
      * Służy do przypinania nieruchomości
@@ -96,7 +73,7 @@ public interface ApartmentService {
      * @return lista mieszkań
      * @throws RentowneBusinessException wyjątek biznesowy
      */
-    List<ApartmentBasicDto> getAllApartmentsByLoggedUser() throws RentowneBusinessException;
+    List<ApartmentDto> getAllApartmentsByLoggedUser() throws RentowneBusinessException;
 
     /**
      * Pobiera wszystkie mieszkania zalogowanego użytkownika z pełnymi danymi (do generowania PDF)

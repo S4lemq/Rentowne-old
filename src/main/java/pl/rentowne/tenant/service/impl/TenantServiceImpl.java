@@ -3,8 +3,8 @@ package pl.rentowne.tenant.service.impl;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import pl.rentowne.apartment.repository.ApartmentRepository;
-import pl.rentowne.apartment.service.ApartmentService;
+import pl.rentowne.apartment.ApartmentRepository;
+import pl.rentowne.apartment.ApartmentService;
 import pl.rentowne.exception.RentowneBusinessException;
 import pl.rentowne.exception.RentowneErrorCode;
 import pl.rentowne.exception.RentowneNotFoundException;
@@ -13,6 +13,7 @@ import pl.rentowne.meter.model.MeterType;
 import pl.rentowne.meter_reading.model.MeterReading;
 import pl.rentowne.meter_reading.model.dto.MeterReadingDto;
 import pl.rentowne.meter_reading.repository.MeterReadingRepository;
+import pl.rentowne.rented_object.model.RentedObject;
 import pl.rentowne.rented_object.repository.RentedObjectRepository;
 import pl.rentowne.security.service.AuthenticationService;
 import pl.rentowne.tenant.model.Tenant;
@@ -101,8 +102,9 @@ public class TenantServiceImpl implements TenantService {
     private void secondUpdateFlags(TenantDto dto) {
         Long rentedObjectId = dto.getRentedObjectDto().getId();
         rentedObjectRepository.updateRentedFlag(rentedObjectId, true);
-        Long apartmentId = dto.getApartment().getId();
-        List<Long> ids = apartmentRepository.getAllRentedObjectsByApartmentIdAndRentedFlag(apartmentId, false);
+        Long apartmentId = dto.getApartment().id();
+        List<Long> ids = rentedObjectRepository.findByApartmentIdAndIsRented(apartmentId, false)
+                .stream().map(RentedObject::getId).toList();
         if (ids.isEmpty()) {
             apartmentRepository.updateRentedFlag(apartmentId, true);
         }

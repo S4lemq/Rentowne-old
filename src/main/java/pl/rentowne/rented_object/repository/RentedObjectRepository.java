@@ -32,6 +32,8 @@ public interface RentedObjectRepository extends JpaRepository<RentedObject, Long
     @Query("SELECT ro.id FROM RentedObject ro WHERE ro.apartment.id = :apartmentId")
     List<Long> findRentedObjectIdsByApartmentId(@Param("apartmentId") Long apartmentId);
 
+    List<RentedObject> findByApartmentIdAndIsRented(Long apartmentId, boolean isRented);
+
     @Query("SELECT CONCAT(COALESCE(s.tenant.firstname, ''), '_', COALESCE(s.tenant.lastname, ''), '_', s.rentedObject.rentedObjectName) " +
            "FROM Settlement s WHERE s.id = (SELECT MAX(s2.id) FROM Settlement s2 WHERE s2.rentedObject.id = :rentedObjectId)")
     String getSettlementFileNameData(@Param("rentedObjectId") Long rentedObjectId);

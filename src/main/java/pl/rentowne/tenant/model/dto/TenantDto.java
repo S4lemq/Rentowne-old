@@ -2,8 +2,10 @@ package pl.rentowne.tenant.model.dto;
 
 import lombok.Builder;
 import lombok.Getter;
-import pl.rentowne.address.model.dto.AddressDto;
-import pl.rentowne.apartment.model.dto.ApartmentDto;
+import pl.rentowne.address.AddressDto;
+import pl.rentowne.address.AddressMapper;
+import pl.rentowne.apartment.ApartmentDto;
+import pl.rentowne.apartment.ApartmentMapper;
 import pl.rentowne.lease_agreement.model.dto.LeaseAgreementDto;
 import pl.rentowne.rented_object.model.RentedObject;
 import pl.rentowne.rented_object.model.dto.RentedObjectDto;
@@ -32,7 +34,7 @@ public class TenantDto {
                 .email(dto.email)
                 .accountNumber(dto.accountNumber)
                 .phoneNumber(dto.phoneNumber)
-                .address(dto.addressDto != null ? AddressDto.asEntity(dto.addressDto) : null)
+                .address(dto.addressDto != null ? AddressMapper.toEntity(dto.addressDto) : null)
                 .leaseAgreement(LeaseAgreementDto.asEntity(dto.getLeaseAgreementDto()))
                 .rentedObject(new RentedObject(dto.getRentedObjectDto().getId()))
                 .build();
@@ -46,10 +48,10 @@ public class TenantDto {
                 .email(entity.getEmail())
                 .accountNumber(entity.getAccountNumber())
                 .phoneNumber(entity.getPhoneNumber())
-                .addressDto(entity.getAddress() != null ? AddressDto.asDto(entity.getAddress()) : null)
+                .addressDto(entity.getAddress() != null ? AddressMapper.toDto(entity.getAddress()) : null)
                 .leaseAgreementDto(LeaseAgreementDto.asDto(entity.getLeaseAgreement()))
                 .rentedObjectDto(RentedObjectDto.asDtoWithoutMeters(entity.getRentedObject()))
-                .apartment(ApartmentDto.asBasicDto(entity.getRentedObject().getApartment()))
+                .apartment(ApartmentMapper.toBasicDto(entity.getRentedObject().getApartment()))
                 .build();
     }
 

@@ -4,7 +4,7 @@ import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
-import pl.rentowne.apartment.model.dto.ApartmentDto;
+import pl.rentowne.apartment.ApartmentDto;
 import pl.rentowne.meter.model.MeterType;
 import pl.rentowne.rented_object.model.dto.RentedObjectDto;
 

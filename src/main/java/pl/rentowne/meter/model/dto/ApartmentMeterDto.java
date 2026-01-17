@@ -1,6 +1,6 @@
 package pl.rentowne.meter.model.dto;
 
-import pl.rentowne.apartment.model.dto.ApartmentDto;
+import pl.rentowne.apartment.ApartmentDto;
 import pl.rentowne.meter.model.MeterType;
 
 import java.math.BigDecimal;

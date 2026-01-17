@@ -7,7 +7,8 @@ import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import pl.rentowne.address.model.dto.AddressDto;
+import pl.rentowne.address.AddressDto;
+import pl.rentowne.address.AddressMapper;
 import pl.rentowne.common.mail.EmailClientService;
 import pl.rentowne.exception.RentowneBusinessException;
 import pl.rentowne.exception.RentowneErrorCode;
@@ -75,7 +76,7 @@ public class UserServiceImpl implements UserService {
                 .phoneNumber(user.getPhoneNumber())
                 .preferredLanguage(user.getPreferredLanguage())
                 .paymentCardDto(user.getPaymentCard() != null ? PaymentCardDto.asDto(user.getPaymentCard()) : null)
-                .addressDto(user.getAddress() != null ? AddressDto.asDto(user.getAddress()) : null)
+                .addressDto(user.getAddress() != null ? AddressMapper.toDto(user.getAddress()) : null)
                 .build();
     }
 
@@ -84,7 +85,7 @@ public class UserServiceImpl implements UserService {
     public void updateUser(UserDto userDto) {
         User user = userRepository.findById(userDto.getId()).orElseThrow(() -> new RentowneNotFoundException(userDto.getEmail()));
         if (validateAddress(userDto.getAddressDto())) {
-            user.setAddress(AddressDto.asEntity(userDto.getAddressDto()));
+            user.setAddress(AddressMapper.toEntity(userDto.getAddressDto()));
         }
         if (validatePaymentCard(userDto.getPaymentCardDto())) {
             paymentCardService.save(userDto.getPaymentCardDto(), user);
@@ -134,16 +135,16 @@ public class UserServiceImpl implements UserService {
      * @return true/false
      */
     private boolean validateAddress(AddressDto address) {
-        boolean isAnyFieldSet = isNotNullOrEmpty(address.getBuildingNumber())
-                || isNotNullOrEmpty(address.getZipCode())
-                || isNotNullOrEmpty(address.getCityName())
-                || isNotNullOrEmpty(address.getVoivodeship());
+        boolean isAnyFieldSet = isNotNullOrEmpty(address.buildingNumber())
+                || isNotNullOrEmpty(address.zipCode())
+                || isNotNullOrEmpty(address.cityName())
+                || isNotNullOrEmpty(address.voivodeship());
 
         if (isAnyFieldSet) {
-            boolean areAllFieldsSet = isNotNullOrEmpty(address.getBuildingNumber())
-                    && isNotNullOrEmpty(address.getZipCode())
-                    && isNotNullOrEmpty(address.getCityName())
-                    && isNotNullOrEmpty(address.getVoivodeship());
+            boolean areAllFieldsSet = isNotNullOrEmpty(address.buildingNumber())
+                    && isNotNullOrEmpty(address.zipCode())
+                    && isNotNullOrEmpty(address.cityName())
+                    && isNotNullOrEmpty(address.voivodeship());
 
             if (!areAllFieldsSet) {
                 throw new RentowneBusinessException(RentowneErrorCode.EMPTY_REQUIRED_ADDRESS_FIELDS);

@@ -20,7 +20,7 @@ import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
-import pl.rentowne.address.model.Address;
+import pl.rentowne.address.Address;
 import pl.rentowne.common.model.BaseEntity;
 import pl.rentowne.lease_agreement.model.LeaseAgreement;
 import pl.rentowne.rented_object.model.RentedObject;
