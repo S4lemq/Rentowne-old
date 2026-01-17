@@ -7,7 +7,6 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -61,16 +60,6 @@ class ApartmentController extends AbstractController {
     ResponseEntity<ApartmentDto> updateApartment(@RequestBody final ApartmentDto apartmentDto, @PathVariable final Long id) throws RentowneBusinessException {
         apartmentService.updateApartment(apartmentDto, id);
         return ResponseEntity.ok(apartmentService.getApartment(id));
-    }
-
-    @Operation(
-            summary = "Usuwa mieszkanie",
-            description = "Metoda służy do usunięcia mieszkania"
-    )
-    @DeleteMapping("/api/apartments/{id}")
-    ResponseEntity<Void> deleteApartment(@PathVariable final Long id) {
-        apartmentService.deleteApartment(id);
-        return new ResponseEntity<>(HttpStatus.OK);
     }
 
     @Operation(

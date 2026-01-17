@@ -2,12 +2,14 @@ package pl.rentowne.apartment;
 
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.jpa.repository.EntityGraph;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
 import java.util.List;
+import java.util.Optional;
 
 public interface ApartmentRepository extends JpaRepository<Apartment, Long> {
 
@@ -15,40 +17,28 @@ public interface ApartmentRepository extends JpaRepository<Apartment, Long> {
 
     List<Apartment> findByUser_IdOrderByApartmentName(Long userId);
 
-    @Query("""
-            SELECT a.id FROM Apartment a
-            JOIN RentedObject ro ON ro.apartment.id = a.id
-            WHERE ro.id = :rentedObjectId
-            """)
-    Long getApartmentIdByRentedObject(@Param("rentedObjectId") Long rentedObjectId);
+    Long findIdByRentedObjects_Id(Long rentedObjectId);
 
     @Modifying
     @Query("UPDATE Apartment a SET a.isRented = :flag WHERE a.id = :apartmentId")
     void updateRentedFlag(@Param("apartmentId") Long apartmentId, @Param("flag") boolean flag);
 
     @Query("""
-            SELECT new pl.rentowne.apartment.ApartmentDto(
-                a.id, a.apartmentName, null, false,
-                null, null, false,
-                null, null, null, null,
-                null, null
-            )
-            FROM Apartment a
+            SELECT a Apartment FROM Apartment a
             WHERE (a.user.id = :loggedUserId AND a.isRented = false)
             OR (:apartmentId IS NOT NULL AND a.id = :apartmentId)
             """)
-    List<ApartmentDto> getAllApartmentsByLoggedUserAndApartment(@Param("loggedUserId") Long loggedUserId, @Param("apartmentId") Long apartmentId);
+    List<Apartment> getAllApartmentsByLoggedUserAndApartment(@Param("loggedUserId") Long loggedUserId, @Param("apartmentId") Long apartmentId);
 
     @Modifying
     @Query("UPDATE Apartment a SET a.pinned = :isPinned WHERE a.id = :id")
     void pinApartment(@Param("isPinned") boolean isPinned, @Param("id") Long id);
 
-    @Query("""
-            SELECT a FROM Apartment a
-            LEFT JOIN FETCH a.housingProviders
-            WHERE a.id = :apartmentId
-            """)
-    Apartment getApartmentWithHousingProviders(@Param("apartmentId") Long apartmentId);
+    @EntityGraph(attributePaths = {"housingProviders"})
+    Apartment getApartmentWithHousingProviders(Long apartmentId);
+
+    @EntityGraph(attributePaths = {"rentedObjects"})
+    Optional<Apartment> findByIdWithRentedObjects(Long id);
 
     /**
      * Pobiera listę mieszkań do tabeli (Page)

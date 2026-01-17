@@ -35,13 +35,6 @@ public interface ApartmentService {
     void updateApartment(ApartmentDto apartmentDto, Long apartmentId) throws RentowneBusinessException;
 
     /**
-     * Usuwa mieszkanie po id
-     * @param id id mieszkania
-     * @return
-     */
-    void deleteApartment(Long id);
-
-    /**
      * Pobiera wszystkie mieszkania zalogowanego użytkownika po oraz opcjonalnie dodaje do wyników jeszcze przekazany parametr apartmentId
      * @param apartmentId id mieszkania
      * @return lista mieszkań

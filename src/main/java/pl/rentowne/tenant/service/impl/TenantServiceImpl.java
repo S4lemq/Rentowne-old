@@ -112,7 +112,7 @@ public class TenantServiceImpl implements TenantService {
 
     private void firstUpdateFlags(Long rentedObjectIdInDB) {
         rentedObjectRepository.updateRentedFlag(rentedObjectIdInDB, false);
-        Long apartmentId = apartmentRepository.getApartmentIdByRentedObject(rentedObjectIdInDB);
+        Long apartmentId = apartmentRepository.findIdByRentedObjects_Id(rentedObjectIdInDB);
         apartmentRepository.updateRentedFlag(apartmentId, false);
     }
 }

@@ -47,14 +47,6 @@ public interface RentedObjectRepository extends JpaRepository<RentedObject, Long
     List<RentedObject> getAllByApartmentId(@Param("apartmentId") Long apartmentId);
 
     /**
-     * Usuwa wszystkie wynajęte obiekty po id mieszkania
-     * @param apartmentId id mieszkania
-     */
-    @Modifying
-    @Query("DELETE FROM RentedObject ro WHERE ro.apartment.id = :apartmentId")
-    void deleteAllByApartmentId(@Param("apartmentId") Long apartmentId);
-
-    /**
      * Pobiera wszystkie obiekty do wynajęcia danego użytkownika
      * @param userId id użytkownika
      * @return lista obiektów do wynajęcia

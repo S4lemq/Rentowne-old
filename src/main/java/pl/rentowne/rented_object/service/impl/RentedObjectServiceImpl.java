@@ -54,11 +54,6 @@ public class RentedObjectServiceImpl implements RentedObjectService {
     }
 
     @Override
-    public void deleteAllByApartmentId(Long apartmentId) {
-        rentedObjectRepository.deleteAllByApartmentId(apartmentId);
-    }
-
-    @Override
     public List<RentedObjectDto> getAllRentedObjectDtosWithMeters(Long apartmentId) {
         List<RentedObject> rentedObjects = rentedObjectRepository.findByApartmentIdWithMeters(apartmentId);
         return this.mapToDtos(rentedObjects);

@@ -32,9 +32,7 @@ public class ApartmentServiceImpl implements ApartmentService {
     @Override
     @Transactional(readOnly = true)
     public ApartmentDto getApartment(final Long id) throws RentowneNotFoundException {
-        final Apartment apartment = apartmentRepository.findById(id)
-            .orElseThrow(() -> new RentowneNotFoundException(id));
-        loadRentedObjects(apartment);
+        final Apartment apartment = apartmentRepository.findByIdWithRentedObjects(id).orElseThrow(() -> new RentowneNotFoundException(id));
         return ApartmentMapper.toDto(apartment);
     }
 
@@ -44,9 +42,7 @@ public class ApartmentServiceImpl implements ApartmentService {
         validateRentedObjectNames(apartmentDto);
 
         final Long loggedUserId = userService.getLoggedUser().getId();
-        final Long savedApartmentId = apartmentRepository.saveAndFlush(
-            ApartmentMapper.toEntity(apartmentDto, null, loggedUserId)
-        ).getId();
+        final Long savedApartmentId = apartmentRepository.saveAndFlush(ApartmentMapper.toEntity(apartmentDto, null, loggedUserId)).getId();
 
         final Set<RentedObject> rentedObjects = mapToRentedObjectEntities(apartmentDto, savedApartmentId);
         rentedObjectService.saveAll(rentedObjects);
@@ -62,24 +58,19 @@ public class ApartmentServiceImpl implements ApartmentService {
     }
 
     @Override
-    @Transactional
-    public void deleteApartment(final Long id) {
-        rentedObjectService.deleteAllByApartmentId(id);
-        apartmentRepository.deleteById(id);
-    }
-
-    @Override
     @Transactional(readOnly = true)
     public List<ApartmentDto> getAllApartmentsByLoggedUserAndApartment(final Long apartmentId) throws RentowneBusinessException {
         final Long loggedUserId = userService.getLoggedUser().getId();
-        return apartmentRepository.getAllApartmentsByLoggedUserAndApartment(loggedUserId, apartmentId);
+        return apartmentRepository.getAllApartmentsByLoggedUserAndApartment(loggedUserId, apartmentId).stream()
+                .map(ApartmentMapper::toBasicDto)
+                .toList();
     }
 
     @Override
     @Transactional
     public void updateRentedFlagOnApartment(final Long rentedObjectId) {
         rentedObjectRepository.updateRentedFlag(rentedObjectId, true);
-        final Long apartmentId = apartmentRepository.getApartmentIdByRentedObject(rentedObjectId);
+        final Long apartmentId = apartmentRepository.findIdByRentedObjects_Id(rentedObjectId);
         final List<Long> ids = rentedObjectRepository.findByApartmentIdAndIsRented(apartmentId, false)
                 .stream().map(RentedObject::getId).toList();
         if (ids.isEmpty()) {
