@@ -2,7 +2,7 @@ package pl.rentowne.util;
 
 import pl.rentowne.exception.RentowneBusinessException;
 import pl.rentowne.exception.RentowneErrorCode;
-import pl.rentowne.meter.model.MeterType;
+import pl.rentowne.meter.MeterType;
 
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;

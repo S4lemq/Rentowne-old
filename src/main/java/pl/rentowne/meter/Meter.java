@@ -1,4 +1,4 @@
-package pl.rentowne.meter.model;
+package pl.rentowne.meter;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;

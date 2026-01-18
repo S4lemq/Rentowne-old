@@ -1,13 +1,10 @@
-package pl.rentowne.meter.repository;
+package pl.rentowne.meter;
 
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
-import pl.rentowne.meter.model.Meter;
-import pl.rentowne.meter.model.MeterType;
-import pl.rentowne.meter.model.dto.MeterListDto;
 import pl.rentowne.meter_reading.model.dto.MeterReadingDto;
 
 import java.util.List;
@@ -80,7 +77,7 @@ public interface MeterRepository extends JpaRepository<Meter, Long> {
             AND m.distributeReadings = true
             """)
     List<Meter> findDistributedMetersByApartmentAndType(@Param("apartmentId") Long apartmentId,
-                                                         @Param("meterType") pl.rentowne.meter.model.MeterType meterType);
+                                                         @Param("meterType") MeterType meterType);
 
     /**
      * Pobiera stany i id licznika, które nie zostały rozliczone dla danego obiektu do wynajęcia i typu licznika

@@ -14,7 +14,7 @@ import pl.rentowne.lease_agreement.model.dto.LeaseTerminationInfoDto;
 import pl.rentowne.lease_agreement.model.dto.TerminateLeaseRequestDto;
 import pl.rentowne.lease_agreement.repository.LeaseAgreementRepository;
 import pl.rentowne.lease_agreement.service.LeaseAgreementService;
-import pl.rentowne.meter.model.MeterType;
+import pl.rentowne.meter.MeterType;
 import pl.rentowne.meter_reading.repository.MeterReadingRepository;
 import pl.rentowne.rented_object.RentedObject;
 import pl.rentowne.settlement.model.Settlement;

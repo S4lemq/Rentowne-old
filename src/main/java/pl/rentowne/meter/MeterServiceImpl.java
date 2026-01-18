@@ -1,4 +1,4 @@
-package pl.rentowne.meter.service.impl;
+package pl.rentowne.meter;
 
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
@@ -8,14 +8,6 @@ import org.springframework.transaction.annotation.Transactional;
 import pl.rentowne.apartment.Apartment;
 import pl.rentowne.exception.RentowneBusinessException;
 import pl.rentowne.exception.RentowneErrorCode;
-import pl.rentowne.meter.ApartmentDto;
-import pl.rentowne.meter.model.Meter;
-import pl.rentowne.meter.model.MeterType;
-import pl.rentowne.meter.model.dto.ApartmentMeterDto;
-import pl.rentowne.meter.model.dto.MeterDto;
-import pl.rentowne.meter.model.dto.MeterListDto;
-import pl.rentowne.meter.repository.MeterRepository;
-import pl.rentowne.meter.service.MeterService;
 import pl.rentowne.rented_object.RentedObject;
 import pl.rentowne.rented_object.RentedObjectDto;
 import pl.rentowne.user.service.UserService;
@@ -31,32 +23,32 @@ public class MeterServiceImpl implements MeterService {
 
     @Override
     @Transactional
-    public MeterDto addMeter(MeterDto meterDto) {
-        RentedObject rentedObjectReference = new RentedObject(meterDto.getRentedObject().id());
+    public MeterDto addMeter(final MeterDto meterDto) {
+        final RentedObject rentedObjectReference = new RentedObject(meterDto.getRentedObject().id());
 
-        Meter meter = this.convertToEntity(meterDto, rentedObjectReference);
-        Meter savedMeter = meterRepository.save(meter);
+        final Meter meter = this.convertToEntity(meterDto, rentedObjectReference);
+        final Meter savedMeter = meterRepository.save(meter);
         return this.convertToDto(savedMeter);
     }
 
     @Override
     @Transactional
-    public ApartmentMeterDto addApartmentMeter(ApartmentMeterDto meterDto) {
-        Apartment apartmentReference = new Apartment(meterDto.apartment().id());
+    public ApartmentMeterDto addApartmentMeter(final ApartmentMeterDto meterDto) {
+        final Apartment apartmentReference = new Apartment(meterDto.apartment().id());
 
-        Meter meter = this.convertToEntityFromApartmentMeter(meterDto, apartmentReference);
-        Meter savedMeter = meterRepository.save(meter);
+        final Meter meter = this.convertToEntityFromApartmentMeter(meterDto, apartmentReference);
+        final Meter savedMeter = meterRepository.save(meter);
         return this.convertToApartmentMeterDto(savedMeter);
     }
 
     @Override
     @Transactional(readOnly = true)
-    public MeterDto getMeterById(Long id) {
-        Meter meter = meterRepository.getMeterDtoById(id);
+    public MeterDto getMeterById(final Long id) {
+        final Meter meter = meterRepository.getMeterDtoById(id);
 
         if (meter.getRentedObject() != null) {
-            Long rentedObjectId = meter.getRentedObject().getId();
-            String apartmentName = meterRepository.getApartmentNameByRentedObjectId(rentedObjectId);
+            final Long rentedObjectId = meter.getRentedObject().getId();
+            final String apartmentName = meterRepository.getApartmentNameByRentedObjectId(rentedObjectId);
 
             return MeterDto.builder()
                     .id(meter.getId())
@@ -74,7 +66,7 @@ public class MeterServiceImpl implements MeterService {
                     .distributeReadings(false)
                     .build();
         } else {
-            Apartment apartment = meter.getApartment();
+            final Apartment apartment = meter.getApartment();
             return MeterDto.builder()
                     .id(meter.getId())
                     .name(meter.getName())
@@ -93,8 +85,8 @@ public class MeterServiceImpl implements MeterService {
 
     @Override
     @Transactional
-    public void updateMeter(MeterDto meter) {
-        Meter meterEntity = meterRepository.findById(meter.getId())
+    public void updateMeter(final MeterDto meter) {
+        final Meter meterEntity = meterRepository.findById(meter.getId())
                 .orElseThrow(() -> new RentowneBusinessException(RentowneErrorCode.ITEM_NOT_FOUND));
 
         meterEntity.setName(meter.getName());
@@ -112,8 +104,8 @@ public class MeterServiceImpl implements MeterService {
 
     @Override
     @Transactional
-    public void updateApartmentMeter(ApartmentMeterDto meter) {
-        Meter meterEntity = meterRepository.findById(meter.id())
+    public void updateApartmentMeter(final ApartmentMeterDto meter) {
+        final Meter meterEntity = meterRepository.findById(meter.id())
                 .orElseThrow(() -> new RentowneBusinessException(RentowneErrorCode.ITEM_NOT_FOUND));
 
         meterEntity.setName(meter.name());
@@ -132,8 +124,8 @@ public class MeterServiceImpl implements MeterService {
 
     @Override
     @Transactional(readOnly = true)
-    public List<ApartmentMeterDto> getApartmentMeters(Long apartmentId) {
-        List<Meter> meters = meterRepository.findByApartmentId(apartmentId);
+    public List<ApartmentMeterDto> getApartmentMeters(final Long apartmentId) {
+        final List<Meter> meters = meterRepository.findByApartmentId(apartmentId);
         return meters.stream()
                 .map(this::convertToApartmentMeterDto)
                 .toList();
@@ -141,8 +133,8 @@ public class MeterServiceImpl implements MeterService {
 
     @Override
     @Transactional(readOnly = true)
-    public void getMeterCountByRentedObject(Long id) {
-        List<Long> ids = meterRepository.findMeterCountByRentedObject(id);
+    public void getMeterCountByRentedObject(final Long id) {
+        final List<Long> ids = meterRepository.findMeterCountByRentedObject(id);
         if (ids.isEmpty()) {
             throw new RentowneBusinessException(RentowneErrorCode.RENTED_OBJECT_DOES_NOT_HAVE_METERS);
         }
@@ -150,12 +142,12 @@ public class MeterServiceImpl implements MeterService {
 
     @Override
     @Transactional(readOnly = true)
-    public Page<MeterListDto> getMetersList(Pageable pageable, Long apartmentId, MeterType meterType, String searchText) {
-        Long userAccountId = userService.getLoggedUser().getId();
+    public Page<MeterListDto> getMetersList(final Pageable pageable, final Long apartmentId, final MeterType meterType, final String searchText) {
+        final Long userAccountId = userService.getLoggedUser().getId();
         return meterRepository.getMetersList(pageable, userAccountId, apartmentId, meterType, searchText);
     }
 
-    private Meter convertToEntity(MeterDto dto, RentedObject rentedObjectReference) {
+    private Meter convertToEntity(final MeterDto dto, final RentedObject rentedObjectReference) {
         return Meter.builder()
                 .name(dto.getName())
                 .meterType(dto.getMeterType())
@@ -166,7 +158,7 @@ public class MeterServiceImpl implements MeterService {
                 .build();
     }
 
-    private Meter convertToEntityFromApartmentMeter(ApartmentMeterDto dto, Apartment apartmentReference) {
+    private Meter convertToEntityFromApartmentMeter(final ApartmentMeterDto dto, final Apartment apartmentReference) {
         return Meter.builder()
                 .name(dto.name())
                 .meterType(dto.meterType())
@@ -178,7 +170,7 @@ public class MeterServiceImpl implements MeterService {
                 .build();
     }
 
-    private MeterDto convertToDto(Meter entity) {
+    private MeterDto convertToDto(final Meter entity) {
         return MeterDto.builder()
                 .id(entity.getId())
                 .name(entity.getName())
@@ -189,7 +181,7 @@ public class MeterServiceImpl implements MeterService {
                 .build();
     }
 
-    private ApartmentMeterDto convertToApartmentMeterDto(Meter entity) {
+    private ApartmentMeterDto convertToApartmentMeterDto(final Meter entity) {
         return new ApartmentMeterDto(
                 entity.getId(),
                 entity.getName(),

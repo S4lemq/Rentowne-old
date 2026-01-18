@@ -4,8 +4,8 @@ import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
-import pl.rentowne.meter.model.Meter;
-import pl.rentowne.meter.model.dto.MeterDto;
+import pl.rentowne.meter.Meter;
+import pl.rentowne.meter.MeterDto;
 import pl.rentowne.meter_reading.model.MeterReading;
 
 import java.math.BigDecimal;

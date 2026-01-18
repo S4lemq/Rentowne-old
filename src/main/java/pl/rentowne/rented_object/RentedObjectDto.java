@@ -1,7 +1,7 @@
 package pl.rentowne.rented_object;
 
 import lombok.Builder;
-import pl.rentowne.meter.model.MeterType;
+import pl.rentowne.meter.MeterType;
 
 import java.util.List;
 

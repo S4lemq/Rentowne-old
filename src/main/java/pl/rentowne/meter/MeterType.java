@@ -1,4 +1,4 @@
-package pl.rentowne.meter.model;
+package pl.rentowne.meter;
 
 public enum MeterType {
     WATER_COLD,

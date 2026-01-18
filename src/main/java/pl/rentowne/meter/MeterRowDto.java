@@ -1,8 +1,7 @@
-package pl.rentowne.meter.model.dto;
+package pl.rentowne.meter;
 
 import lombok.AllArgsConstructor;
 import lombok.Getter;
-import pl.rentowne.meter.model.MeterType;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;

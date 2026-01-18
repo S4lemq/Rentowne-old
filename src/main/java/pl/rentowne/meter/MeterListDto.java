@@ -1,6 +1,4 @@
-package pl.rentowne.meter.model.dto;
-
-import pl.rentowne.meter.model.MeterType;
+package pl.rentowne.meter;
 
 /**
  * DTO listy liczników

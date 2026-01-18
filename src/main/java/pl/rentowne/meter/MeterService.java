@@ -1,11 +1,7 @@
-package pl.rentowne.meter.service;
+package pl.rentowne.meter;
 
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
-import pl.rentowne.meter.model.MeterType;
-import pl.rentowne.meter.model.dto.ApartmentMeterDto;
-import pl.rentowne.meter.model.dto.MeterDto;
-import pl.rentowne.meter.model.dto.MeterListDto;
 
 import java.util.List;
 

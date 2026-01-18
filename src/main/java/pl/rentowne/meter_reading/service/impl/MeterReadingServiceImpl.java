@@ -5,7 +5,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import pl.rentowne.exception.RentowneBusinessException;
 import pl.rentowne.exception.RentowneErrorCode;
-import pl.rentowne.meter.model.MeterType;
+import pl.rentowne.meter.MeterType;
 import pl.rentowne.meter_reading.model.MeterReading;
 import pl.rentowne.meter_reading.model.dto.MeterReadingDto;
 import pl.rentowne.meter_reading.model.dto.PrevMeterReadingDto;

@@ -1,6 +1,6 @@
 package pl.rentowne.meter_reading.model.dto;
 
-import pl.rentowne.meter.model.MeterType;
+import pl.rentowne.meter.MeterType;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;

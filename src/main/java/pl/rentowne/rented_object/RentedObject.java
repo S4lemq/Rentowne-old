@@ -22,7 +22,7 @@ import lombok.Setter;
 import org.hibernate.annotations.SQLRestriction;
 import pl.rentowne.apartment.Apartment;
 import pl.rentowne.common.model.BaseEntity;
-import pl.rentowne.meter.model.Meter;
+import pl.rentowne.meter.Meter;
 import pl.rentowne.settlement.model.Settlement;
 import pl.rentowne.tenant.model.Tenant;
 

@@ -1,11 +1,9 @@
-package pl.rentowne.meter.model.dto;
+package pl.rentowne.meter;
 
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
-import pl.rentowne.meter.ApartmentDto;
-import pl.rentowne.meter.model.MeterType;
 import pl.rentowne.rented_object.RentedObjectDto;
 
 import java.math.BigDecimal;

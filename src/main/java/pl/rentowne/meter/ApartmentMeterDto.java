@@ -1,7 +1,4 @@
-package pl.rentowne.meter.model.dto;
-
-import pl.rentowne.meter.ApartmentDto;
-import pl.rentowne.meter.model.MeterType;
+package pl.rentowne.meter;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
