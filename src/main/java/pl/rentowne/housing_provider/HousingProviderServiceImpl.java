@@ -24,34 +24,30 @@ public class HousingProviderServiceImpl implements HousingProviderService {
     private final HousingProviderRepository housingProviderRepository;
     private final ProviderFieldRepository providerFieldRepository;
     private final UserService userService;
-    private final HousingProviderMapper mapper;
 
     @Override
     @Transactional
     public Long addHousingServiceProvider(final HousingProviderDto dto) throws RentowneBusinessException {
-        final Long userId = userService.getLoggedUser().getId();
-        return housingProviderRepository.save(mapper.toEntity(dto, userId)).getId();
+        final Long userId = getLoggedUserId();
+        final HousingProvider entity = HousingProviderMapper.toEntity(dto, userId);
+        return housingProviderRepository.save(entity).getId();
     }
 
     @Override
     public HousingProviderDto getHousingProviderById(final Long id) {
-        final HousingProvider housingProvider = housingProviderRepository.findWithProviderFieldsById(id).orElseThrow(() -> new RentowneNotFoundException(id));
-        return mapper.toDto(housingProvider);
+        final HousingProvider housingProvider = housingProviderRepository.findWithProviderFieldsById(id)
+                .orElseThrow(() -> new RentowneNotFoundException(id));
+        return HousingProviderMapper.toDto(housingProvider);
     }
 
     @Override
     @Transactional
     public void updateHousingProvider(final HousingProviderDto dto) {
-        final HousingProvider entity = housingProviderRepository.findWithProviderFieldsById(dto.id()).orElseThrow(() -> new RentowneNotFoundException(dto.id()));
+        final HousingProvider entity = housingProviderRepository.findWithProviderFieldsById(dto.id())
+                .orElseThrow(() -> new RentowneNotFoundException(dto.id()));
 
-        // Aktualizacja podstawowych pól
-        entity.setName(dto.name());
-        entity.setType(dto.type());
-        entity.setTax(dto.tax());
-        entity.setConversionRate(dto.conversionRate());
-        entity.setRecurringPayment(dto.recurringPayment());
+        HousingProviderMapper.updateEntity(entity, dto);
 
-        // Aktualizacja pól ProviderField, jeśli są dostępne
         if (dto.providerFieldDtos() != null) {
             updateProviderFields(dto.providerFieldDtos(), entity);
         }
@@ -62,74 +58,60 @@ public class HousingProviderServiceImpl implements HousingProviderService {
     @Override
     @Transactional(readOnly = true)
     public List<HousingProviderBasicDto> getHousingProvidersForLoggedUser() {
-        final Long loggedUserId = userService.getLoggedUser().getId();
-        final List<HousingProvider> providers = housingProviderRepository.findAllByUserId(loggedUserId);
-        return providers.stream()
-                .map(mapper::toBasicDto)
-                .collect(Collectors.toList());
+        final Long userId = getLoggedUserId();
+        return housingProviderRepository.findAllByUserId(userId).stream()
+                .map(HousingProviderMapper::toBasicDto)
+                .toList();
     }
 
     private void updateProviderFields(final List<ProviderFieldDto> fieldsDto, final HousingProvider housingProvider) {
         final List<ProviderField> currentFields = housingProvider.getProviderFields();
-        // Usuwanie, aktualizowanie istniejących i dodawanie nowych pól
         final Map<Long, ProviderFieldDto> dtoMap = fieldsDto.stream()
                 .filter(fieldDto -> fieldDto.id() != null)
                 .collect(Collectors.toMap(ProviderFieldDto::id, Function.identity()));
 
-        // Usuń istniejące ProviderField, których nie ma w dto
         final List<ProviderField> fieldsToRemove = currentFields.stream()
                 .filter(field -> !dtoMap.containsKey(field.getId()))
-                .collect(Collectors.toList());
-        currentFields.removeAll(fieldsToRemove);
-        housingProvider.setProviderFields(currentFields); // Aktualizuj kolekcję w encji
-        providerFieldRepository.deleteAll(fieldsToRemove); // Usuń z bazy danych
+                .toList();
 
-        // Aktualizuj istniejące i dodaj nowe
+        currentFields.removeAll(fieldsToRemove);
+        providerFieldRepository.deleteAll(fieldsToRemove);
+
         for (final ProviderFieldDto fieldDto : fieldsDto) {
             if (fieldDto.id() != null) {
-                // Aktualizuj istniejące
-                final ProviderField existingField = currentFields.stream()
+                currentFields.stream()
                         .filter(field -> field.getId().equals(fieldDto.id()))
                         .findFirst()
-                        .orElse(null);
-                if (existingField != null) {
-                    existingField.setName(fieldDto.name());
-                    existingField.setPrice(fieldDto.price());
-                    existingField.setBillingMethod(fieldDto.billingMethod());
-                }
+                        .ifPresent(existingField -> HousingProviderMapper.updateProviderFieldEntity(existingField, fieldDto));
             } else {
-                // Dodaj nowe
-                final ProviderField newField = ProviderField.builder()
-                        .name(fieldDto.name())
-                        .price(fieldDto.price())
-                        .billingMethod(fieldDto.billingMethod())
-                        .housingProvider(housingProvider)
-                        .build();
+                final ProviderField newField = HousingProviderMapper.toProviderFieldEntity(fieldDto, housingProvider);
                 currentFields.add(newField);
             }
         }
-
     }
 
     @Override
     @Transactional(readOnly = true)
     public Page<HousingProviderListDto> getHousingProvidersList(final Pageable pageable, final Long apartmentId, final String searchText) {
-        final Long userAccountId = userService.getLoggedUser().getId();
-        return housingProviderRepository.getHousingProvidersList(pageable, userAccountId, apartmentId, searchText);
+        final Long userId = getLoggedUserId();
+        return housingProviderRepository.getHousingProvidersList(pageable, userId, apartmentId, searchText);
     }
 
     @Override
     @Transactional(readOnly = true)
     public Page<HousingProviderApartmentDto> getHousingProvidersForApartment(final Pageable pageable, final Long apartmentId) {
-        final Long userAccountId = userService.getLoggedUser().getId();
-        return housingProviderRepository.getHousingProvidersForApartment(pageable, userAccountId, apartmentId);
+        final Long userId = getLoggedUserId();
+        return housingProviderRepository.getHousingProvidersForApartment(pageable, userId, apartmentId);
     }
 
     @Override
     @Transactional(readOnly = true)
     public Page<HousingProviderWithAssignmentDto> getAllProvidersWithAssignmentStatus(final Pageable pageable, final Long apartmentId) {
-        final Long userAccountId = userService.getLoggedUser().getId();
-        return housingProviderRepository.getAllProvidersWithAssignmentStatus(pageable, userAccountId, apartmentId);
+        final Long userId = getLoggedUserId();
+        return housingProviderRepository.getAllProvidersWithAssignmentStatus(pageable, userId, apartmentId);
     }
 
+    private Long getLoggedUserId() {
+        return userService.getLoggedUser().getId();
+    }
 }

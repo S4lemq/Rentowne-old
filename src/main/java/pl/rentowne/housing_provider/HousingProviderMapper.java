@@ -1,16 +1,18 @@
 package pl.rentowne.housing_provider;
 
-import org.springframework.stereotype.Component;
+import lombok.AccessLevel;
+import lombok.NoArgsConstructor;
+import lombok.NonNull;
 import pl.rentowne.provider_field.model.ProviderField;
 import pl.rentowne.provider_field.model.dto.ProviderFieldDto;
 import pl.rentowne.user.model.User;
 
 import java.util.List;
 
-@Component
+@NoArgsConstructor(access = AccessLevel.PRIVATE)
 class HousingProviderMapper {
 
-    HousingProviderBasicDto toBasicDto(HousingProvider provider) {
+    static HousingProviderBasicDto toBasicDto(@NonNull final HousingProvider provider) {
         return new HousingProviderBasicDto(
                 provider.getId(),
                 provider.getName(),
@@ -19,7 +21,7 @@ class HousingProviderMapper {
         );
     }
 
-    HousingProviderDto toDto(HousingProvider entity) {
+    static HousingProviderDto toDto(@NonNull final HousingProvider entity) {
         return new HousingProviderDto(
                 entity.getId(),
                 entity.getName(),
@@ -27,14 +29,14 @@ class HousingProviderMapper {
                 entity.getTax(),
                 entity.getConversionRate(),
                 entity.getProviderFields().stream()
-                        .map(this::toProviderFieldDto)
+                        .map(HousingProviderMapper::toProviderFieldDto)
                         .toList(),
                 entity.isRecurringPayment()
         );
     }
 
-    HousingProvider toEntity(HousingProviderDto dto, Long userId) {
-        HousingProvider housingProvider = HousingProvider.builder()
+    static HousingProvider toEntity(@NonNull final HousingProviderDto dto, @NonNull final Long userId) {
+        final HousingProvider housingProvider = HousingProvider.builder()
                 .id(dto.id())
                 .name(dto.name())
                 .type(dto.type())
@@ -44,15 +46,15 @@ class HousingProviderMapper {
                 .user(new User(userId))
                 .build();
 
-        List<ProviderField> fields = dto.providerFieldDtos().stream()
-                .map(field -> toProviderField(field, housingProvider))
+        final List<ProviderField> fields = dto.providerFieldDtos().stream()
+                .map(field -> toProviderFieldEntity(field, housingProvider))
                 .toList();
 
         housingProvider.setProviderFields(fields);
         return housingProvider;
     }
 
-    private ProviderFieldDto toProviderFieldDto(ProviderField field) {
+    private static ProviderFieldDto toProviderFieldDto(@NonNull final ProviderField field) {
         return new ProviderFieldDto(
                 field.getId(),
                 field.getName(),
@@ -61,7 +63,7 @@ class HousingProviderMapper {
         );
     }
 
-    private ProviderField toProviderField(ProviderFieldDto dto, HousingProvider housingProvider) {
+    static ProviderField toProviderFieldEntity(@NonNull final ProviderFieldDto dto, @NonNull final HousingProvider housingProvider) {
         return ProviderField.builder()
                 .id(dto.id())
                 .name(dto.name())
@@ -69,5 +71,19 @@ class HousingProviderMapper {
                 .billingMethod(dto.billingMethod())
                 .housingProvider(housingProvider)
                 .build();
+    }
+
+    static void updateEntity(@NonNull final HousingProvider entity, @NonNull final HousingProviderDto dto) {
+        entity.setName(dto.name());
+        entity.setType(dto.type());
+        entity.setTax(dto.tax());
+        entity.setConversionRate(dto.conversionRate());
+        entity.setRecurringPayment(dto.recurringPayment());
+    }
+
+    static void updateProviderFieldEntity(@NonNull final ProviderField entity, @NonNull final ProviderFieldDto dto) {
+        entity.setName(dto.name());
+        entity.setPrice(dto.price());
+        entity.setBillingMethod(dto.billingMethod());
     }
 }
