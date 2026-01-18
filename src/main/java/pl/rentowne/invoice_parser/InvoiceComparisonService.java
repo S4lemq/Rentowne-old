@@ -30,7 +30,7 @@ public class InvoiceComparisonService {
     @Transactional(readOnly = true)
     public InvoiceComparisonResponse compareInvoiceWithSaved(Long housingProviderId, MultipartFile pdf, ProviderType type) {
         // Walidacja - czy użytkownik jest właścicielem tego HousingProvider
-        HousingProvider housingProvider = housingProviderRepository.findById(housingProviderId)
+        HousingProvider housingProvider = housingProviderRepository.findWithProviderFieldsById(housingProviderId)
                 .orElseThrow(() -> new RentowneBusinessException(RentowneErrorCode.HOUSING_PROVIDER_NOT_FOUND));
 
         Long loggedUserId = userService.getLoggedUser().getId();

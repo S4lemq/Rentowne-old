@@ -11,13 +11,10 @@ import java.util.List;
 import java.util.Optional;
 import java.util.Set;
 
-/**
- * Repozytorium dostawców świadczeń
- */
 public interface HousingProviderRepository extends JpaRepository<HousingProvider, Long> {
 
-    @Query("SELECT hp FROM HousingProvider hp LEFT JOIN FETCH hp.providerFields WHERE hp.id = :id")
-    HousingProvider getHousingById(@Param("id")Long id);
+    @EntityGraph(attributePaths = "providerFields")
+    Optional<HousingProvider> findWithProviderFieldsById(Long id);
 
     @Query("SELECT DISTINCT hp FROM HousingProvider hp " +
             "LEFT JOIN FETCH hp.providerFields pf " +
@@ -26,11 +23,7 @@ public interface HousingProviderRepository extends JpaRepository<HousingProvider
             "WHERE ro.id = :rentedObjectId")
     List<HousingProvider> findHousingProviderWithProviderFieldsByRentedObjectId(@Param("rentedObjectId") Long rentedObjectId);
 
-    @EntityGraph(attributePaths = {"providerFields"})
-    Optional<HousingProvider> findById(Long id);
-
-    @Query("SELECT hp FROM HousingProvider hp WHERE hp.user.id = :userId")
-    List<HousingProvider> findByUserId(@Param("userId") Long userId);
+    List<HousingProvider> findAllByUserId(Long userId);
 
     @Query("""
             select distinct hp from HousingProvider hp
@@ -47,7 +40,7 @@ public interface HousingProviderRepository extends JpaRepository<HousingProvider
     Set<HousingProvider> fetchApartmentsForProviders(@Param("providers") Set<HousingProvider> providers);
 
     @Query("""
-            SELECT new pl.rentowne.housing_provider.model.dto.HousingProviderListDto(
+            SELECT new pl.rentowne.housing_provider.HousingProviderListDto(
                 hp.id,
                 hp.name,
                 hp.type,
@@ -75,7 +68,7 @@ public interface HousingProviderRepository extends JpaRepository<HousingProvider
      * @return paginowana lista dostawców dla mieszkania
      */
     @Query("""
-            SELECT new pl.rentowne.housing_provider.model.dto.HousingProviderApartmentDto(
+            SELECT new pl.rentowne.housing_provider.HousingProviderApartmentDto(
                 hp.id,
                 hp.name,
                 hp.type,
@@ -98,7 +91,7 @@ public interface HousingProviderRepository extends JpaRepository<HousingProvider
      * @return paginowana lista dostawców z flagą przypisania
      */
     @Query("""
-            SELECT new pl.rentowne.housing_provider.model.dto.HousingProviderWithAssignmentDto(
+            SELECT new pl.rentowne.housing_provider.HousingProviderWithAssignmentDto(
                 hp.id,
                 hp.name,
                 hp.type,

@@ -6,6 +6,7 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import pl.rentowne.exception.RentowneBusinessException;
+import pl.rentowne.exception.RentowneNotFoundException;
 import pl.rentowne.provider_field.model.ProviderField;
 import pl.rentowne.provider_field.model.dto.ProviderFieldDto;
 import pl.rentowne.provider_field.repository.ProviderFieldRepository;
@@ -33,14 +34,14 @@ public class HousingProviderServiceImpl implements HousingProviderService {
 
     @Override
     public HousingProviderDto getHousingProviderById(Long id) {
-        HousingProvider housingProvider = housingProviderRepository.getHousingById(id);
+        HousingProvider housingProvider = housingProviderRepository.findWithProviderFieldsById(id).orElseThrow(() -> new RentowneNotFoundException(id));
         return this.asDto(housingProvider);
     }
 
     @Override
     @Transactional
     public void updateHousingProvider(HousingProviderDto dto) {
-        HousingProvider entity = housingProviderRepository.getHousingById(dto.getId());
+        HousingProvider entity = housingProviderRepository.findWithProviderFieldsById(dto.getId()).orElseThrow(() -> new RentowneNotFoundException(dto.getId()));
 
         // Aktualizacja podstawowych pól
         entity.setName(dto.getName());
@@ -62,7 +63,7 @@ public class HousingProviderServiceImpl implements HousingProviderService {
     public List<HousingProviderBasicDto> getHousingProvidersForLoggedUser() {
         Long loggedUserId = userService.getLoggedUser().getId();
 
-        List<HousingProvider> providers = housingProviderRepository.findByUserId(loggedUserId);
+        List<HousingProvider> providers = housingProviderRepository.findAllByUserId(loggedUserId);
 
         return providers.stream()
                 .map(provider -> HousingProviderBasicDto.builder()
