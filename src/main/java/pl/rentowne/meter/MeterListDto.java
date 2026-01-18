@@ -3,7 +3,7 @@ package pl.rentowne.meter;
 /**
  * DTO listy liczników
  */
-public record MeterListDto(
+record MeterListDto(
         Long id,
         String apartmentName,
         String rentedObject,

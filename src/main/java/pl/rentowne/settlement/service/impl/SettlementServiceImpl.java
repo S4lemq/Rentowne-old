@@ -12,7 +12,7 @@ import pl.rentowne.housing_provider.HousingProviderRepository;
 import pl.rentowne.housing_provider.ProviderType;
 import pl.rentowne.lease_agreement.model.dto.LeaseAgreementDto;
 import pl.rentowne.lease_agreement.repository.LeaseAgreementRepository;
-import pl.rentowne.meter.MeterRepository;
+import pl.rentowne.meter.MeterReadingData;
 import pl.rentowne.meter.MeterType;
 import pl.rentowne.meter_reading.model.MeterReading;
 import pl.rentowne.meter_reading.model.dto.MeterReadingDto;
@@ -53,7 +53,6 @@ import java.util.stream.Collectors;
 public class SettlementServiceImpl implements SettlementService {
     private final SettlementRepository settlementRepository;
     private final HousingProviderRepository housingProviderRepository;
-    private final MeterRepository meterRepository;
     private final MeterReadingRepository meterReadingRepository;
     private final LeaseAgreementRepository leaseAgreementRepository;
     private final RentedObjectRepository rentedObjectRepository;
@@ -510,9 +509,9 @@ public class SettlementServiceImpl implements SettlementService {
         Map<Long, BigDecimal> grossPerRo = allocateGrossPerRentedObject(netPerRo, apartmentGross, vatPercent);
 
         // --- 8) Odczyty do oznaczenia 'settled' – tylko bieżący RO ---
-        List<MeterReadingDto> meterReadingDtos =
-                meterRepository.getConsumptionAndIdByRentedObjectAndMeterType(rentedObjectId, MeterType.ELECTRIC);
-        allMeterReadingIds.addAll(meterReadingDtos.stream().map(MeterReadingDto::getId).toList());
+        List<MeterReadingData> meterReadings =
+                settlementRepository.getConsumptionAndIdByRentedObjectAndMeterType(rentedObjectId, MeterType.ELECTRIC);
+        allMeterReadingIds.addAll(meterReadings.stream().map(MeterReadingData::id).toList());
 
         BigDecimal resultGrossForCurrent = grossPerRo.getOrDefault(rentedObjectId, BigDecimal.ZERO);
 
@@ -721,10 +720,10 @@ public class SettlementServiceImpl implements SettlementService {
         if (elecCtx != null) {
             electricityAmount = elecCtx.amount();
             // Pobierz zużycie prądu
-            List<MeterReadingDto> electricityReadings =
-                    meterRepository.getConsumptionAndIdByRentedObjectAndMeterType(rentedObjectId, MeterType.ELECTRIC);
+            List<MeterReadingData> electricityReadings =
+                    settlementRepository.getConsumptionAndIdByRentedObjectAndMeterType(rentedObjectId, MeterType.ELECTRIC);
             electricityConsumption = electricityReadings.stream()
-                    .map(MeterReadingDto::getConsumption)
+                    .map(MeterReadingData::consumption)
                     .reduce(BigDecimal.ZERO, BigDecimal::add);
         }
 
@@ -734,10 +733,10 @@ public class SettlementServiceImpl implements SettlementService {
                 providerWithProviderFields, rentedObjectId, BigDecimal.ZERO, tempMeterReadingIds);
 
         // Pobierz zużycie wody
-        List<MeterReadingDto> waterReadings =
-                meterRepository.getConsumptionAndIdByRentedObjectAndMeterType(rentedObjectId, MeterType.WATER_COLD);
+        List<MeterReadingData> waterReadings =
+                settlementRepository.getConsumptionAndIdByRentedObjectAndMeterType(rentedObjectId, MeterType.WATER_COLD);
         BigDecimal waterConsumption = waterReadings.stream()
-                .map(MeterReadingDto::getConsumption)
+                .map(MeterReadingData::consumption)
                 .reduce(BigDecimal.ZERO, BigDecimal::add);
 
         return UtilityCostsDto.builder()

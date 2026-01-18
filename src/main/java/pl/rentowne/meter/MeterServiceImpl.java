@@ -8,6 +8,7 @@ import org.springframework.transaction.annotation.Transactional;
 import pl.rentowne.apartment.Apartment;
 import pl.rentowne.exception.RentowneBusinessException;
 import pl.rentowne.exception.RentowneErrorCode;
+import pl.rentowne.exception.RentowneNotFoundException;
 import pl.rentowne.rented_object.RentedObject;
 import pl.rentowne.rented_object.RentedObjectDto;
 import pl.rentowne.user.service.UserService;
@@ -44,18 +45,18 @@ public class MeterServiceImpl implements MeterService {
     @Override
     @Transactional(readOnly = true)
     public MeterDto getMeterById(final Long id) {
-        final Meter meter = meterRepository.getMeterDtoById(id);
+        final Meter meter = meterRepository.findWithApartmentAndRentedObjectById(id).orElseThrow(() -> new RentowneNotFoundException(id));
 
         if (meter.getRentedObject() != null) {
-            final Long rentedObjectId = meter.getRentedObject().getId();
-            final String apartmentName = meterRepository.getApartmentNameByRentedObjectId(rentedObjectId);
+            final RentedObject rentedObject = meter.getRentedObject();
+            final String apartmentName = rentedObject.getApartment().getApartmentName();
 
             return MeterDto.builder()
                     .id(meter.getId())
                     .name(meter.getName())
                     .meterType(meter.getMeterType())
                     .rentedObject(RentedObjectDto.builder()
-                            .id(rentedObjectId)
+                            .id(rentedObject.getId())
                             .build())
                     .apartment(ApartmentDto.builder()
                             .apartmentName(apartmentName)
@@ -125,7 +126,7 @@ public class MeterServiceImpl implements MeterService {
     @Override
     @Transactional(readOnly = true)
     public List<ApartmentMeterDto> getApartmentMeters(final Long apartmentId) {
-        final List<Meter> meters = meterRepository.findByApartmentId(apartmentId);
+        final List<Meter> meters = meterRepository.findAllByApartmentIdOrderByIdAsc(apartmentId);
         return meters.stream()
                 .map(this::convertToApartmentMeterDto)
                 .toList();
@@ -134,8 +135,11 @@ public class MeterServiceImpl implements MeterService {
     @Override
     @Transactional(readOnly = true)
     public void getMeterCountByRentedObject(final Long id) {
-        final List<Long> ids = meterRepository.findMeterCountByRentedObject(id);
-        if (ids.isEmpty()) {
+        final List<Meter> meters = meterRepository.findAllByRentedObjectId(id);
+        final boolean hasRequiredMeters = meters.stream()
+                .anyMatch(meter -> meter.getMeterType() == MeterType.ELECTRIC || meter.getMeterType() == MeterType.WATER_COLD);
+
+        if (!hasRequiredMeters) {
             throw new RentowneBusinessException(RentowneErrorCode.RENTED_OBJECT_DOES_NOT_HAVE_METERS);
         }
     }

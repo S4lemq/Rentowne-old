@@ -6,6 +6,8 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
+import pl.rentowne.meter.MeterReadingData;
+import pl.rentowne.meter.MeterType;
 import pl.rentowne.settlement.model.Settlement;
 import pl.rentowne.settlement.model.SettlementStatus;
 import pl.rentowne.settlement.model.dto.SettlementDateAmountDto;
@@ -243,6 +245,25 @@ public interface SettlementRepository extends JpaRepository<Settlement, Long> {
     void updateStatus(
             @Param("orderHash") String orderHash,
             @Param("settlementStatus") SettlementStatus settlementStatus
+    );
+
+    /**
+     * Pobiera stany i id licznika, które nie zostały rozliczone dla danego obiektu do wynajęcia i typu licznika
+     * @param rentedObjectId id obiektu
+     * @param meterType typ licznika
+     * @return lista danych odczytów liczników
+     */
+    @Query("""
+            SELECT new pl.rentowne.meter.MeterReadingData(mr.id, mr.consumption)
+            FROM Meter m
+            JOIN MeterReading mr ON mr.meter.id = m.id
+            WHERE m.rentedObject.id = :rentedObjectId
+            AND m.meterType = :meterType
+            AND mr.settled = false
+            """)
+    List<MeterReadingData> getConsumptionAndIdByRentedObjectAndMeterType(
+            @Param("rentedObjectId") Long rentedObjectId,
+            @Param("meterType") MeterType meterType
     );
 
     /**
