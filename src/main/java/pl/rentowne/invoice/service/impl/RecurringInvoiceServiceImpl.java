@@ -18,13 +18,17 @@ import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Optional;
+import java.util.Map;
 import java.util.Set;
+
+import static java.util.stream.Collectors.toMap;
 
 @Slf4j
 @Service
 @RequiredArgsConstructor
 public class RecurringInvoiceServiceImpl implements RecurringInvoiceService {
+
+    private static final int PAY_DAY_OF_MONTH = 15;
 
     private final HousingProviderRepository housingProviderRepository;
     private final InvoiceRepository invoiceRepository;
@@ -33,112 +37,133 @@ public class RecurringInvoiceServiceImpl implements RecurringInvoiceService {
     @Override
     @Transactional
     public List<RecurringInvoiceDto> generateRecurringInvoices() {
+        final LocalDate currentMonth = clock.currentMonthFirstDay();
 
-        List<RecurringInvoiceDto> generatedInvoices = new ArrayList<>();
-        LocalDate currentMonth = clock.currentMonthFirstDay();
-
-        // Pobierz wszystkich dostawców z recurringPayment = true wraz z polami
-        Set<HousingProvider> providers = housingProviderRepository.findProvidersWithRecurringPaymentAndProviderFields();
-
-        // Doładuj mieszkania dla tych dostawców w osobnym zapytaniu
-        if (!providers.isEmpty()) {
-            providers = housingProviderRepository.fetchApartmentsForProviders(providers);
+        final Set<HousingProvider> providers = loadRecurringProvidersWithFieldsAndApartments();
+        if (providers.isEmpty()) {
+            log.info("Brak dostawców z płatnościami cyklicznymi.");
+            return List.of();
         }
 
         log.info("Znaleziono {} dostawców z płatnościami cyklicznymi", providers.size());
 
-        for (HousingProvider provider : providers) {
-            log.debug("Przetwarzam dostawcę: {} (ID: {})", provider.getName(), provider.getId());
+        final Set<Long> providerIds = providers.stream()
+                .map(HousingProvider::getId)
+                .collect(java.util.stream.Collectors.toSet());
 
-            // Oblicz kwotę faktury - suma wszystkich price z ProviderField
-            BigDecimal amount = provider.getProviderFields().stream()
-                    .map(ProviderField::getPrice)
-                    .reduce(BigDecimal.ZERO, BigDecimal::add);
+        final Set<Long> apartmentIds = providers.stream()
+                .flatMap(p -> p.getApartments().stream())
+                .map(Apartment::getId)
+                .collect(java.util.stream.Collectors.toSet());
 
-            // Iteruj po wszystkich mieszkaniach przypisanych do dostawcy
-            for (Apartment apartment : provider.getApartments()) {
-                try {
-                    // Sprawdź czy istnieje już faktura dla bieżącego miesiąca
-                    boolean invoiceExists = invoiceRepository.existsByApartmentAndProviderForCurrentMonth(
-                            apartment.getId(), provider.getId(), currentMonth
-                    );
+        if (apartmentIds.isEmpty()) {
+            log.info("Dostawcy cykliczni nie mają przypisanych mieszkań. Kończę.");
+            return List.of();
+        }
 
-                    if (invoiceExists) {
-                        log.debug("Faktura dla mieszkania {} i dostawcy {} już istnieje dla bieżącego miesiąca",
-                                apartment.getApartmentName(), provider.getName());
-                        continue;
-                    }
+        final var lastPayDayMonthByPair = loadLastPayDayMonthMap(providerIds, apartmentIds);
 
-                    // Sprawdź czy są jakieś faktury dla tego mieszkania i dostawcy
-                    Optional<Invoice> latestInvoiceOpt = invoiceRepository.findLatestByApartmentAndProvider(
-                            apartment.getId(), provider.getId()
-                    );
+        final List<Invoice> invoicesToSave = new ArrayList<>();
+        final List<RecurringInvoiceDto> result = new ArrayList<>();
 
-                    boolean shouldGenerate = false;
+        for (final HousingProvider provider : providers) {
+            final BigDecimal amount = calculateAmount(provider);
 
-                    if (latestInvoiceOpt.isEmpty()) {
-                        // Brak faktur w systemie - generuj nową
-                        log.debug("Brak faktur dla mieszkania {} i dostawcy {} - generuję nową",
-                                apartment.getApartmentName(), provider.getName());
-                        shouldGenerate = true;
-                    } else {
-                        // Sprawdź czy payDayMonth jest starszy niż aktualny miesiąc
-                        Invoice latestInvoice = latestInvoiceOpt.get();
-                        if (latestInvoice.getPayDayMonth() != null &&
-                                latestInvoice.getPayDayMonth().isBefore(currentMonth)) {
-                            log.debug("Ostatnia faktura dla mieszkania {} i dostawcy {} ma payDayMonth starszy niż bieżący miesiąc - generuję nową",
-                                    apartment.getApartmentName(), provider.getName());
-                            shouldGenerate = true;
-                        }
-                    }
-
-                    if (shouldGenerate) {
-                        RecurringInvoiceDto invoiceDto = generateInvoice(provider, apartment, amount, currentMonth);
-                        generatedInvoices.add(invoiceDto);
-                        log.info("Wygenerowano fakturę: {} dla mieszkania: {}",
-                                invoiceDto.getInvoiceNumber(), apartment.getApartmentName());
-                    }
-
-                } catch (Exception e) {
-                    log.error("Błąd podczas generowania faktury dla mieszkania {} i dostawcy {}",
-                            apartment.getApartmentName(), provider.getName(), e);
+            for (final Apartment apartment : provider.getApartments()) {
+                if (!shouldGenerate(currentMonth, lastPayDayMonthByPair, provider.getId(), apartment.getId())) {
+                    continue;
                 }
+
+                final Invoice invoice = buildInvoice(provider, apartment, amount, currentMonth);
+                invoicesToSave.add(invoice);
+
+                // DTO budujemy już teraz (invoiceNumber znamy), a nie po save()
+                result.add(toDto(provider, apartment, amount, currentMonth, invoice.getInvoiceNumber()));
             }
         }
 
-        log.info("Zakończono generowanie faktur. Wygenerowano {} faktur", generatedInvoices.size());
-        return generatedInvoices;
+        if (invoicesToSave.isEmpty()) {
+            log.info("Brak faktur do wygenerowania dla miesiąca {}", currentMonth);
+            return List.of();
+        }
+
+        invoiceRepository.saveAll(invoicesToSave);
+
+        log.info("Zakończono generowanie faktur. Wygenerowano {} faktur.", result.size());
+        return result;
     }
 
-    private RecurringInvoiceDto generateInvoice(HousingProvider provider, Apartment apartment,
-                                                 BigDecimal amount, LocalDate currentMonth) {
-        // Generuj numer faktury (format: FV/RRRRMM/ID_DOSTAWCY/ID_MIESZKANIA)
-        String invoiceNumber = generateInvoiceNumber(provider.getId(), apartment.getId(), currentMonth);
+    private Set<HousingProvider> loadRecurringProvidersWithFieldsAndApartments() {
+        final Set<HousingProvider> providers = housingProviderRepository.findProvidersWithRecurringPaymentAndProviderFields();
+        if (providers.isEmpty()) {
+            return providers;
+        }
+        return housingProviderRepository.fetchApartmentsForProviders(providers);
+    }
 
-        // Ustaw daty
-        LocalDate dateFrom = currentMonth.withDayOfMonth(1);
-        LocalDate dateTo = currentMonth.withDayOfMonth(currentMonth.lengthOfMonth());
-        LocalDate payDay = currentMonth.withDayOfMonth(15); // 15 dzień miesiąca
+    private Map<InvoiceKey, LocalDate> loadLastPayDayMonthMap(final Set<Long> providerIds, final Set<Long> apartmentIds) {
+        return invoiceRepository.findLastPayDayMonthByProviderAndApartment(providerIds, apartmentIds).stream()
+                .collect(toMap(
+                        row -> new InvoiceKey(row.getHousingProviderId(), row.getApartmentId()),
+                        InvoiceRepository.LastPayDayMonthRow::getLastPayDayMonth
+                ));
+    }
 
-        // Zapisz fakturę do bazy
-        Invoice invoice = Invoice.builder()
+    private boolean shouldGenerate(final LocalDate currentMonth,
+                                   final Map<InvoiceKey, LocalDate> lastPayDayMonthByPair,
+                                   final Long providerId,
+                                   final Long apartmentId) {
+        final LocalDate last = lastPayDayMonthByPair.get(new InvoiceKey(providerId, apartmentId));
+
+        // brak rekordu => nigdy nie było faktury => generuj
+        if (last == null) {
+            return true;
+        }
+        return last.isBefore(currentMonth);
+    }
+
+    private BigDecimal calculateAmount(final HousingProvider provider) {
+        // zabezpieczenie na null listy lub null price
+        if (provider.getProviderFields() == null || provider.getProviderFields().isEmpty()) {
+            return BigDecimal.ZERO;
+        }
+        return provider.getProviderFields().stream()
+                .map(ProviderField::getPrice)
+                .filter(java.util.Objects::nonNull)
+                .reduce(BigDecimal.ZERO, BigDecimal::add);
+    }
+
+    private Invoice buildInvoice(final HousingProvider provider,
+                                 final Apartment apartment,
+                                 final BigDecimal amount,
+                                 final LocalDate currentMonth) {
+
+        final String invoiceNumber = generateInvoiceNumber(provider.getId(), apartment.getId(), currentMonth);
+
+        final LocalDate dateTo = currentMonth.withDayOfMonth(currentMonth.lengthOfMonth());
+        final LocalDate payDay = currentMonth.withDayOfMonth(PAY_DAY_OF_MONTH);
+
+        return Invoice.builder()
                 .housingProvider(provider)
                 .apartment(apartment)
                 .invoiceNumber(invoiceNumber)
                 .month(currentMonth)
-                .dateFrom(dateFrom)
+                .dateFrom(currentMonth)
                 .dateTo(dateTo)
                 .amount(amount)
                 .payDay(payDay)
                 .payDayMonth(currentMonth)
                 .build();
+    }
 
-        Invoice savedInvoice = invoiceRepository.save(invoice);
-
-        // Zwróć DTO z informacjami o fakturze
+    private RecurringInvoiceDto toDto(final HousingProvider provider,
+                                      final Apartment apartment,
+                                      final BigDecimal amount,
+                                      final LocalDate currentMonth,
+                                      final String invoiceNumber) {
         return RecurringInvoiceDto.builder()
                 .seller(provider.getName())
-                .invoiceNumber(savedInvoice.getInvoiceNumber())
+                .invoiceNumber(invoiceNumber)
                 .apartment(apartment.getApartmentName())
                 .settlementMonth(currentMonth)
                 .providerType(provider.getType().name())
@@ -146,9 +171,11 @@ public class RecurringInvoiceServiceImpl implements RecurringInvoiceService {
                 .build();
     }
 
-    private String generateInvoiceNumber(Long providerId, Long apartmentId, LocalDate month) {
-        // Format: FV/RRRRMM/ID_DOSTAWCY/ID_MIESZKANIA
-        String yearMonth = String.format("%d%02d", month.getYear(), month.getMonthValue());
-        return String.format("FV/%s/%d/%d", yearMonth, providerId, apartmentId);
+    private String generateInvoiceNumber(final Long providerId, final Long apartmentId, final LocalDate monthStart) {
+        // FV/yyyyMM/providerId/apartmentId
+        final String yearMonth = java.time.YearMonth.from(monthStart).format(java.time.format.DateTimeFormatter.ofPattern("yyyyMM"));
+        return "FV/%s/%d/%d".formatted(yearMonth, providerId, apartmentId);
     }
+
+    private record InvoiceKey(Long providerId, Long apartmentId) { }
 }

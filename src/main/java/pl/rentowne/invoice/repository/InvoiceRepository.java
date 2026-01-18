@@ -13,11 +13,34 @@ import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 
 /**
  * Repozytorium faktur
  */
 public interface InvoiceRepository extends JpaRepository<Invoice, Long> {
+
+
+    interface LastPayDayMonthRow {
+        Long getHousingProviderId();
+        Long getApartmentId();
+        LocalDate getLastPayDayMonth();
+    }
+
+    @Query("""
+            select i.housingProvider.id as housingProviderId,
+                   i.apartment.id as apartmentId,
+                   max(i.payDayMonth) as lastPayDayMonth
+            from Invoice i
+            where i.housingProvider.id in :providerIds
+              and i.apartment.id in :apartmentIds
+            group by i.housingProvider.id, i.apartment.id
+            """)
+    List<LastPayDayMonthRow> findLastPayDayMonthByProviderAndApartment(
+            @Param("providerIds") Set<Long> providerIds,
+            @Param("apartmentIds") Set<Long> apartmentIds
+    );
+
 
     @Query(
             value = """

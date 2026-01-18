@@ -16,26 +16,28 @@ public interface HousingProviderRepository extends JpaRepository<HousingProvider
     @EntityGraph(attributePaths = "providerFields")
     Optional<HousingProvider> findWithProviderFieldsById(Long id);
 
-    @Query("SELECT DISTINCT hp FROM HousingProvider hp " +
-            "LEFT JOIN FETCH hp.providerFields pf " +
-            "JOIN hp.apartments a " +
-            "JOIN a.rentedObjects ro " +
-            "WHERE ro.id = :rentedObjectId")
+    @Query("""
+            SELECT DISTINCT hp FROM HousingProvider hp
+            LEFT JOIN FETCH hp.providerFields pf
+            JOIN hp.apartments a
+            JOIN a.rentedObjects ro
+            WHERE ro.id = :rentedObjectId
+            """)
     List<HousingProvider> findHousingProviderWithProviderFieldsByRentedObjectId(@Param("rentedObjectId") Long rentedObjectId);
 
     List<HousingProvider> findAllByUserId(Long userId);
 
     @Query("""
-            select distinct hp from HousingProvider hp
-            left join fetch hp.providerFields
-            where hp.recurringPayment = true
+            SELECT DISTINCT hp FROM HousingProvider hp
+            LEFT JOIN FETCH hp.providerFields
+            WHERE hp.recurringPayment = true
             """)
     Set<HousingProvider> findProvidersWithRecurringPaymentAndProviderFields();
 
     @Query("""
-            select distinct hp from HousingProvider hp
-            left join fetch hp.apartments
-            where hp in :providers
+            SELECT DISTINCT hp FROM HousingProvider hp
+            LEFT JOIN FETCH hp.apartments
+            WHERE hp IN :providers
             """)
     Set<HousingProvider> fetchApartmentsForProviders(@Param("providers") Set<HousingProvider> providers);
 
@@ -60,13 +62,6 @@ public interface HousingProviderRepository extends JpaRepository<HousingProvider
                                                          @Param("apartmentId") Long apartmentId,
                                                          @Param("searchText") String searchText);
 
-    /**
-     * Pobiera dostawców świadczeń przypisanych do konkretnego mieszkania
-     * @param pageable obiekt paginacji
-     * @param userAccountId id użytkownika
-     * @param apartmentId id mieszkania
-     * @return paginowana lista dostawców dla mieszkania
-     */
     @Query("""
             SELECT new pl.rentowne.housing_provider.HousingProviderApartmentDto(
                 hp.id,
@@ -83,13 +78,6 @@ public interface HousingProviderRepository extends JpaRepository<HousingProvider
                                                                        @Param("userAccountId") Long userAccountId,
                                                                        @Param("apartmentId") Long apartmentId);
 
-    /**
-     * Pobiera wszystkich dostawców użytkownika z informacją czy są przypisani do mieszkania
-     * @param pageable obiekt paginacji
-     * @param userAccountId id użytkownika
-     * @param apartmentId id mieszkania
-     * @return paginowana lista dostawców z flagą przypisania
-     */
     @Query("""
             SELECT new pl.rentowne.housing_provider.HousingProviderWithAssignmentDto(
                 hp.id,
