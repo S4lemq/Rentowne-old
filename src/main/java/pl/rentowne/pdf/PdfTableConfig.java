@@ -1,77 +1,77 @@
 package pl.rentowne.pdf;
 
 import org.springframework.lang.NonNull;
-import org.springframework.lang.Nullable;
 
 import java.util.List;
-import java.util.Optional;
 
 /**
  * Konfiguracja tabeli PDF.
  *
- * @param columnCount   liczba kolumn
- * @param columnWidths  opcjonalne szerokości kolumn (w procentach, suma powinna = 100)
- * @param headers       opcjonalne nagłówki kolumn
- * @param headerConfig  konfiguracja czcionki nagłówków
- * @param cellConfig    konfiguracja czcionki komórek
+ * @param columns      konfiguracja kolumn (nagłówki, szerokości w procentach - suma powinna = 100, oraz wyrównanie)
+ * @param headerConfig konfiguracja czcionki nagłówków
+ * @param cellConfig   konfiguracja czcionki komórek
  */
 public record PdfTableConfig(
-        int columnCount,
-        @Nullable List<Float> columnWidths,
-        @Nullable List<String> headers,
+        @NonNull List<ColumnConfig> columns,
         @NonNull PdfFontConfig headerConfig,
         @NonNull PdfFontConfig cellConfig
 ) {
     /**
-     * Tworzy konfigurację tabeli z podaną liczbą kolumn i domyślnymi ustawieniami.
+     * Tworzy konfigurację tabeli z kolumnami i domyślnymi ustawieniami czcionek.
      *
-     * @param columnCount liczba kolumn
+     * @param columns konfiguracja kolumn
      * @return konfiguracja tabeli
      */
-    public static PdfTableConfig withColumns(int columnCount) {
+    public static PdfTableConfig withColumns(@NonNull List<ColumnConfig> columns) {
         return new PdfTableConfig(
-                columnCount,
-                null,
-                null,
+                columns,
                 PdfFontConfig.TABLE_HEADER,
                 PdfFontConfig.DEFAULT
         );
     }
 
     /**
-     * Tworzy konfigurację tabeli z nagłówkami.
+     * Zwraca liczbę kolumn.
      *
-     * @param headers nagłówki kolumn
-     * @return konfiguracja tabeli
+     * @return liczba kolumn
      */
-    public static PdfTableConfig withHeaders(@NonNull List<String> headers) {
-        return new PdfTableConfig(
-                headers.size(),
-                null,
-                headers,
-                PdfFontConfig.TABLE_HEADER,
-                PdfFontConfig.DEFAULT
-        );
+    public int columnCount() {
+        return columns.size();
     }
 
     /**
-     * Zwraca opcjonalne szerokości kolumn.
+     * Zwraca nagłówki wyekstrahowane z konfiguracji kolumn.
      *
-     * @return szerokości kolumn lub empty
+     * @return lista nagłówków
      */
     @NonNull
-    public Optional<List<Float>> getColumnWidths() {
-        return Optional.ofNullable(columnWidths);
+    public List<String> getHeaders() {
+        return columns.stream()
+                .map(ColumnConfig::header)
+                .toList();
     }
 
     /**
-     * Zwraca opcjonalne nagłówki.
+     * Zwraca szerokości kolumn wyekstrahowane z konfiguracji kolumn.
      *
-     * @return nagłówki lub empty
+     * @return lista szerokości (w procentach)
      */
     @NonNull
-    public Optional<List<String>> getHeaders() {
-        return Optional.ofNullable(headers);
+    public List<Float> getWidths() {
+        return columns.stream()
+                .map(ColumnConfig::width)
+                .toList();
+    }
+
+    /**
+     * Zwraca wyrównania kolumn wyekstrahowane z konfiguracji kolumn.
+     *
+     * @return lista wyrównań
+     */
+    @NonNull
+    public List<TextAlignment> getAlignments() {
+        return columns.stream()
+                .map(ColumnConfig::alignment)
+                .toList();
     }
 }
-

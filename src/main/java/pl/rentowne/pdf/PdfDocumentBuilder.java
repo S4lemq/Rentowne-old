@@ -493,13 +493,15 @@ public final class PdfDocumentBuilder implements AutoCloseable {
 
         final float tableWidth = pageSize.getWidth() - margins.left() - margins.right();
         final float[] columnWidths = calculateColumnWidths(config, tableWidth);
+        final TextAlignment[] columnAlignments = calculateColumnAlignments(config);
+        final TextAlignment[] headerAlignments = createCenteredAlignments(config.columnCount());
 
-        // Dodaj nagłówki jeśli są
-        config.getHeaders().ifPresent(headers -> addTableRow(headers, columnWidths, config.headerConfig()));
+        // Dodaj nagłówki (nagłówki zawsze wycentrowane)
+        addTableRow(config.getHeaders(), columnWidths, config.headerConfig(), headerAlignments);
 
-        // Dodaj wiersze danych
+        // Dodaj wiersze danych z wyrównaniem kolumn
         for (final PdfTableRow row : rows) {
-            addTableRow(row.toTableRow(), columnWidths, config.cellConfig());
+            addTableRow(row.toTableRow(), columnWidths, config.cellConfig(), columnAlignments);
         }
 
         // Odstęp po tabeli
@@ -510,6 +512,7 @@ public final class PdfDocumentBuilder implements AutoCloseable {
 
     /**
      * Dodaje nagłówki do tabeli (metoda pomocnicza do ręcznego tworzenia tabel).
+     * Nagłówki są zawsze wycentrowane.
      *
      * @param headers      nagłówki
      * @param columnWidths szerokości kolumn
@@ -517,7 +520,7 @@ public final class PdfDocumentBuilder implements AutoCloseable {
      */
     @NonNull
     public PdfDocumentBuilder addTableHeaders(@NonNull final List<String> headers, @NonNull final float[] columnWidths) {
-        addTableRow(headers, columnWidths, PdfFontConfig.TABLE_HEADER);
+        addTableRow(headers, columnWidths, PdfFontConfig.TABLE_HEADER, createCenteredAlignments(headers.size()));
         return this;
     }
 
@@ -797,28 +800,32 @@ public final class PdfDocumentBuilder implements AutoCloseable {
     }
 
     private float[] calculateColumnWidths(@NonNull final PdfTableConfig config, final float tableWidth) {
-        return config.getColumnWidths()
-                .map(widths -> {
-                    final float[] absoluteWidths = new float[widths.size()];
-                    for (int i = 0; i < widths.size(); i++) {
-                        absoluteWidths[i] = tableWidth * widths.get(i) / 100f;
-                    }
-                    return absoluteWidths;
-                })
-                .orElseGet(() -> {
-                    final float[] equalWidths = new float[config.columnCount()];
-                    final float width = tableWidth / config.columnCount();
-                    for (int i = 0; i < config.columnCount(); i++) {
-                        equalWidths[i] = width;
-                    }
-                    return equalWidths;
-                });
+        final List<Float> widths = config.getWidths();
+        final float[] absoluteWidths = new float[widths.size()];
+        for (int i = 0; i < widths.size(); i++) {
+            absoluteWidths[i] = tableWidth * widths.get(i) / 100f;
+        }
+        return absoluteWidths;
+    }
+
+    @NonNull
+    private TextAlignment[] calculateColumnAlignments(@NonNull final PdfTableConfig config) {
+        final List<TextAlignment> alignments = config.getAlignments();
+        return alignments.toArray(new TextAlignment[0]);
+    }
+
+    @NonNull
+    private TextAlignment[] createCenteredAlignments(final int columnCount) {
+        final TextAlignment[] alignments = new TextAlignment[columnCount];
+        java.util.Arrays.fill(alignments, TextAlignment.CENTER);
+        return alignments;
     }
 
     private void addTableRow(
             @NonNull final List<String> cells,
             @NonNull final float[] columnWidths,
-            @NonNull final PdfFontConfig fontConfig
+            @NonNull final PdfFontConfig fontConfig,
+            @Nullable final TextAlignment[] columnAlignments
     ) {
         final float lineHeight = textHelper.calculateLineHeight(fontConfig);
         final float cellPadding = TABLE_CELL_PADDING;
@@ -853,18 +860,14 @@ public final class PdfDocumentBuilder implements AutoCloseable {
                 stream.addRect(x, currentY - rowHeight, cellWidth, rowHeight);
                 stream.stroke();
 
+                // Określ wyrównanie dla tej kolumny
+                final TextAlignment alignment = getColumnAlignment(i, columnAlignments);
+
                 // Rysuj każdą linię tekstu
                 float textY = currentY - cellPadding - lineHeight * CELL_TEXT_Y_OFFSET;
                 for (final String line : lines) {
                     final float textWidth = textHelper.calculateTextWidth(line, fontConfig);
-
-                    // Pierwsza kolumna wyrównana do lewej, pozostałe wycentrowane
-                    final float textX;
-                    if (i == 0) {
-                        textX = x + cellPadding;
-                    } else {
-                        textX = x + (cellWidth - textWidth) / 2;
-                    }
+                    final float textX = calculateCellTextX(x, cellWidth, cellPadding, textWidth, alignment);
 
                     textHelper.writeText(stream, line, textX, textY, fontConfig);
                     textY -= lineHeight;
@@ -878,6 +881,29 @@ public final class PdfDocumentBuilder implements AutoCloseable {
         } catch (final IOException e) {
             throw PdfGenerationException.error(PdfErrorCode.TABLE_ROW_CREATION_ERROR, e);
         }
+    }
+
+    @NonNull
+    private TextAlignment getColumnAlignment(final int columnIndex, @Nullable final TextAlignment[] columnAlignments) {
+        // Jeśli brak konfiguracji wyrównania, domyślnie: pierwsza kolumna LEFT, pozostałe CENTER
+        if (columnAlignments == null || columnIndex >= columnAlignments.length) {
+            return columnIndex == 0 ? TextAlignment.LEFT : TextAlignment.CENTER;
+        }
+        return columnAlignments[columnIndex];
+    }
+
+    private float calculateCellTextX(
+            final float cellX,
+            final float cellWidth,
+            final float cellPadding,
+            final float textWidth,
+            @NonNull final TextAlignment alignment
+    ) {
+        return switch (alignment) {
+            case LEFT -> cellX + cellPadding;
+            case CENTER -> cellX + (cellWidth - textWidth) / 2;
+            case RIGHT -> cellX + cellWidth - cellPadding - textWidth;
+        };
     }
 
     private float calculateImageXPosition(final float imageWidth, @NonNull final TextAlignment alignment) {

@@ -226,7 +226,7 @@ public interface MeterReadingRepository extends JpaRepository<MeterReading, Long
      * @return id licznika, odczyt oraz data odczytu
      */
     @Query("""
-            SELECT new pl.rentowne.meter_reading.model.dto.MeterReadingDto(mr.currentReading, new pl.rentowne.meter.model.dto.MeterDto(m.id), mr.readingDate)
+            SELECT new pl.rentowne.meter_reading.model.dto.MeterReadingDto(mr.currentReading, new pl.rentowne.meter.MeterDto(m.id), mr.readingDate)
             FROM Meter m
             LEFT JOIN MeterReading mr ON mr.meter.id = m.id
             WHERE m.meterType = :type

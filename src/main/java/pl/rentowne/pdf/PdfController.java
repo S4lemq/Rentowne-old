@@ -92,7 +92,12 @@ class PdfController {
                         .addSpace(10)
                         .createSecondaryHeader("Sekcja 2: Tabela danych")
                         .createTable(
-                                PdfTableConfig.withHeaders(List.of("Lp.", "Nazwa", "Wartość", "Status")),
+                                PdfTableConfig.withColumns(List.of(
+                                        ColumnConfig.of("Lp.", 10f),
+                                        ColumnConfig.of("Nazwa", 30f, TextAlignment.LEFT),
+                                        ColumnConfig.of("Wartość", 30f, TextAlignment.RIGHT),
+                                        ColumnConfig.of("Status", 30f)
+                                )),
                                 List.of(
                                         new SampleTableRow("1", "Element A", "100.00 PLN", "Aktywny"),
                                         new SampleTableRow("2", "Element B", "250.50 PLN", "Oczekujący"),
@@ -181,9 +186,12 @@ class PdfController {
                         .addSpace(20)
                         .createTable(
                                 new PdfTableConfig(
-                                        4,
-                                        List.of(12f, 18f, 28f, 42f),
-                                        List.of("Typ waluty", "Symbol waluty", "Nazwa waluty", "Wartość środków pieniężnych"),
+                                        List.of(
+                                                ColumnConfig.of("Typ waluty", 12f, TextAlignment.CENTER),
+                                                ColumnConfig.of("Symbol waluty", 18f, TextAlignment.CENTER),
+                                                ColumnConfig.of("Nazwa waluty", 28f, TextAlignment.LEFT),
+                                                ColumnConfig.of("Wartość środków pieniężnych", 42f, TextAlignment.RIGHT)
+                                        ),
                                         PdfFontConfig.TABLE_HEADER,
                                         PdfFontConfig.DEFAULT
                                 ),
@@ -208,9 +216,11 @@ class PdfController {
                         // Tabela: Wg rejestru / Druki ścisłego zarachowania / Stan (szt.)
                         .createTable(
                                 new PdfTableConfig(
-                                        3,
-                                        List.of(30f, 50f, 20f),
-                                        List.of("Wg rejestru", "Druki ścisłego zarachowania", "Stan (szt.)"),
+                                        List.of(
+                                                ColumnConfig.of("Wg rejestru", 30f, TextAlignment.LEFT),
+                                                ColumnConfig.of("Druki ścisłego zarachowania", 50f, TextAlignment.LEFT),
+                                                ColumnConfig.of("Stan (szt.)", 20f, TextAlignment.CENTER)
+                                        ),
                                         PdfFontConfig.TABLE_HEADER,
                                         PdfFontConfig.DEFAULT
                                 ),
@@ -223,9 +233,10 @@ class PdfController {
                         // Tabela: Depozyty / Stan (szt.)
                         .createTable(
                                 new PdfTableConfig(
-                                        2,
-                                        List.of(85f, 15f),
-                                        List.of("Depozyty", "Stan (szt.)"),
+                                        List.of(
+                                                ColumnConfig.of("Depozyty", 85f, TextAlignment.LEFT),
+                                                ColumnConfig.of("Stan (szt.)", 15f, TextAlignment.CENTER)
+                                        ),
                                         PdfFontConfig.TABLE_HEADER,
                                         PdfFontConfig.DEFAULT
                                 ),
