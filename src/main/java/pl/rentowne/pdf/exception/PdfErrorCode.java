@@ -26,7 +26,8 @@ public enum PdfErrorCode implements ErrorCode {
     INVALID_IMAGE_DIMENSIONS(HttpStatus.BAD_REQUEST, "Wymiary obrazu muszą być większe od 0", "Podane wymiary: width=%s, height=%s"),
     EMPTY_IMAGE_BYTES(HttpStatus.BAD_REQUEST, "Bajty obrazu nie mogą być puste"),
     INVALID_SPACE_VALUE(HttpStatus.BAD_REQUEST, "Odstęp musi być większy od 0", "Podana wartość: %s"),
-    DOCUMENT_GENERATION_ERROR(HttpStatus.INTERNAL_SERVER_ERROR, "Błąd podczas generowania dokumentu PDF");
+    DOCUMENT_GENERATION_ERROR(HttpStatus.INTERNAL_SERVER_ERROR, "Błąd podczas generowania dokumentu PDF"),
+    ENCRYPTION_ERROR(HttpStatus.INTERNAL_SERVER_ERROR, "Błąd podczas szyfrowania dokumentu PDF");
 
     private final HttpStatus httpStatus;
     private final String message;

@@ -11,8 +11,8 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 @NoArgsConstructor
 public class AuthenticationRequest {
-    @Schema(description = "email", example = "peter.lubowicz@gmail.com", required = true)
+    @Schema(description = "email", example = "karedon00@gmail.com", required = true)
     private String email;
-    @Schema(description = "hasło", example = "Rentowne2023!", required = true)
+    @Schema(description = "hasło", example = "m1u0r5MK@", required = true)
     private String password;
 }

@@ -113,6 +113,58 @@ class PdfController {
         return PdfResponseHelper.buildResponse(response);
     }
 
+    /**
+     * Generuje zaszyfrowany przykładowy dokument PDF.
+     * <p>
+     * Dokument można otworzyć dwoma hasłami:
+     * <ul>
+     *   <li>admin1 - otwiera z ograniczonymi uprawnieniami (tylko drukowanie)</li>
+     *   <li>admin2 - otwiera z pełnymi uprawnieniami</li>
+     * </ul>
+     *
+     * @param filename opcjonalna nazwa pliku
+     * @return zaszyfrowany dokument PDF
+     */
+    @GetMapping("/sample-encrypted")
+    @NonNull
+    ResponseEntity<ByteArrayResource> generateEncryptedSamplePdf(
+            @RequestParam(defaultValue = "encrypted-document") final String filename
+    ) {
+        final PdfDocumentResponse response = pdfDocumentFactory.createDocumentResponse(
+                filename,
+                builder -> builder
+                        .setMetadata(PdfMetadata.builder()
+                                .title("Zaszyfrowany dokument PDF")
+                                .subject("Dokument demonstracyjny z szyfrowaniem")
+                                .keywords("pdf, szyfrowanie, demo")
+                                .build())
+                        .setEncryption(PdfEncryptionConfig.forGovernment("admin1", "admin2"))
+                        .enablePageNumbering()
+                        .addPage()
+                        .createPrimaryHeader("Zaszyfrowany dokument PDF")
+                        .addSpace(20)
+                        .createSecondaryHeader("Sekcja 1: Informacje o szyfrowaniu")
+                        .createLeftAlignedParagraph(
+                                "Ten dokument jest zaszyfrowany przy użyciu AES-256. " +
+                                "Do otwarcia dokumentu można użyć hasła: admin1 (ograniczone uprawnienia) " +
+                                "lub admin2 (pełne uprawnienia)."
+                        )
+                        .addSpace(10)
+                        .createSecondaryHeader("Sekcja 2: Uprawnienia dla hasła admin1")
+                        .createLabelValueRow("Drukowanie:", "Dozwolone")
+                        .createLabelValueRow("Modyfikacja:", "Zabroniona")
+                        .createLabelValueRow("Kopiowanie tekstu:", "Zabronione")
+                        .createLabelValueRow("Adnotacje:", "Zabronione")
+                        .createLabelValueRow("Wypełnianie formularzy:", "Zabronione")
+                        .createLabelValueRow("Dostępność (WCAG):", "Dozwolona")
+                        .addSpace(10)
+                        .addHorizontalLine()
+                        .createCenteredParagraph("Dokument wygenerowany automatycznie")
+                        .createRightAlignedParagraph("Data generowania: " + java.time.LocalDate.now())
+        );
+
+        return PdfResponseHelper.buildResponse(response);
+    }
 
     /**
      * Generuje dokument inwentaryzacji (Załącznik nr 3a).

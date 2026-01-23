@@ -8,6 +8,8 @@ import org.apache.pdfbox.pdmodel.PDDocumentInformation;
 import org.apache.pdfbox.pdmodel.PDPage;
 import org.apache.pdfbox.pdmodel.PDPageContentStream;
 import org.apache.pdfbox.pdmodel.common.PDRectangle;
+import org.apache.pdfbox.pdmodel.encryption.AccessPermission;
+import org.apache.pdfbox.pdmodel.encryption.StandardProtectionPolicy;
 import org.apache.pdfbox.pdmodel.graphics.image.PDImageXObject;
 import org.springframework.lang.NonNull;
 import org.springframework.lang.Nullable;
@@ -58,6 +60,9 @@ public final class PdfDocumentBuilder implements AutoCloseable {
     @Nullable
     private PdfMetadata metadata;
 
+    @Nullable
+    private PdfEncryptionConfig encryptionConfig;
+
     /**
      * Włącza numerowanie stron z domyślną konfiguracją (wycentrowane).
      *
@@ -89,6 +94,18 @@ public final class PdfDocumentBuilder implements AutoCloseable {
     @NonNull
     public PdfDocumentBuilder setMetadata(@NonNull final PdfMetadata metadata) {
         this.metadata = metadata;
+        return this;
+    }
+
+    /**
+     * Włącza szyfrowanie dokumentu PDF z podaną konfiguracją.
+     *
+     * @param config konfiguracja szyfrowania
+     * @return ten builder
+     */
+    @NonNull
+    public PdfDocumentBuilder setEncryption(@NonNull final PdfEncryptionConfig config) {
+        this.encryptionConfig = config;
         return this;
     }
 
@@ -701,6 +718,7 @@ public final class PdfDocumentBuilder implements AutoCloseable {
         closeCurrentContentStream();
         applyMetadata();
         applyPageNumbering();
+        applyEncryption();
 
         try (final var outputStream = new java.io.ByteArrayOutputStream()) {
             document.save(outputStream);
@@ -766,6 +784,41 @@ public final class PdfDocumentBuilder implements AutoCloseable {
                 throw PdfGenerationException.error(PdfErrorCode.PAGE_NUMBERING_ERROR, e);
             }
         }
+    }
+
+    private void applyEncryption() {
+        if (encryptionConfig == null) {
+            return;
+        }
+
+        try {
+            final AccessPermission permissions = getAccessPermission();
+
+            final StandardProtectionPolicy protectionPolicy = new StandardProtectionPolicy(
+                    encryptionConfig.ownerPassword(),
+                    encryptionConfig.userPassword(),
+                    permissions
+            );
+            protectionPolicy.setEncryptionKeyLength(encryptionConfig.keyLength());
+
+            document.protect(protectionPolicy);
+        } catch (final IOException e) {
+            throw PdfGenerationException.error(PdfErrorCode.ENCRYPTION_ERROR, e);
+        }
+    }
+
+    private AccessPermission getAccessPermission() {
+        final AccessPermission permissions = new AccessPermission();
+        final PdfEncryptionConfig.PdfPermissions perms = encryptionConfig.permissions();
+
+        permissions.setCanPrint(perms.canPrint());
+        permissions.setCanModify(perms.canModify());
+        permissions.setCanExtractContent(perms.canExtractContent());
+        permissions.setCanModifyAnnotations(perms.canModifyAnnotations());
+        permissions.setCanFillInForm(perms.canFillInForm());
+        permissions.setCanExtractForAccessibility(perms.canExtractForAccessibility());
+        permissions.setCanAssembleDocument(perms.canAssembleDocument());
+        return permissions;
     }
 
     @NonNull
