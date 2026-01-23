@@ -12,6 +12,7 @@ import org.springframework.lang.Nullable;
 public enum PdfErrorCode implements ErrorCode {
 
     FONT_LOADING_ERROR(HttpStatus.INTERNAL_SERVER_ERROR, "Nie można załadować czcionki: %s"),
+    FONT_NOT_LOADED(HttpStatus.INTERNAL_SERVER_ERROR, "Czcionka nie została załadowana dla stylu: %s"),
     CONTENT_STREAM_ERROR(HttpStatus.INTERNAL_SERVER_ERROR, "Strumień treści nie jest otwarty - dodaj stronę najpierw"),
     PAGE_CREATION_ERROR(HttpStatus.INTERNAL_SERVER_ERROR, "Nie można utworzyć strumienia treści strony"),
     TEXT_WIDTH_CALCULATION_ERROR(HttpStatus.INTERNAL_SERVER_ERROR, "Błąd podczas obliczania szerokości tekstu"),
@@ -27,7 +28,8 @@ public enum PdfErrorCode implements ErrorCode {
     EMPTY_IMAGE_BYTES(HttpStatus.BAD_REQUEST, "Bajty obrazu nie mogą być puste"),
     INVALID_SPACE_VALUE(HttpStatus.BAD_REQUEST, "Odstęp musi być większy od 0", "Podana wartość: %s"),
     DOCUMENT_GENERATION_ERROR(HttpStatus.INTERNAL_SERVER_ERROR, "Błąd podczas generowania dokumentu PDF"),
-    ENCRYPTION_ERROR(HttpStatus.INTERNAL_SERVER_ERROR, "Błąd podczas szyfrowania dokumentu PDF");
+    ENCRYPTION_ERROR(HttpStatus.INTERNAL_SERVER_ERROR, "Błąd podczas szyfrowania dokumentu PDF"),
+    CONTENT_EXCEEDS_PAGE_HEIGHT(HttpStatus.BAD_REQUEST, "Zawartość przekracza maksymalną wysokość strony", "Wymagana wysokość: %.2f, dostępna: %.2f");
 
     private final HttpStatus httpStatus;
     private final String message;

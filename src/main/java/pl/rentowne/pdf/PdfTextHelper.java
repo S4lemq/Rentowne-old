@@ -32,11 +32,27 @@ final class PdfTextHelper {
      */
     float calculateTextWidth(@NonNull final String text, @NonNull final PdfFontConfig fontConfig) {
         try {
-            final PDFont font = fonts.get(fontConfig.fontStyle());
+            final PDFont font = getFont(fontConfig.fontStyle());
             return font.getStringWidth(text) / 1000f * fontConfig.fontSize().getSize();
         } catch (final IOException e) {
             throw PdfGenerationException.error(PdfErrorCode.TEXT_WIDTH_CALCULATION_ERROR, e);
         }
+    }
+
+    /**
+     * Pobiera czcionkę dla podanego stylu z walidacją.
+     *
+     * @param fontStyle styl czcionki
+     * @return czcionka PDF
+     * @throws PdfGenerationException gdy czcionka nie jest załadowana
+     */
+    @NonNull
+    private PDFont getFont(@NonNull final FontStyle fontStyle) {
+        final PDFont font = fonts.get(fontStyle);
+        if (font == null) {
+            throw PdfGenerationException.error(PdfErrorCode.FONT_NOT_LOADED, fontStyle.name());
+        }
+        return font;
     }
 
     /**
@@ -133,7 +149,7 @@ final class PdfTextHelper {
             final float y,
             @NonNull final PdfFontConfig fontConfig
     ) throws IOException {
-        final PDFont font = fonts.get(fontConfig.fontStyle());
+        final PDFont font = getFont(fontConfig.fontStyle());
         contentStream.beginText();
         contentStream.setFont(font, fontConfig.fontSize().getSize());
         contentStream.newLineAtOffset(x, y);

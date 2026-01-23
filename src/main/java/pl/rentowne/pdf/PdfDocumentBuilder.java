@@ -847,6 +847,16 @@ public final class PdfDocumentBuilder implements AutoCloseable {
     }
 
     private void checkPageBreak(final float requiredSpace) {
+        final float availablePageHeight = pageSize.getHeight() - margins.top() - margins.bottom();
+
+        if (requiredSpace > availablePageHeight) {
+            throw PdfGenerationException.errorWithExtDescription(
+                    PdfErrorCode.CONTENT_EXCEEDS_PAGE_HEIGHT,
+                    requiredSpace,
+                    availablePageHeight
+            );
+        }
+
         if (currentY - requiredSpace < margins.bottom()) {
             addPage();
         }

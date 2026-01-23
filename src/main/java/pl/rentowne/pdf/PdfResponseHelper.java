@@ -21,6 +21,10 @@ final class PdfResponseHelper {
 
     /**
      * Tworzy ResponseEntity dla dokumentu PDF z odpowiednimi nagłówkami.
+     * <p>
+     * Używa {@link PdfDocumentResponse#contentUnsafe()} dla wydajności,
+     * ponieważ {@link ByteArrayResource} nie modyfikuje przekazanej tablicy.
+     * </p>
      *
      * @param response odpowiedź z dokumentem PDF
      * @return ResponseEntity gotowe do zwrócenia z kontrolera
@@ -36,7 +40,7 @@ final class PdfResponseHelper {
 
         return ResponseEntity.ok()
                 .headers(headers)
-                .body(new ByteArrayResource(response.content()));
+                .body(new ByteArrayResource(response.contentUnsafe()));
     }
 
 
