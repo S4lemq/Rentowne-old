@@ -3,25 +3,27 @@ package pl.rentowne.pdf;
 import org.springframework.lang.NonNull;
 
 /**
- * Konfiguracja szyfrowania dokumentu PDF dla aplikacji rządowych.
+ * Konfiguracja szyfrowania dokumentu PDF.
  * <p>
  * Dokument może być otwarty dwoma różnymi hasłami:
  * <ul>
- *   <li>{@code userPassword} - otwiera dokument z ograniczonymi uprawnieniami (tylko drukowanie)</li>
- *   <li>{@code ownerPassword} - otwiera dokument z pełnymi uprawnieniami (może zmieniać zabezpieczenia)</li>
+ *   <li>{@code userPassword} (hasło klienta) - otwiera dokument z ograniczonymi uprawnieniami
+ *       (wyświetlanie, drukowanie)</li>
+ *   <li>{@code ownerPassword} (hasło admina) - otwiera dokument z pełnymi uprawnieniami
+ *       (edycja, zmiana zabezpieczeń, kopiowanie)</li>
  * </ul>
- * Szyfrowanie AES-256 z restrykcyjnymi uprawnieniami.
+ * Szyfrowanie AES-256.
  * </p>
  *
  * <h3>Użycie:</h3>
  * <pre>{@code
- * builder.setEncryption(PdfEncryptionConfig.forGovernment("haslo1", "haslo2"))
+ * builder.setEncryption(PdfEncryptionConfig.forClientAndAdmin("hasloKlienta", "hasloAdmina"))
  * }</pre>
  *
- * @param userPassword  hasło do otwarcia dokumentu (z ograniczonymi uprawnieniami)
- * @param ownerPassword hasło do otwarcia dokumentu (z pełnymi uprawnieniami)
+ * @param userPassword  hasło klienta - otwiera dokument z ograniczonymi uprawnieniami
+ * @param ownerPassword hasło admina - otwiera dokument z pełnymi uprawnieniami
  * @param keyLength     długość klucza szyfrowania (256 bitów AES)
- * @param permissions   uprawnienia dla użytkownika otwierającego z userPassword
+ * @param permissions   uprawnienia dla użytkownika otwierającego hasłem klienta
  */
 public record PdfEncryptionConfig(
         @NonNull String userPassword,
@@ -36,17 +38,24 @@ public record PdfEncryptionConfig(
     public static final int DEFAULT_KEY_LENGTH = 256;
 
     /**
-     * Tworzy konfigurację szyfrowania dla dokumentów rządowych z maksymalnym bezpieczeństwem.
-     * Oba hasła pozwalają otworzyć dokument. Uprawnienia są bardzo restrykcyjne.
+     * Tworzy konfigurację szyfrowania z dwoma poziomami dostępu.
+     * <p>
+     * Klient otwierający dokument swoim hasłem może:
+     * <ul>
+     *   <li>wyświetlać dokument</li>
+     *   <li>drukować dokument</li>
+     * </ul>
+     * Admin otwierający dokument swoim hasłem może wykonywać wszystkie operacje.
+     * </p>
      *
-     * @param userPassword  pierwsze hasło do otwarcia dokumentu
-     * @param ownerPassword drugie hasło do otwarcia dokumentu (również pozwala na zmianę uprawnień)
+     * @param clientPassword hasło dla klienta (ograniczone uprawnienia)
+     * @param adminPassword  hasło dla admina (pełne uprawnienia)
      * @return konfiguracja szyfrowania
      */
     @NonNull
-    public static PdfEncryptionConfig forGovernment(@NonNull final String userPassword,
-                                                    @NonNull final String ownerPassword) {
-        return new PdfEncryptionConfig(userPassword, ownerPassword, DEFAULT_KEY_LENGTH, PdfPermissions.GOVERNMENT_SECURE);
+    public static PdfEncryptionConfig forClientAndAdmin(@NonNull final String clientPassword,
+                                                        @NonNull final String adminPassword) {
+        return new PdfEncryptionConfig(clientPassword, adminPassword, DEFAULT_KEY_LENGTH, PdfPermissions.CLIENT_ACCESS);
     }
 
     /**
@@ -62,12 +71,14 @@ public record PdfEncryptionConfig(
             boolean canAssembleDocument
     ) {
         /**
-         * Uprawnienia dla dokumentów rządowych - maksymalne bezpieczeństwo.
-         * Dozwolone tylko: drukowanie.
-         * Zabronione: modyfikacja, kopiowanie tekstu, adnotacje, wypełnianie formularzy, składanie dokumentu.
+         * Uprawnienia dla klienta - wyświetlanie i drukowanie.
+         * <ul>
+         *   <li>Dozwolone: drukowanie, dostępność (WCAG)</li>
+         *   <li>Zabronione: modyfikacja, kopiowanie tekstu, adnotacje, wypełnianie formularzy, składanie dokumentu</li>
+         * </ul>
          */
-        public static final PdfPermissions GOVERNMENT_SECURE = new PdfPermissions(
-                true,   // drukowanie - dozwolone (użytkownik może wydrukować do celów urzędowych)
+        public static final PdfPermissions CLIENT_ACCESS = new PdfPermissions(
+                true,   // drukowanie - dozwolone
                 false,  // modyfikacja - zabroniona
                 false,  // kopiowanie tekstu - zabronione
                 false,  // adnotacje - zabronione

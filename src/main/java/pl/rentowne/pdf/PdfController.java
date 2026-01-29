@@ -118,8 +118,8 @@ class PdfController {
      * <p>
      * Dokument można otworzyć dwoma hasłami:
      * <ul>
-     *   <li>admin1 - otwiera z ograniczonymi uprawnieniami (tylko drukowanie)</li>
-     *   <li>admin2 - otwiera z pełnymi uprawnieniami</li>
+     *   <li>klient123 - hasło klienta (wyświetlanie i drukowanie)</li>
+     *   <li>admin456 - hasło admina (pełne uprawnienia)</li>
      * </ul>
      *
      * @param filename opcjonalna nazwa pliku
@@ -138,7 +138,7 @@ class PdfController {
                                 .subject("Dokument demonstracyjny z szyfrowaniem")
                                 .keywords("pdf, szyfrowanie, demo")
                                 .build())
-                        .setEncryption(PdfEncryptionConfig.forGovernment("admin1", "admin2"))
+                        .setEncryption(PdfEncryptionConfig.forClientAndAdmin("klient123", "admin456"))
                         .enablePageNumbering()
                         .addPage()
                         .createPrimaryHeader("Zaszyfrowany dokument PDF")
@@ -146,11 +146,11 @@ class PdfController {
                         .createSecondaryHeader("Sekcja 1: Informacje o szyfrowaniu")
                         .createLeftAlignedParagraph(
                                 "Ten dokument jest zaszyfrowany przy użyciu AES-256. " +
-                                "Do otwarcia dokumentu można użyć hasła: admin1 (ograniczone uprawnienia) " +
-                                "lub admin2 (pełne uprawnienia)."
+                                "Do otwarcia dokumentu można użyć hasła: klient123 (wyświetlanie i drukowanie) " +
+                                "lub admin456 (pełne uprawnienia)."
                         )
                         .addSpace(10)
-                        .createSecondaryHeader("Sekcja 2: Uprawnienia dla hasła admin1")
+                        .createSecondaryHeader("Sekcja 2: Uprawnienia dla hasła klienta")
                         .createLabelValueRow("Drukowanie:", "Dozwolone")
                         .createLabelValueRow("Modyfikacja:", "Zabroniona")
                         .createLabelValueRow("Kopiowanie tekstu:", "Zabronione")
