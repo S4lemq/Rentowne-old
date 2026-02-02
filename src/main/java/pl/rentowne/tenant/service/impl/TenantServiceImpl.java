@@ -19,6 +19,7 @@ import pl.rentowne.security.service.AuthenticationService;
 import pl.rentowne.tenant.model.Tenant;
 import pl.rentowne.tenant.model.dto.TenantDto;
 import pl.rentowne.tenant.repository.TenantRepository;
+import pl.rentowne.tenant.service.CifGeneratorService;
 import pl.rentowne.tenant.service.TenantService;
 import pl.rentowne.util.DateUtils;
 
@@ -37,6 +38,7 @@ public class TenantServiceImpl implements TenantService {
     private final ApartmentRepository apartmentRepository;
     private final AuthenticationService authenticationService;
     private final MeterReadingRepository meterReadingRepository;
+    private final CifGeneratorService cifGeneratorService;
 
     @Override
     @Transactional
@@ -45,6 +47,7 @@ public class TenantServiceImpl implements TenantService {
         apartmentService.updateRentedFlagOnApartment(rentedObjectId);
         Tenant tenant = TenantDto.asEntity(tenantDto);
         tenant.setActive(true);
+        tenant.setCif(cifGeneratorService.generateCif());
         Long tenantId = tenantRepository.save(tenant).getId();
         LocalDateTime currentReadingDate = tenantDto.getLeaseAgreementDto().getStartContractDate();
 
@@ -67,9 +70,17 @@ public class TenantServiceImpl implements TenantService {
     public void updateTenantAndLeaseAgreement(TenantDto dto) {
         Long rentedObjectIdInDB = tenantRepository.getRentedObjectId(dto.getId());
         this.firstUpdateFlags(rentedObjectIdInDB);
-        tenantRepository.save(TenantDto.asEntity(dto));
-        this.secondUpdateFlags(dto);
 
+        Tenant existingTenant = tenantRepository.findById(dto.getId())
+                .orElseThrow(() -> new RentowneBusinessException(RentowneErrorCode.ITEM_NOT_FOUND));
+
+        Tenant updatedTenant = TenantDto.asEntity(dto);
+        updatedTenant.setCif(existingTenant.getCif());
+        updatedTenant.setAddtInfoValue(existingTenant.getAddtInfoValue());
+        updatedTenant.setActive(existingTenant.isActive());
+
+        tenantRepository.save(updatedTenant);
+        this.secondUpdateFlags(dto);
     }
 
     private void processMeterReading(BigDecimal initialReading, MeterType meterType, Long rentedObjectId, LocalDateTime currentReadingDate) {

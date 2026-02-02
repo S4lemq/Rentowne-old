@@ -37,7 +37,10 @@ public enum RentowneErrorCode implements Serializable {
     METER_READING_NOT_FOUND(),
     METER_READING_ALREADY_SETTLED(),
     HOUSING_PROVIDER_NOT_FOUND(),
-    NO_PERMISSION_TO_HOUSING_PROVIDER();
+    NO_PERMISSION_TO_HOUSING_PROVIDER(),
+    PASSWORDS_DO_NOT_MATCH(),
+    INVALID_PASSWORD_LENGTH(),
+    INVALID_BASE64_FORMAT();
 
     private Set<String> translateKeys;
 
