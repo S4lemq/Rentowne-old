@@ -1,6 +1,6 @@
 package pl.rentowne.invoice_parser;
 
-import pl.rentowne.provider_field.model.BillingMethod;
+import pl.rentowne.provider_field.BillingMethod;
 
 import java.math.BigDecimal;
 import java.util.List;

@@ -9,7 +9,7 @@ import pl.rentowne.exception.RentowneErrorCode;
 import pl.rentowne.housing_provider.HousingProvider;
 import pl.rentowne.housing_provider.HousingProviderRepository;
 import pl.rentowne.housing_provider.ProviderType;
-import pl.rentowne.provider_field.model.ProviderField;
+import pl.rentowne.provider_field.ProviderField;
 import pl.rentowne.user.service.UserService;
 
 import java.math.BigDecimal;

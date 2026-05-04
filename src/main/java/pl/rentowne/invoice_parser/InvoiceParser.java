@@ -4,7 +4,7 @@ import org.springframework.ai.chat.client.ChatClient;
 import org.springframework.ai.converter.BeanOutputConverter;
 import org.springframework.stereotype.Service;
 import pl.rentowne.housing_provider.ProviderType;
-import pl.rentowne.provider_field.model.BillingMethod;
+import pl.rentowne.provider_field.BillingMethod;
 
 import java.math.BigDecimal;
 import java.util.List;

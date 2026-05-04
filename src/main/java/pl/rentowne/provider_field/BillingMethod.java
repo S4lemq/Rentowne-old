@@ -1,4 +1,4 @@
-package pl.rentowne.provider_field.model;
+package pl.rentowne.provider_field;
 
 /**
  * Sposób naliczania pola dostawcy świadczeń

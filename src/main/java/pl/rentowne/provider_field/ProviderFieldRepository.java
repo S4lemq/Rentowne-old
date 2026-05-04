@@ -1,9 +1,8 @@
-package pl.rentowne.provider_field.repository;
+package pl.rentowne.provider_field;
 
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
-import pl.rentowne.provider_field.model.ProviderField;
 
 import java.util.List;
 

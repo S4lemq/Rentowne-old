@@ -1,4 +1,4 @@
-package pl.rentowne.provider_field.model;
+package pl.rentowne.provider_field;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;

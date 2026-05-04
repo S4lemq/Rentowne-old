@@ -7,9 +7,9 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import pl.rentowne.exception.RentowneBusinessException;
 import pl.rentowne.exception.RentowneNotFoundException;
-import pl.rentowne.provider_field.model.ProviderField;
-import pl.rentowne.provider_field.model.dto.ProviderFieldDto;
-import pl.rentowne.provider_field.repository.ProviderFieldRepository;
+import pl.rentowne.provider_field.ProviderField;
+import pl.rentowne.provider_field.ProviderFieldDto;
+import pl.rentowne.provider_field.ProviderFieldRepository;
 import pl.rentowne.user.service.UserService;
 
 import java.util.List;

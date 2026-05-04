@@ -7,7 +7,7 @@ import org.springframework.transaction.annotation.Transactional;
 import pl.rentowne.apartment.Apartment;
 import pl.rentowne.housing_provider.HousingProvider;
 import pl.rentowne.housing_provider.HousingProviderRepository;
-import pl.rentowne.provider_field.model.ProviderField;
+import pl.rentowne.provider_field.ProviderField;
 import pl.rentowne.util.Clock;
 
 import java.math.BigDecimal;

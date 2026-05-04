@@ -3,8 +3,8 @@ package pl.rentowne.housing_provider;
 import lombok.AccessLevel;
 import lombok.NoArgsConstructor;
 import lombok.NonNull;
-import pl.rentowne.provider_field.model.ProviderField;
-import pl.rentowne.provider_field.model.dto.ProviderFieldDto;
+import pl.rentowne.provider_field.ProviderField;
+import pl.rentowne.provider_field.ProviderFieldDto;
 import pl.rentowne.user.model.User;
 
 import java.util.List;

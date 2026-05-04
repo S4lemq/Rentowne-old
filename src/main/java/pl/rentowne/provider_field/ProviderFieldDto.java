@@ -1,6 +1,4 @@
-package pl.rentowne.provider_field.model.dto;
-
-import pl.rentowne.provider_field.model.BillingMethod;
+package pl.rentowne.provider_field;
 
 import java.math.BigDecimal;
 

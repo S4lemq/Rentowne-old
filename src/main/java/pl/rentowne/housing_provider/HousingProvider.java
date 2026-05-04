@@ -25,7 +25,7 @@ import lombok.NoArgsConstructor;
 import lombok.Setter;
 import pl.rentowne.apartment.Apartment;
 import pl.rentowne.common.model.BaseEntity;
-import pl.rentowne.provider_field.model.ProviderField;
+import pl.rentowne.provider_field.ProviderField;
 import pl.rentowne.user.model.User;
 
 import java.math.BigDecimal;
