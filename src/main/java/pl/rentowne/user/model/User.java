@@ -27,7 +27,7 @@ import pl.rentowne.address.Address;
 import pl.rentowne.apartment.Apartment;
 import pl.rentowne.common.model.BaseEntity;
 import pl.rentowne.housing_provider.HousingProvider;
-import pl.rentowne.payment_card.model.PaymentCard;
+import pl.rentowne.payment_card.PaymentCard;
 import pl.rentowne.security.model.Token;
 
 import java.time.LocalDateTime;

@@ -13,8 +13,8 @@ import pl.rentowne.common.mail.EmailClientService;
 import pl.rentowne.exception.RentowneBusinessException;
 import pl.rentowne.exception.RentowneErrorCode;
 import pl.rentowne.exception.RentowneNotFoundException;
-import pl.rentowne.payment_card.model.dto.PaymentCardDto;
-import pl.rentowne.payment_card.service.PaymentCardService;
+import pl.rentowne.payment_card.PaymentCardDto;
+import pl.rentowne.payment_card.PaymentCardService;
 import pl.rentowne.tenant.repository.TenantRepository;
 import pl.rentowne.user.model.User;
 import pl.rentowne.user.model.dto.UserBasicDto;
@@ -165,13 +165,13 @@ public class UserServiceImpl implements UserService {
         }
 
         // Sprawdź, czy jakiekolwiek pole nie jest null i nie jest puste (dla String) lub większe od 0 (dla int)
-        boolean isAnyFieldSet = isNotNullOrEmpty(cardDto.getNumber()) || isNotNullOrEmpty(cardDto.getName())
-                || cardDto.getMonth() > 0 || cardDto.getYear() > 0 || cardDto.getCvv() > 0;
+        boolean isAnyFieldSet = isNotNullOrEmpty(cardDto.number()) || isNotNullOrEmpty(cardDto.name())
+                || cardDto.month() > 0 || cardDto.year() > 0 || cardDto.cvv() > 0;
 
         if (isAnyFieldSet) {
             // Jeżeli jakiekolwiek pole jest ustawione, sprawdź czy wszystkie są ustawione
-            boolean areAllFieldsSet = isNotNullOrEmpty(cardDto.getNumber()) && isNotNullOrEmpty(cardDto.getName())
-                    && cardDto.getMonth() > 0 && cardDto.getYear() > 0 && cardDto.getCvv() > 0;
+            boolean areAllFieldsSet = isNotNullOrEmpty(cardDto.number()) && isNotNullOrEmpty(cardDto.name())
+                    && cardDto.month() > 0 && cardDto.year() > 0 && cardDto.cvv() > 0;
 
             if (!areAllFieldsSet) {
                 throw new RentowneBusinessException(RentowneErrorCode.EMPTY_REQUIRED_PAYMENT_CARD_FIELDS);

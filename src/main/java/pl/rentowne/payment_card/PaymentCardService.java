@@ -1,6 +1,5 @@
-package pl.rentowne.payment_card.service;
+package pl.rentowne.payment_card;
 
-import pl.rentowne.payment_card.model.dto.PaymentCardDto;
 import pl.rentowne.user.model.User;
 
 public interface PaymentCardService {

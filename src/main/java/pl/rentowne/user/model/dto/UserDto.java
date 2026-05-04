@@ -3,7 +3,7 @@ package pl.rentowne.user.model.dto;
 import lombok.Builder;
 import lombok.Getter;
 import pl.rentowne.address.AddressDto;
-import pl.rentowne.payment_card.model.dto.PaymentCardDto;
+import pl.rentowne.payment_card.PaymentCardDto;
 import pl.rentowne.user.model.PreferredLanguage;
 
 @Getter
