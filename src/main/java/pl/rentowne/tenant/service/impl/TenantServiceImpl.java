@@ -10,9 +10,9 @@ import pl.rentowne.exception.RentowneErrorCode;
 import pl.rentowne.exception.RentowneNotFoundException;
 import pl.rentowne.meter.Meter;
 import pl.rentowne.meter.MeterType;
-import pl.rentowne.meter_reading.model.MeterReading;
-import pl.rentowne.meter_reading.model.dto.MeterReadingDto;
-import pl.rentowne.meter_reading.repository.MeterReadingRepository;
+import pl.rentowne.meter_reading.MeterReading;
+import pl.rentowne.meter_reading.MeterReadingDto;
+import pl.rentowne.meter_reading.MeterReadingRepository;
 import pl.rentowne.rented_object.RentedObject;
 import pl.rentowne.rented_object.RentedObjectRepository;
 import pl.rentowne.security.service.AuthenticationService;
@@ -86,15 +86,15 @@ public class TenantServiceImpl implements TenantService {
         if (initialReading != null) {
             MeterReadingDto meterIdAndConsumption = meterReadingRepository.getMeterIdReadingValueAndDate(rentedObjectId, meterType);
 
-            Optional.ofNullable(meterIdAndConsumption.getCurrentReading())
+            Optional.ofNullable(meterIdAndConsumption.currentReading())
                     .ifPresent(currentReading -> {
                         if (initialReading.compareTo(currentReading) < 0) {
                             throw new RentowneBusinessException(RentowneErrorCode.BAD_METER_READING_VALUES_TENANT);
                         }
-                        DateUtils.compareDates(currentReadingDate, meterIdAndConsumption.getReadingDate(), true, meterType);
+                        DateUtils.compareDates(currentReadingDate, meterIdAndConsumption.readingDate(), true, meterType);
                     });
 
-            BigDecimal consumption = Optional.ofNullable(meterIdAndConsumption.getCurrentReading())
+            BigDecimal consumption = Optional.ofNullable(meterIdAndConsumption.currentReading())
                     .map(initialReading::subtract)
                     .orElse(BigDecimal.ZERO);
 
@@ -102,7 +102,7 @@ public class TenantServiceImpl implements TenantService {
                     .currentReading(initialReading)
                     .readingDate(currentReadingDate)
                     .consumption(consumption)
-                    .meter(Meter.builder().id(meterIdAndConsumption.getMeterDto().getId()).build())
+                    .meter(Meter.builder().id(meterIdAndConsumption.meterDto().getId()).build())
                     .settled(true)
                     .build();
             meterReadingRepository.save(meterReading);

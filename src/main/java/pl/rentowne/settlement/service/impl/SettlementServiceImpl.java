@@ -14,9 +14,9 @@ import pl.rentowne.lease_agreement.LeaseAgreementDto;
 import pl.rentowne.lease_agreement.LeaseAgreementRepository;
 import pl.rentowne.meter.MeterReadingData;
 import pl.rentowne.meter.MeterType;
-import pl.rentowne.meter_reading.model.MeterReading;
-import pl.rentowne.meter_reading.model.dto.MeterReadingDto;
-import pl.rentowne.meter_reading.repository.MeterReadingRepository;
+import pl.rentowne.meter_reading.MeterReading;
+import pl.rentowne.meter_reading.MeterReadingDto;
+import pl.rentowne.meter_reading.MeterReadingRepository;
 import pl.rentowne.provider_field.model.BillingMethod;
 import pl.rentowne.provider_field.model.ProviderField;
 import pl.rentowne.rented_object.RentedObject;
@@ -443,13 +443,13 @@ public class SettlementServiceImpl implements SettlementService {
                 meterReadingRepository.findUnsettledDistributedReadingsByApartmentAndType(apartmentId, MeterType.ELECTRIC);
 
         BigDecimal distributedConsumption = distributedReadings.stream()
-                .map(MeterReadingDto::getConsumption)
+                .map(MeterReadingDto::consumption)
                 .reduce(BigDecimal.ZERO, BigDecimal::add);
 
         // WAŻNE: Dodajemy ID odczytów z licznika mieszkania do apartmentSnapshotIds,
         // żeby były oznaczone jako settled dopiero po przetworzeniu wszystkich kawalerek
         List<Long> distributedReadingIds = distributedReadings.stream()
-                .map(MeterReadingDto::getId)
+                .map(MeterReadingDto::id)
                 .toList();
 
         // Tworzenie listy ReadingSnapshot z odpowiednimi flagami
@@ -548,10 +548,10 @@ public class SettlementServiceImpl implements SettlementService {
                 // Pobierz nierozliczone odczyty do obliczenia zużycia i oznaczenia jako settled
                 List<MeterReadingDto> unsettledReadings = meterReadingRepository.findReadingsWithDatesByRentedObjectAndMeterType(rentedObjectId, MeterType.WATER_COLD);
                 BigDecimal consumption = unsettledReadings.stream()
-                        .map(MeterReadingDto::getConsumption)
+                        .map(MeterReadingDto::consumption)
                         .reduce(BigDecimal.ZERO, BigDecimal::add);
                 allMeterReadingIds.addAll(unsettledReadings.stream()
-                        .map(MeterReadingDto::getId)
+                        .map(MeterReadingDto::id)
                         .toList());
 
                 // Oblicz koszt wody na podstawie zużycia
@@ -579,10 +579,10 @@ public class SettlementServiceImpl implements SettlementService {
                 // Pobierz nierozliczone odczyty do obliczenia zużycia i oznaczenia jako settled
                 List<MeterReadingDto> unsettledReadings = meterReadingRepository.findReadingsWithDatesByRentedObjectAndMeterType(rentedObjectId, MeterType.WATER_COLD);
                 BigDecimal consumption = unsettledReadings.stream()
-                        .map(MeterReadingDto::getConsumption)
+                        .map(MeterReadingDto::consumption)
                         .reduce(BigDecimal.ZERO, BigDecimal::add);
                 allMeterReadingIds.addAll(unsettledReadings.stream()
-                        .map(MeterReadingDto::getId)
+                        .map(MeterReadingDto::id)
                         .toList());
 
                 // Oblicz koszt wody na podstawie zużycia

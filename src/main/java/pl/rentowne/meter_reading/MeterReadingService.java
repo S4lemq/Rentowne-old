@@ -1,10 +1,8 @@
-package pl.rentowne.meter_reading.service;
+package pl.rentowne.meter_reading;
 
 import pl.rentowne.exception.RentowneBusinessException;
-import pl.rentowne.meter_reading.model.dto.MeterReadingDto;
-import pl.rentowne.meter_reading.model.dto.PrevMeterReadingDto;
 
-public interface MeterReadingService {
+interface MeterReadingService {
     /**
      * Dodaje odczyt licznika
      * @param dto odczytu licznika

@@ -1,4 +1,4 @@
-package pl.rentowne.meter_reading.repository;
+package pl.rentowne.meter_reading;
 
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -7,10 +7,6 @@ import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import pl.rentowne.meter.MeterType;
-import pl.rentowne.meter_reading.model.MeterReading;
-import pl.rentowne.meter_reading.model.dto.MeterReadingDto;
-import pl.rentowne.meter_reading.model.dto.MeterReadingRowDto;
-import pl.rentowne.meter_reading.model.dto.PrevMeterReadingDto;
 
 import java.math.BigDecimal;
 import java.util.List;
@@ -26,7 +22,7 @@ public interface MeterReadingRepository extends JpaRepository<MeterReading, Long
     int updateSettledToFalseBySettlementId(Long id);
 
     @Query("""
-            select new pl.rentowne.meter_reading.model.dto.PrevMeterReadingDto(
+            select new pl.rentowne.meter_reading.PrevMeterReadingDto(
                 mr.id, mr.currentReading, mr.readingDate,
                 concat(t.firstname, ' ', t.lastname), ro.rentedObjectName, m.meterType)
             from MeterReading mr
@@ -54,7 +50,7 @@ public interface MeterReadingRepository extends JpaRepository<MeterReading, Long
 
     // Pobieranie odczytów z datami dla danego RO i typu licznika (nierozliczone)
     @Query("""
-       select new pl.rentowne.meter_reading.model.dto.MeterReadingDto(mr.id, mr.consumption, mr.readingDate)
+       select new pl.rentowne.meter_reading.MeterReadingDto(mr.id, mr.consumption, mr.readingDate)
        from MeterReading mr
        join mr.meter m
        where m.rentedObject.id = :rentedObjectId
@@ -67,7 +63,7 @@ public interface MeterReadingRepository extends JpaRepository<MeterReading, Long
 
     // Pobieranie dwóch ostatnich odczytów z datami dla danego RO i typu licznika (bez względu na settled)
     @Query("""
-       select new pl.rentowne.meter_reading.model.dto.MeterReadingDto(mr.id, mr.consumption, mr.readingDate)
+       select new pl.rentowne.meter_reading.MeterReadingDto(mr.id, mr.consumption, mr.readingDate)
        from MeterReading mr
        join mr.meter m
        where m.rentedObject.id = :rentedObjectId
@@ -134,7 +130,7 @@ public interface MeterReadingRepository extends JpaRepository<MeterReading, Long
 
     // Pobiera nierozliczone odczyty z licznika mieszkania (distributeReadings = true)
     @Query("""
-           select new pl.rentowne.meter_reading.model.dto.MeterReadingDto(mr.id, mr.consumption, mr.readingDate)
+           select new pl.rentowne.meter_reading.MeterReadingDto(mr.id, mr.consumption, mr.readingDate)
            from MeterReading mr
            join mr.meter m
            where m.apartment.id = :apartmentId
@@ -226,7 +222,7 @@ public interface MeterReadingRepository extends JpaRepository<MeterReading, Long
      * @return id licznika, odczyt oraz data odczytu
      */
     @Query("""
-            SELECT new pl.rentowne.meter_reading.model.dto.MeterReadingDto(mr.currentReading, new pl.rentowne.meter.MeterDto(m.id), mr.readingDate)
+            SELECT new pl.rentowne.meter_reading.MeterReadingDto(mr.currentReading, new pl.rentowne.meter.MeterDto(m.id), mr.readingDate)
             FROM Meter m
             LEFT JOIN MeterReading mr ON mr.meter.id = m.id
             WHERE m.meterType = :type
@@ -243,7 +239,7 @@ public interface MeterReadingRepository extends JpaRepository<MeterReading, Long
      * @return strona z listą odczytów liczników
      */
     @Query("""
-            SELECT new pl.rentowne.meter_reading.model.dto.MeterReadingRowDto(
+            SELECT new pl.rentowne.meter_reading.MeterReadingRowDto(
                 mr.id, mr.currentReading, mr.readingDate, mr.consumption, mr.settled, m.meterType
             )
             FROM MeterReading mr

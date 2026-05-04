@@ -8,7 +8,7 @@ import pl.rentowne.apartment.Apartment;
 import pl.rentowne.housing_provider.ProviderType;
 import pl.rentowne.invoice.InvoiceRepository;
 import pl.rentowne.meter.MeterType;
-import pl.rentowne.meter_reading.repository.MeterReadingRepository;
+import pl.rentowne.meter_reading.MeterReadingRepository;
 import pl.rentowne.rented_object.RentedObject;
 import pl.rentowne.settlement.model.Settlement;
 import pl.rentowne.settlement.model.SettlementStatus;

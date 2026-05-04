@@ -1,5 +1,4 @@
-package pl.rentowne.meter_reading.controller;
-
+package pl.rentowne.meter_reading;
 
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
@@ -18,16 +17,11 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import pl.rentowne.common.controler.AbstractController;
 import pl.rentowne.exception.RentowneBusinessException;
-import pl.rentowne.meter_reading.model.dto.MeterReadingDto;
-import pl.rentowne.meter_reading.model.dto.MeterReadingRowDto;
-import pl.rentowne.meter_reading.model.dto.PrevMeterReadingDto;
-import pl.rentowne.meter_reading.repository.MeterReadingRepository;
-import pl.rentowne.meter_reading.service.MeterReadingService;
 
 @RestController
 @RequiredArgsConstructor
 @Tag(name = "Odczyty liczników")
-public class MeterReadingController extends AbstractController {
+class MeterReadingController extends AbstractController {
 
     private final MeterReadingService meterReadingService;
     private final MeterReadingRepository meterReadingRepository;
@@ -43,7 +37,7 @@ public class MeterReadingController extends AbstractController {
             }
     )
     @PostMapping("/api/meter-reading")
-    public ResponseEntity<Void> addMeterReading(@RequestBody MeterReadingDto dto) throws RentowneBusinessException {
+    ResponseEntity<Void> addMeterReading(@RequestBody MeterReadingDto dto) throws RentowneBusinessException {
         meterReadingService.addMeterReading(dto);
         return new ResponseEntity<>(HttpStatus.CREATED);
     }
@@ -60,7 +54,7 @@ public class MeterReadingController extends AbstractController {
             }
     )
     @GetMapping("/api/meter/{meterId}/prev-meter-reading")
-    public ResponseEntity<PrevMeterReadingDto> getMeterReadingByMeter(@PathVariable Long meterId) {
+    ResponseEntity<PrevMeterReadingDto> getMeterReadingByMeter(@PathVariable Long meterId) {
         return ResponseEntity.ok(meterReadingService.getMeterReadingByMeter(meterId));
     }
 
@@ -76,7 +70,7 @@ public class MeterReadingController extends AbstractController {
             }
     )
     @GetMapping("/api/meter/{meterId}/meter-reading/{id}")
-    public ResponseEntity<MeterReadingDto> getCurrentAndPreviousReading(@PathVariable Long meterId, @PathVariable Long id) {
+    ResponseEntity<MeterReadingDto> getCurrentAndPreviousReading(@PathVariable Long meterId, @PathVariable Long id) {
         return ResponseEntity.ok(meterReadingService.getCurrentAndPreviousReading(meterId, id));
     }
 
@@ -92,7 +86,7 @@ public class MeterReadingController extends AbstractController {
             }
     )
     @DeleteMapping("/api/meter-reading/{id}")
-    public ResponseEntity<Void> deleteMeterReading(@PathVariable Long id) throws RentowneBusinessException {
+    ResponseEntity<Void> deleteMeterReading(@PathVariable Long id) throws RentowneBusinessException {
         meterReadingService.deleteMeterReading(id);
         return new ResponseEntity<>(HttpStatus.NO_CONTENT);
     }
@@ -107,7 +101,7 @@ public class MeterReadingController extends AbstractController {
             }
     )
     @GetMapping("/api/meter-readings/list")
-    public ResponseEntity<Page<MeterReadingRowDto>> getMeterReadingsList(
+    ResponseEntity<Page<MeterReadingRowDto>> getMeterReadingsList(
             Pageable pageable,
             @RequestParam Long meterId
     ) {

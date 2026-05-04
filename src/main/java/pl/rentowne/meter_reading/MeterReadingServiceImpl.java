@@ -1,4 +1,4 @@
-package pl.rentowne.meter_reading.service.impl;
+package pl.rentowne.meter_reading;
 
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -6,27 +6,22 @@ import org.springframework.transaction.annotation.Transactional;
 import pl.rentowne.exception.RentowneBusinessException;
 import pl.rentowne.exception.RentowneErrorCode;
 import pl.rentowne.meter.MeterType;
-import pl.rentowne.meter_reading.model.MeterReading;
-import pl.rentowne.meter_reading.model.dto.MeterReadingDto;
-import pl.rentowne.meter_reading.model.dto.PrevMeterReadingDto;
-import pl.rentowne.meter_reading.repository.MeterReadingRepository;
-import pl.rentowne.meter_reading.service.MeterReadingService;
 import pl.rentowne.util.DateUtils;
 
 @Service
 @RequiredArgsConstructor
-public class MeterReadingServiceImpl implements MeterReadingService {
+class MeterReadingServiceImpl implements MeterReadingService {
 
     private final MeterReadingRepository meterReadingRepository;
 
     @Transactional
     @Override
     public void addMeterReading(MeterReadingDto dto) throws RentowneBusinessException {
-        if (dto.getPreviousReading() != null && dto.getPreviousReadingDate() != null) {
-            if (dto.getCurrentReading().compareTo(dto.getPreviousReading()) <= 0) {
+        if (dto.previousReading() != null && dto.previousReadingDate() != null) {
+            if (dto.currentReading().compareTo(dto.previousReading()) <= 0) {
                 throw new RentowneBusinessException(RentowneErrorCode.BAD_METER_READING_VALUES);
             }
-            DateUtils.compareDates(dto.getReadingDate(), dto.getPreviousReadingDate(), false, MeterType.fromString(dto.getMeterType()));
+            DateUtils.compareDates(dto.readingDate(), dto.previousReadingDate(), false, MeterType.fromString(dto.meterType()));
         }
 
         meterReadingRepository.save(MeterReadingDto.asEntity(dto));

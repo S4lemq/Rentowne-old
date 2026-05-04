@@ -1,4 +1,4 @@
-package pl.rentowne.meter_reading.model;
+package pl.rentowne.meter_reading;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;

@@ -22,7 +22,7 @@ import lombok.NoArgsConstructor;
 import lombok.Setter;
 import pl.rentowne.apartment.Apartment;
 import pl.rentowne.common.model.BaseEntity;
-import pl.rentowne.meter_reading.model.MeterReading;
+import pl.rentowne.meter_reading.MeterReading;
 import pl.rentowne.rented_object.RentedObject;
 
 import java.math.BigDecimal;

@@ -1,16 +1,15 @@
-package pl.rentowne.meter_reading.model.dto;
+package pl.rentowne.meter_reading;
 
 import pl.rentowne.meter.MeterType;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 
-public record PrevMeterReadingDto(
+record MeterReadingRowDto(
         Long id,
         BigDecimal currentReading,
         LocalDateTime readingDate,
-        String tenantFullName,
-        String rentedObjectName,
+        BigDecimal consumption,
+        boolean settled,
         MeterType meterType
-) {
-}
+) {}
