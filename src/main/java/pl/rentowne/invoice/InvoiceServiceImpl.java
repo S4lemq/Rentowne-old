@@ -1,4 +1,4 @@
-package pl.rentowne.invoice.service.impl;
+package pl.rentowne.invoice;
 
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
@@ -9,24 +9,13 @@ import pl.rentowne.apartment.Apartment;
 import pl.rentowne.exception.RentowneBusinessException;
 import pl.rentowne.exception.RentowneErrorCode;
 import pl.rentowne.housing_provider.HousingProvider;
-import pl.rentowne.invoice.mapper.InvoiceMapper;
-import pl.rentowne.invoice.model.Invoice;
-import pl.rentowne.invoice.model.InvoiceFilterType;
-import pl.rentowne.invoice.model.dto.InvoiceDto;
-import pl.rentowne.invoice.model.dto.InvoiceFilterDto;
-import pl.rentowne.invoice.model.dto.InvoiceFilterSummaryDto;
-import pl.rentowne.invoice.model.dto.InvoiceListDto;
-import pl.rentowne.invoice.model.dto.InvoiceSummaryDto;
-import pl.rentowne.invoice.repository.InvoiceRepository;
-import pl.rentowne.invoice.service.InvoicePdfService;
-import pl.rentowne.invoice.service.InvoiceService;
 
 import java.io.InputStream;
 import java.time.LocalDate;
 
 @Service
 @RequiredArgsConstructor
-public class InvoiceServiceImpl implements InvoiceService {
+class InvoiceServiceImpl implements InvoiceService {
 
     private final InvoiceRepository invoiceRepository;
     private final InvoiceMapper invoiceMapper;

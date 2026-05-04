@@ -1,8 +1,8 @@
-package pl.rentowne.invoice.model.dto;
+package pl.rentowne.invoice;
 
 import pl.rentowne.housing_provider.ProviderType;
 
-public record InvoiceFilterDto (
+record InvoiceFilterDto (
    Long housingProviderId,
    Long apartmentId,
    String month,

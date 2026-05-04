@@ -1,4 +1,4 @@
-package pl.rentowne.invoice.model.dto;
+package pl.rentowne.invoice;
 
 import lombok.Builder;
 import lombok.Getter;
@@ -9,20 +9,21 @@ import java.time.LocalDate;
 
 @Getter
 @Builder
-public class InvoiceDto {
+class InvoiceListDto {
     private Long id;
-    private Long housingProviderId;
-    private ProviderType providerType;
+    private String sellerName;
     private String invoiceNumber;
-    private Long apartmentId;
+    private String localName;
     private LocalDate month;
     private LocalDate dateFrom;
     private LocalDate dateTo;
     private BigDecimal amount;
     private LocalDate payDay;
     private BigDecimal consumption;
+    private BigDecimal unitPrice;
     private BigDecimal meterValue;
     private LocalDate paymentDate;
     private LocalDate payDayMonth;
-    private String pdfFileName;
+    private ProviderType category;
+    private boolean hasFile;
 }

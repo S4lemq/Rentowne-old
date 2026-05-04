@@ -1,11 +1,10 @@
-package pl.rentowne.invoice.service.impl;
+package pl.rentowne.invoice;
 
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.io.FileSystemResourceLoader;
 import org.springframework.core.io.Resource;
 import org.springframework.stereotype.Service;
-import pl.rentowne.invoice.service.InvoicePdfService;
 import pl.rentowne.util.ExistingFileRenameUtils;
 import pl.rentowne.util.UploadedFilesNameUtils;
 
@@ -18,7 +17,7 @@ import java.nio.file.Paths;
 
 @Slf4j
 @Service
-public class InvoicePdfServiceImpl implements InvoicePdfService {
+class InvoicePdfServiceImpl implements InvoicePdfService {
 
     @Value("${application.invoicePdfDir:data/invoicePdfs/}")
     private String invoicePdfDir;

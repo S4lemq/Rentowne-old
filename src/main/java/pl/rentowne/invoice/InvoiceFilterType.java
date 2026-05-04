@@ -1,4 +1,4 @@
-package pl.rentowne.invoice.model;
+package pl.rentowne.invoice;
 
 import lombok.Getter;
 
@@ -6,7 +6,7 @@ import lombok.Getter;
  * Typ filtra dla faktur
  */
 @Getter
-public enum InvoiceFilterType {
+enum InvoiceFilterType {
     /**
      * Faktury zapłacone w bieżącym miesiącu (według paymentDate)
      */

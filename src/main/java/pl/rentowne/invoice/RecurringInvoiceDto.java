@@ -1,4 +1,4 @@
-package pl.rentowne.invoice.model.dto;
+package pl.rentowne.invoice;
 
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -12,7 +12,7 @@ import java.time.LocalDate;
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-public class RecurringInvoiceDto {
+class RecurringInvoiceDto {
 
     private String seller;
     private String invoiceNumber;

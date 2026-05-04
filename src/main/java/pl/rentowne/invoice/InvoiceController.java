@@ -1,4 +1,4 @@
-package pl.rentowne.invoice.controller;
+package pl.rentowne.invoice;
 
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
@@ -23,16 +23,6 @@ import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
 import pl.rentowne.exception.RentowneBusinessException;
 import pl.rentowne.exception.RentowneErrorCode;
-import pl.rentowne.invoice.model.InvoiceFilterType;
-import pl.rentowne.invoice.model.dto.InvoiceDto;
-import pl.rentowne.invoice.model.dto.InvoiceFilterDto;
-import pl.rentowne.invoice.model.dto.InvoiceFilterSummaryDto;
-import pl.rentowne.invoice.model.dto.InvoiceListDto;
-import pl.rentowne.invoice.model.dto.InvoiceSummaryDto;
-import pl.rentowne.invoice.model.dto.RecurringInvoiceDto;
-import pl.rentowne.invoice.service.InvoicePdfService;
-import pl.rentowne.invoice.service.InvoiceService;
-import pl.rentowne.invoice.service.RecurringInvoiceService;
 import pl.rentowne.user.model.dto.UploadResponse;
 
 import java.io.IOException;
@@ -42,7 +32,7 @@ import java.util.List;
 @RestController
 @RequiredArgsConstructor
 @Tag(name = "Faktury")
-public class InvoiceController {
+class InvoiceController {
 
     private final InvoiceService invoiceService;
     private final InvoicePdfService invoicePdfService;
@@ -59,7 +49,7 @@ public class InvoiceController {
             }
     )
     @PostMapping("/api/invoices")
-    public ResponseEntity<Long> addInvoice(@RequestBody InvoiceDto dto) {
+    ResponseEntity<Long> addInvoice(@RequestBody InvoiceDto dto) {
         return new ResponseEntity<>(invoiceService.addInvoice(dto), HttpStatus.CREATED);
     }
 
@@ -74,7 +64,7 @@ public class InvoiceController {
             }
     )
     @GetMapping("/api/invoices/{id}")
-    public ResponseEntity<InvoiceDto> getInvoice(@PathVariable Long id) {
+    ResponseEntity<InvoiceDto> getInvoice(@PathVariable Long id) {
         return new ResponseEntity<>(invoiceService.getInvoiceById(id), HttpStatus.OK);
     }
 
@@ -89,7 +79,7 @@ public class InvoiceController {
             }
     )
     @PutMapping("/api/invoices")
-    public ResponseEntity<Void> updateInvoice(@RequestBody InvoiceDto dto) {
+    ResponseEntity<Void> updateInvoice(@RequestBody InvoiceDto dto) {
         invoiceService.updateInvoice(dto);
         return ResponseEntity.ok().build();
     }
@@ -104,7 +94,7 @@ public class InvoiceController {
             }
     )
     @DeleteMapping("/api/invoices/{id}")
-    public ResponseEntity<Void> deleteInvoice(@PathVariable Long id) {
+    ResponseEntity<Void> deleteInvoice(@PathVariable Long id) {
         invoiceService.deleteInvoice(id);
         return ResponseEntity.ok().build();
     }
@@ -119,7 +109,7 @@ public class InvoiceController {
             }
     )
     @GetMapping("/api/invoices")
-    public ResponseEntity<Page<InvoiceListDto>> getInvoices(
+    ResponseEntity<Page<InvoiceListDto>> getInvoices(
             @PageableDefault(size = 20, sort = "id") Pageable pageable,
             @RequestParam(required = false) String filter,
             InvoiceFilterDto invoiceFilterDto) {
@@ -136,7 +126,7 @@ public class InvoiceController {
             }
     )
     @GetMapping("/api/invoices/summary")
-    public ResponseEntity<InvoiceSummaryDto> getInvoiceSummary() {
+    ResponseEntity<InvoiceSummaryDto> getInvoiceSummary() {
         return ResponseEntity.ok(invoiceService.getInvoiceSummary());
     }
 
@@ -149,7 +139,7 @@ public class InvoiceController {
             }
     )
     @GetMapping("/api/invoices/filter-summary")
-    public ResponseEntity<InvoiceFilterSummaryDto> getInvoiceFilterSummary(InvoiceFilterDto invoiceFilterDto) {
+    ResponseEntity<InvoiceFilterSummaryDto> getInvoiceFilterSummary(InvoiceFilterDto invoiceFilterDto) {
         return ResponseEntity.ok(invoiceService.getInvoiceSummaryByFilters(invoiceFilterDto));
     }
 
@@ -166,7 +156,7 @@ public class InvoiceController {
             }
     )
     @PostMapping("/api/invoices/upload-pdf")
-    public ResponseEntity<UploadResponse> uploadInvoicePdf(
+    ResponseEntity<UploadResponse> uploadInvoicePdf(
             @RequestParam("file") MultipartFile file,
             @RequestParam(value = "invoiceId", required = false) Long invoiceId) {
         if (file.isEmpty()) {
@@ -206,7 +196,7 @@ public class InvoiceController {
             }
     )
     @GetMapping("/api/invoices/pdf/download/{filename}")
-    public ResponseEntity<Resource> getInvoicePdf(
+    ResponseEntity<Resource> getInvoicePdf(
             @PathVariable String filename) {
         Resource file = invoicePdfService.getInvoicePdf(filename);
 
@@ -231,7 +221,7 @@ public class InvoiceController {
             }
     )
     @DeleteMapping("/api/invoices/pdf/{filename}")
-    public ResponseEntity<Void> deleteInvoicePdf(@PathVariable String filename) {
+    ResponseEntity<Void> deleteInvoicePdf(@PathVariable String filename) {
         invoicePdfService.deleteInvoicePdf(filename);
         return ResponseEntity.ok().build();
     }
@@ -246,7 +236,7 @@ public class InvoiceController {
             }
     )
     @PostMapping("/api/invoices/generate-recurring")
-    public ResponseEntity<List<RecurringInvoiceDto>> generateRecurringInvoices() {
+    ResponseEntity<List<RecurringInvoiceDto>> generateRecurringInvoices() {
         List<RecurringInvoiceDto> generatedInvoices = recurringInvoiceService.generateRecurringInvoices();
         return ResponseEntity.ok(generatedInvoices);
     }

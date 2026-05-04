@@ -1,4 +1,4 @@
-package pl.rentowne.invoice.service.impl;
+package pl.rentowne.invoice;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -7,10 +7,6 @@ import org.springframework.transaction.annotation.Transactional;
 import pl.rentowne.apartment.Apartment;
 import pl.rentowne.housing_provider.HousingProvider;
 import pl.rentowne.housing_provider.HousingProviderRepository;
-import pl.rentowne.invoice.model.Invoice;
-import pl.rentowne.invoice.model.dto.RecurringInvoiceDto;
-import pl.rentowne.invoice.repository.InvoiceRepository;
-import pl.rentowne.invoice.service.RecurringInvoiceService;
 import pl.rentowne.provider_field.model.ProviderField;
 import pl.rentowne.util.Clock;
 
@@ -26,7 +22,7 @@ import static java.util.stream.Collectors.toMap;
 @Slf4j
 @Service
 @RequiredArgsConstructor
-public class RecurringInvoiceServiceImpl implements RecurringInvoiceService {
+class RecurringInvoiceServiceImpl implements RecurringInvoiceService {
 
     private static final int PAY_DAY_OF_MONTH = 15;
 

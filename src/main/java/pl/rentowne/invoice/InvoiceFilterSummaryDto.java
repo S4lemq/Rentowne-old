@@ -1,11 +1,11 @@
-package pl.rentowne.invoice.model.dto;
+package pl.rentowne.invoice;
 
 import lombok.Builder;
 
 import java.math.BigDecimal;
 
 @Builder
-public record InvoiceFilterSummaryDto(
+record InvoiceFilterSummaryDto(
     BigDecimal totalAmount,
     BigDecimal totalConsumption
 ) {}

@@ -1,10 +1,8 @@
-package pl.rentowne.invoice.service;
-
-import pl.rentowne.invoice.model.dto.RecurringInvoiceDto;
+package pl.rentowne.invoice;
 
 import java.util.List;
 
-public interface RecurringInvoiceService {
+interface RecurringInvoiceService {
 
     /**
      * Generuje faktury cykliczne dla dostawców z flagą recurringPayment = true
@@ -13,4 +11,3 @@ public interface RecurringInvoiceService {
      */
     List<RecurringInvoiceDto> generateRecurringInvoices();
 }
-

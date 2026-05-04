@@ -1,20 +1,14 @@
-package pl.rentowne.invoice.service;
+package pl.rentowne.invoice;
 
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
-import pl.rentowne.invoice.model.InvoiceFilterType;
-import pl.rentowne.invoice.model.dto.InvoiceDto;
-import pl.rentowne.invoice.model.dto.InvoiceFilterDto;
-import pl.rentowne.invoice.model.dto.InvoiceFilterSummaryDto;
-import pl.rentowne.invoice.model.dto.InvoiceListDto;
-import pl.rentowne.invoice.model.dto.InvoiceSummaryDto;
 
 import java.io.InputStream;
 
 /**
  * Serwis obsługi faktur
  */
-public interface InvoiceService {
+interface InvoiceService {
 
     /**
      * Dodaje nową fakturę

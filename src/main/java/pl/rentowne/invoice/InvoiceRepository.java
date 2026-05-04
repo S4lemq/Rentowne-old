@@ -1,4 +1,4 @@
-package pl.rentowne.invoice.repository;
+package pl.rentowne.invoice;
 
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -6,8 +6,6 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import pl.rentowne.housing_provider.ProviderType;
-import pl.rentowne.invoice.model.Invoice;
-import pl.rentowne.invoice.model.dto.InvoiceFilterDto;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;

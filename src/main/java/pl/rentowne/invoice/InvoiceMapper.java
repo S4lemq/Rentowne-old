@@ -1,21 +1,16 @@
-package pl.rentowne.invoice.mapper;
+package pl.rentowne.invoice;
 
-import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
 import pl.rentowne.apartment.Apartment;
 import pl.rentowne.housing_provider.HousingProvider;
-import pl.rentowne.invoice.model.Invoice;
-import pl.rentowne.invoice.model.dto.InvoiceDto;
-import pl.rentowne.invoice.model.dto.InvoiceListDto;
 
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 
 @Component
-@RequiredArgsConstructor
-public class InvoiceMapper {
+class InvoiceMapper {
 
-    public Invoice toEntity(InvoiceDto dto) {
+    Invoice toEntity(InvoiceDto dto) {
         return Invoice.builder()
                 .id(dto.getId())
                 .housingProvider(dto.getHousingProviderId() != null
@@ -38,7 +33,7 @@ public class InvoiceMapper {
                 .build();
     }
 
-    public InvoiceDto toDto(Invoice entity) {
+    InvoiceDto toDto(Invoice entity) {
         return InvoiceDto.builder()
                 .id(entity.getId())
                 .housingProviderId(entity.getHousingProvider() != null
@@ -64,7 +59,7 @@ public class InvoiceMapper {
                 .build();
     }
 
-    public InvoiceListDto toListDto(Invoice entity) {
+    InvoiceListDto toListDto(Invoice entity) {
         BigDecimal unitPrice = null;
         if (entity.getAmount() != null && entity.getConsumption() != null
                 && entity.getConsumption().compareTo(BigDecimal.ZERO) != 0) {

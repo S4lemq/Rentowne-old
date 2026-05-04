@@ -1,4 +1,4 @@
-package pl.rentowne.invoice.controller;
+package pl.rentowne.invoice;
 
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -12,9 +12,6 @@ import org.springframework.test.web.reactive.server.WebTestClient;
 import pl.rentowne.IntegrationTest;
 import pl.rentowne.TestSecurityConfig;
 import pl.rentowne.WithMockRentowneUser;
-import pl.rentowne.invoice.model.Invoice;
-import pl.rentowne.invoice.model.dto.RecurringInvoiceDto;
-import pl.rentowne.invoice.repository.InvoiceRepository;
 import pl.rentowne.util.Clock;
 import pl.rentowne.util.FixedClock;
 

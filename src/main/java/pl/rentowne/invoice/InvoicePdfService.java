@@ -1,4 +1,4 @@
-package pl.rentowne.invoice.service;
+package pl.rentowne.invoice;
 
 import org.springframework.core.io.Resource;
 
@@ -7,7 +7,7 @@ import java.io.InputStream;
 /**
  * Serwis obsługi plików PDF faktur
  */
-public interface InvoicePdfService {
+interface InvoicePdfService {
 
     /**
      * Wgrywa plik PDF faktury

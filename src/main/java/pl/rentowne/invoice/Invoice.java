@@ -1,4 +1,4 @@
-package pl.rentowne.invoice.model;
+package pl.rentowne.invoice;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
