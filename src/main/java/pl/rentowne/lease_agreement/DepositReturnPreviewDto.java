@@ -1,58 +1,48 @@
-package pl.rentowne.lease_agreement.model.dto;
+package pl.rentowne.lease_agreement;
 
-import lombok.AllArgsConstructor;
 import lombok.Builder;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
-import lombok.Setter;
 
 import java.math.BigDecimal;
 
 /**
  * DTO dla podglądu zwrotu kaucji
  */
-@Getter
-@Setter
 @Builder
-@NoArgsConstructor
-@AllArgsConstructor
-public class DepositReturnPreviewDto {
-
+record DepositReturnPreviewDto(
     /**
      * Kwota zwrotu kaucji w formacie czytelnym dla użytkownika
      * Np: "+ 200 zł (Musisz zwrócić tę kwotę najemcy)"
      * lub: "- 460 zł (Najemca musi dopłacić)"
      */
-    private String depositReturnMessage;
+    String depositReturnMessage,
 
     /**
      * Kwota zwrotu kaucji (wartość liczbowa)
      */
-    private BigDecimal depositReturnAmount;
+    BigDecimal depositReturnAmount,
 
     /**
      * Wpłacona kaucja
      */
-    private BigDecimal depositPaid;
+    BigDecimal depositPaid,
 
     /**
      * Kwota za wodę
      */
-    private BigDecimal waterAmount;
+    BigDecimal waterAmount,
 
     /**
      * Kwota za prąd
      */
-    private BigDecimal electricityAmount;
+    BigDecimal electricityAmount,
 
     /**
      * Kwota obciążenia
      */
-    private BigDecimal chargeAmount;
+    BigDecimal chargeAmount,
 
     /**
      * Kwota obciążenia za gaz
      */
-    private BigDecimal gasChargeAmount;
-}
-
+    BigDecimal gasChargeAmount
+) {}

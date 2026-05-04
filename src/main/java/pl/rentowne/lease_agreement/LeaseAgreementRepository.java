@@ -1,13 +1,10 @@
-package pl.rentowne.lease_agreement.repository;
+package pl.rentowne.lease_agreement;
 
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
-import pl.rentowne.lease_agreement.model.LeaseAgreement;
-import pl.rentowne.lease_agreement.model.dto.LeaseAgreementDto;
-import pl.rentowne.lease_agreement.model.dto.LeaseAgreementRowDto;
 
 /**
  * Repozytorium umów najmu
@@ -20,7 +17,7 @@ public interface LeaseAgreementRepository extends JpaRepository<LeaseAgreement, 
      * @return dane umowy
      */
     @Query("""
-            SELECT new pl.rentowne.lease_agreement.model.dto.LeaseAgreementDto(
+            SELECT new pl.rentowne.lease_agreement.LeaseAgreementDto(
                 la.rentAmount, la.compensationAmount, la.internetFee, la.gasDeposit
             )
             FROM LeaseAgreement la
@@ -39,7 +36,7 @@ public interface LeaseAgreementRepository extends JpaRepository<LeaseAgreement, 
      * @return strona z listą umów najmu
      */
     @Query("""
-            SELECT new pl.rentowne.lease_agreement.model.dto.LeaseAgreementRowDto(
+            SELECT new pl.rentowne.lease_agreement.LeaseAgreementRowDto(
                 t.id,
                 CONCAT(t.firstname, ' ', t.lastname),
                 a.apartmentName,

@@ -10,8 +10,8 @@ import pl.rentowne.apartment.ApartmentService;
 import pl.rentowne.housing_provider.HousingProvider;
 import pl.rentowne.housing_provider.HousingProviderRepository;
 import pl.rentowne.housing_provider.ProviderType;
-import pl.rentowne.lease_agreement.model.dto.LeaseAgreementDto;
-import pl.rentowne.lease_agreement.repository.LeaseAgreementRepository;
+import pl.rentowne.lease_agreement.LeaseAgreementDto;
+import pl.rentowne.lease_agreement.LeaseAgreementRepository;
 import pl.rentowne.meter.MeterReadingData;
 import pl.rentowne.meter.MeterType;
 import pl.rentowne.meter_reading.model.MeterReading;
@@ -94,12 +94,12 @@ public class SettlementServiceImpl implements SettlementService {
                         providerWithProviderFields, rentedObjectId, waterResult, allMeterReadingIds);
             }
 
-            gasResult = leaseAgreement.getGasDeposit() != null ? leaseAgreement.getGasDeposit() : BigDecimal.ZERO;
+            gasResult = leaseAgreement.gasDeposit() != null ? leaseAgreement.gasDeposit() : BigDecimal.ZERO;
 
             BigDecimal totalSum = electricResult.add(waterResult)
-                    .add(leaseAgreement.getCompensationAmount())
-                    .add(leaseAgreement.getInternetFee())
-                    .add(leaseAgreement.getRentAmount())
+                    .add(leaseAgreement.compensationAmount())
+                    .add(leaseAgreement.internetFee())
+                    .add(leaseAgreement.rentAmount())
                     .add(gasResult);
 
             // Logi dla standardowych logów aplikacji
@@ -109,9 +109,9 @@ public class SettlementServiceImpl implements SettlementService {
             log.info("Kwota za prąd z licznika mieszkania: {}", distributedElectricResult);
             log.info("Kwota za wodę: {}", waterResult);
             log.info("Kwota za gaz: {}", gasResult);
-            log.info("Kwota odstępnego: {}", leaseAgreement.getCompensationAmount());
-            log.info("Kwota za internet: {}", leaseAgreement.getInternetFee());
-            log.info("Kwota czynszu: {}", leaseAgreement.getRentAmount());
+            log.info("Kwota odstępnego: {}", leaseAgreement.compensationAmount());
+            log.info("Kwota za internet: {}", leaseAgreement.internetFee());
+            log.info("Kwota czynszu: {}", leaseAgreement.rentAmount());
             log.info("Kwota całkowita: {}", totalSum);
 
             Tenant tenant = tenantRepository.getTenantByRentedObjectId(rentedObjectId);
@@ -122,10 +122,10 @@ public class SettlementServiceImpl implements SettlementService {
                     .waterAmount(waterResult)
                     .gasAmount(gasResult)
                     .totalAmount(totalSum)
-                    .compensationAmount(leaseAgreement.getCompensationAmount())
-                    .rentAmount(leaseAgreement.getRentAmount())
-                    .internetFee(leaseAgreement.getInternetFee())
-                    .gasDeposit(leaseAgreement.getGasDeposit())
+                    .compensationAmount(leaseAgreement.compensationAmount())
+                    .rentAmount(leaseAgreement.rentAmount())
+                    .internetFee(leaseAgreement.internetFee())
+                    .gasDeposit(leaseAgreement.gasDeposit())
                     .settlementDate(dto.getSettlementDate())
                     .rentedObject(RentedObject.builder().id(rentedObjectId).build())
                     .tenant(tenant)
@@ -263,13 +263,13 @@ public class SettlementServiceImpl implements SettlementService {
             ProrationMode gasMode = Boolean.TRUE.equals(dto.getIsGasDepositProrated()) ? ProrationMode.PRORATED : ProrationMode.FULL;
             ProrationMode internetMode = Boolean.TRUE.equals(dto.getIsInternetFeeProrated()) ? ProrationMode.PRORATED : ProrationMode.FULL;
 
-            BigDecimal rentAmount = prorationCalc.calculateAmount(leaseAgreement.getRentAmount(), rentMode);
-            BigDecimal compensationAmount = prorationCalc.calculateAmount(leaseAgreement.getCompensationAmount(), compensationMode);
-            BigDecimal gasDeposit = leaseAgreement.getGasDeposit() != null
-                    ? prorationCalc.calculateAmount(leaseAgreement.getGasDeposit(), gasMode)
+            BigDecimal rentAmount = prorationCalc.calculateAmount(leaseAgreement.rentAmount(), rentMode);
+            BigDecimal compensationAmount = prorationCalc.calculateAmount(leaseAgreement.compensationAmount(), compensationMode);
+            BigDecimal gasDeposit = leaseAgreement.gasDeposit() != null
+                    ? prorationCalc.calculateAmount(leaseAgreement.gasDeposit(), gasMode)
                     : BigDecimal.ZERO;
-            BigDecimal internetFee = leaseAgreement.getInternetFee() != null
-                    ? prorationCalc.calculateAmount(leaseAgreement.getInternetFee(), internetMode)
+            BigDecimal internetFee = leaseAgreement.internetFee() != null
+                    ? prorationCalc.calculateAmount(leaseAgreement.internetFee(), internetMode)
                     : BigDecimal.ZERO;
 
             gasResult = gasDeposit;

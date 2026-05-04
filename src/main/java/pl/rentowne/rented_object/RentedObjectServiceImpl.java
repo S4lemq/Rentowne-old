@@ -4,7 +4,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import pl.rentowne.exception.RentowneBusinessException;
-import pl.rentowne.lease_agreement.model.LeaseAgreement;
+import pl.rentowne.lease_agreement.LeaseAgreement;
 import pl.rentowne.settlement.model.Settlement;
 import pl.rentowne.settlement.repository.SettlementRepository;
 import pl.rentowne.tenant.model.Tenant;

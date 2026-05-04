@@ -1,14 +1,9 @@
-package pl.rentowne.lease_agreement.service;
-
-import pl.rentowne.lease_agreement.model.dto.GasCheckRequestDto;
-import pl.rentowne.lease_agreement.model.dto.GasCheckResponseDto;
-import pl.rentowne.lease_agreement.model.dto.LeaseTerminationInfoDto;
-import pl.rentowne.lease_agreement.model.dto.TerminateLeaseRequestDto;
+package pl.rentowne.lease_agreement;
 
 /**
  * Serwis umów najmu
  */
-public interface LeaseAgreementService {
+interface LeaseAgreementService {
 
     /**
      * Pobiera informacje potrzebne do zakończenia umowy (koszty mediów i wpłacona kaucja)

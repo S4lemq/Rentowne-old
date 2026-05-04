@@ -1,4 +1,4 @@
-package pl.rentowne.lease_agreement.service.impl;
+package pl.rentowne.lease_agreement;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -7,13 +7,6 @@ import org.springframework.transaction.annotation.Transactional;
 import pl.rentowne.apartment.Apartment;
 import pl.rentowne.housing_provider.ProviderType;
 import pl.rentowne.invoice.InvoiceRepository;
-import pl.rentowne.lease_agreement.model.LeaseAgreement;
-import pl.rentowne.lease_agreement.model.dto.GasCheckRequestDto;
-import pl.rentowne.lease_agreement.model.dto.GasCheckResponseDto;
-import pl.rentowne.lease_agreement.model.dto.LeaseTerminationInfoDto;
-import pl.rentowne.lease_agreement.model.dto.TerminateLeaseRequestDto;
-import pl.rentowne.lease_agreement.repository.LeaseAgreementRepository;
-import pl.rentowne.lease_agreement.service.LeaseAgreementService;
 import pl.rentowne.meter.MeterType;
 import pl.rentowne.meter_reading.repository.MeterReadingRepository;
 import pl.rentowne.rented_object.RentedObject;
@@ -31,7 +24,7 @@ import java.util.List;
 @Slf4j
 @Service
 @RequiredArgsConstructor
-public class LeaseAgreementServiceImpl implements LeaseAgreementService {
+class LeaseAgreementServiceImpl implements LeaseAgreementService {
 
     private final LeaseAgreementRepository leaseAgreementRepository;
     private final SettlementService settlementService;
@@ -127,8 +120,8 @@ public class LeaseAgreementServiceImpl implements LeaseAgreementService {
         }
 
         // Dodaj kwoty obciążeń
-        BigDecimal chargeAmount = request.getChargeAmount() != null ? request.getChargeAmount() : BigDecimal.ZERO;
-        BigDecimal gasChargeAmount = request.getGasChargeAmount() != null ? request.getGasChargeAmount() : BigDecimal.ZERO;
+        BigDecimal chargeAmount = request.chargeAmount() != null ? request.chargeAmount() : BigDecimal.ZERO;
+        BigDecimal gasChargeAmount = request.gasChargeAmount() != null ? request.gasChargeAmount() : BigDecimal.ZERO;
 
         // Oblicz zwróconą kaucję
         BigDecimal returnedDeposit = leaseAgreement.getDepositPaid()
@@ -170,7 +163,7 @@ public class LeaseAgreementServiceImpl implements LeaseAgreementService {
         }
 
         // Zaktualizuj umowę
-        leaseAgreement.setChargeDescription(request.getChargeDescription());
+        leaseAgreement.setChargeDescription(request.chargeDescription());
         leaseAgreement.setChargeAmount(chargeAmount);
         leaseAgreement.setGasChargeAmount(gasChargeAmount);
         leaseAgreement.setReturnedDepositAmount(returnedDeposit);
@@ -202,13 +195,13 @@ public class LeaseAgreementServiceImpl implements LeaseAgreementService {
         BigDecimal invoicesTotal = invoiceRepository.sumGasAmountByApartmentAndDateRange(
                 apartmentId,
                 ProviderType.GAS,
-                request.getDateFrom(),
-                request.getDateTo()
+                request.dateFrom(),
+                request.dateTo()
         );
 
         // Konwertuj daty na LocalDateTime (początek pierwszego dnia i koniec ostatniego dnia)
-        LocalDateTime dateTimeFrom = request.getDateFrom().atStartOfDay();
-        LocalDateTime dateTimeTo = request.getDateTo().atTime(23, 59, 59);
+        LocalDateTime dateTimeFrom = request.dateFrom().atStartOfDay();
+        LocalDateTime dateTimeTo = request.dateTo().atTime(23, 59, 59);
 
         // Pobierz sumę zaliczek za gaz z Settlement w danym okresie dla całego mieszkania
         BigDecimal depositsTotal = settlementRepository.sumGasDepositByApartmentAndDateRange(
@@ -267,8 +260,8 @@ public class LeaseAgreementServiceImpl implements LeaseAgreementService {
         }
 
         // Pobierz kwoty obciążeń z requestu
-        BigDecimal chargeAmount = request.getChargeAmount() != null ? request.getChargeAmount() : BigDecimal.ZERO;
-        BigDecimal gasChargeAmount = request.getGasChargeAmount() != null ? request.getGasChargeAmount() : BigDecimal.ZERO;
+        BigDecimal chargeAmount = request.chargeAmount() != null ? request.chargeAmount() : BigDecimal.ZERO;
+        BigDecimal gasChargeAmount = request.gasChargeAmount() != null ? request.gasChargeAmount() : BigDecimal.ZERO;
 
         // Oblicz kwotę zwrotu kaucji
         BigDecimal depositReturnAmount = leaseAgreement.getDepositPaid()

@@ -1,4 +1,4 @@
-package pl.rentowne.lease_agreement.model;
+package pl.rentowne.lease_agreement;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;

@@ -49,11 +49,11 @@ public class TenantServiceImpl implements TenantService {
         tenant.setActive(true);
         tenant.setCif(cifGeneratorService.generateCif());
         Long tenantId = tenantRepository.save(tenant).getId();
-        LocalDateTime currentReadingDate = tenantDto.getLeaseAgreementDto().getStartContractDate();
+        LocalDateTime currentReadingDate = tenantDto.getLeaseAgreementDto().startContractDate();
 
-        processMeterReading(tenantDto.getLeaseAgreementDto().getInitialWaterMeterReading(), MeterType.WATER_COLD, rentedObjectId, currentReadingDate);
-        processMeterReading(tenantDto.getLeaseAgreementDto().getInitialEnergyMeterReading(), MeterType.ELECTRIC, rentedObjectId, currentReadingDate);
-        processMeterReading(tenantDto.getLeaseAgreementDto().getInitialGasMeterReading(), MeterType.GAS, rentedObjectId, currentReadingDate);
+        processMeterReading(tenantDto.getLeaseAgreementDto().initialWaterMeterReading(), MeterType.WATER_COLD, rentedObjectId, currentReadingDate);
+        processMeterReading(tenantDto.getLeaseAgreementDto().initialEnergyMeterReading(), MeterType.ELECTRIC, rentedObjectId, currentReadingDate);
+        processMeterReading(tenantDto.getLeaseAgreementDto().initialGasMeterReading(), MeterType.GAS, rentedObjectId, currentReadingDate);
 
         authenticationService.createTenantAccount(tenantDto);
         return tenantId;

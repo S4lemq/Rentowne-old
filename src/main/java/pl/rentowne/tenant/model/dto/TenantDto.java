@@ -4,7 +4,7 @@ import lombok.Builder;
 import lombok.Getter;
 import pl.rentowne.address.AddressDto;
 import pl.rentowne.address.AddressMapper;
-import pl.rentowne.lease_agreement.model.dto.LeaseAgreementDto;
+import pl.rentowne.lease_agreement.LeaseAgreementDto;
 import pl.rentowne.rented_object.RentedObject;
 import pl.rentowne.tenant.ApartmentDto;
 import pl.rentowne.tenant.RentedObjectDto;
