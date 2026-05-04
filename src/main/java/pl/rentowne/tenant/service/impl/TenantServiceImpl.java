@@ -76,7 +76,6 @@ public class TenantServiceImpl implements TenantService {
 
         Tenant updatedTenant = TenantDto.asEntity(dto);
         updatedTenant.setCif(existingTenant.getCif());
-        updatedTenant.setAddtInfoValue(existingTenant.getAddtInfoValue());
         updatedTenant.setActive(existingTenant.isActive());
 
         tenantRepository.save(updatedTenant);
