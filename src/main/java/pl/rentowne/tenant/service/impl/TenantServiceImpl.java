@@ -3,6 +3,7 @@ package pl.rentowne.tenant.service.impl;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import pl.rentowne.apartment.Apartment;
 import pl.rentowne.apartment.ApartmentRepository;
 import pl.rentowne.apartment.ApartmentService;
 import pl.rentowne.exception.RentowneBusinessException;
@@ -122,7 +123,10 @@ public class TenantServiceImpl implements TenantService {
 
     private void firstUpdateFlags(Long rentedObjectIdInDB) {
         rentedObjectRepository.updateRentedFlag(rentedObjectIdInDB, false);
-        Long apartmentId = apartmentRepository.findIdByRentedObjects_Id(rentedObjectIdInDB);
-        apartmentRepository.updateRentedFlag(apartmentId, false);
+        Optional<Apartment> idByRentedObjectsId = apartmentRepository.findIdByRentedObjects_Id(rentedObjectIdInDB);
+        apartmentRepository.updateRentedFlag(
+            idByRentedObjectsId.orElseThrow(() -> new RentowneNotFoundException(rentedObjectIdInDB)).getId(),
+            false
+        );
     }
 }

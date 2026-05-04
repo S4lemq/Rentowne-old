@@ -15,6 +15,7 @@ import pl.rentowne.user.service.UserService;
 
 import java.util.HashSet;
 import java.util.List;
+import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
 
@@ -69,7 +70,8 @@ public class ApartmentServiceImpl implements ApartmentService {
     @Transactional
     public void updateRentedFlagOnApartment(final Long rentedObjectId) {
         rentedObjectRepository.updateRentedFlag(rentedObjectId, true);
-        final Long apartmentId = apartmentRepository.findIdByRentedObjects_Id(rentedObjectId);
+        Optional<Apartment> idByRentedObjectsId = apartmentRepository.findIdByRentedObjects_Id(rentedObjectId);
+        final Long apartmentId = idByRentedObjectsId.orElseThrow(() -> new RentowneNotFoundException(rentedObjectId)).getId();
         final List<Long> ids = rentedObjectRepository.findByApartmentIdAndIsRented(apartmentId, false)
                 .stream().map(RentedObject::getId).toList();
         if (ids.isEmpty()) {

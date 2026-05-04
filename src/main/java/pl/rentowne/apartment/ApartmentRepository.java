@@ -17,7 +17,7 @@ public interface ApartmentRepository extends JpaRepository<Apartment, Long> {
 
     List<Apartment> findByUser_IdOrderByApartmentName(Long userId);
 
-    Long findIdByRentedObjects_Id(Long rentedObjectId);
+    Optional<Apartment> findIdByRentedObjects_Id(Long rentedObjectId);
 
     @Modifying
     @Query("UPDATE Apartment a SET a.isRented = :flag WHERE a.id = :apartmentId")
