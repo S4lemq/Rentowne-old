@@ -1,41 +1,36 @@
-package pl.rentowne.tenant.model.dto;
+package pl.rentowne.tenant;
 
 import lombok.Builder;
-import lombok.Getter;
 import pl.rentowne.address.AddressDto;
 import pl.rentowne.address.AddressMapper;
 import pl.rentowne.lease_agreement.LeaseAgreementDto;
 import pl.rentowne.rented_object.RentedObject;
-import pl.rentowne.tenant.ApartmentDto;
-import pl.rentowne.tenant.RentedObjectDto;
-import pl.rentowne.tenant.model.Tenant;
 
-@Getter
 @Builder
-public class TenantDto {
-    private Long id;
-    private String firstname;
-    private String lastname;
-    private String email;
-    private String accountNumber;
-    private String phoneNumber;
-    private AddressDto addressDto;
-    private LeaseAgreementDto leaseAgreementDto;
-    private RentedObjectDto rentedObjectDto;
-    private ApartmentDto apartment;
-
+public record TenantDto(
+        Long id,
+        String firstname,
+        String lastname,
+        String email,
+        String accountNumber,
+        String phoneNumber,
+        AddressDto addressDto,
+        LeaseAgreementDto leaseAgreementDto,
+        RentedObjectDto rentedObjectDto,
+        ApartmentDto apartment
+) {
 
     public static Tenant asEntity(TenantDto dto) {
         return Tenant.builder()
-                .id(dto.id)
-                .firstname(dto.firstname)
-                .lastname(dto.lastname)
-                .email(dto.email)
-                .accountNumber(dto.accountNumber)
-                .phoneNumber(dto.phoneNumber)
-                .address(dto.addressDto != null ? AddressMapper.toEntity(dto.addressDto) : null)
-                .leaseAgreement(LeaseAgreementDto.asEntity(dto.getLeaseAgreementDto()))
-                .rentedObject(new RentedObject(dto.rentedObjectDto.id()))
+                .id(dto.id())
+                .firstname(dto.firstname())
+                .lastname(dto.lastname())
+                .email(dto.email())
+                .accountNumber(dto.accountNumber())
+                .phoneNumber(dto.phoneNumber())
+                .address(dto.addressDto() != null ? AddressMapper.toEntity(dto.addressDto()) : null)
+                .leaseAgreement(LeaseAgreementDto.asEntity(dto.leaseAgreementDto()))
+                .rentedObject(new RentedObject(dto.rentedObjectDto().id()))
                 .build();
     }
 

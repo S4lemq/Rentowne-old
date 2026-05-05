@@ -1,4 +1,4 @@
-package pl.rentowne.tenant.service;
+package pl.rentowne.tenant;
 
 import org.springframework.lang.NonNull;
 

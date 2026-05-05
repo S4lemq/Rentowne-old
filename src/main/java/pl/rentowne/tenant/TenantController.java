@@ -1,4 +1,4 @@
-package pl.rentowne.tenant.controller;
+package pl.rentowne.tenant;
 
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
@@ -19,17 +19,12 @@ import org.springframework.web.bind.annotation.RestController;
 import pl.rentowne.common.controler.AbstractController;
 import pl.rentowne.exception.RentowneBusinessException;
 import pl.rentowne.exception.RentowneNotFoundException;
-import pl.rentowne.tenant.model.dto.TenantDto;
-import pl.rentowne.tenant.model.dto.TenantRowDto;
-import pl.rentowne.tenant.model.dto.TenantSettlementRowDto;
-import pl.rentowne.tenant.repository.TenantRepository;
-import pl.rentowne.tenant.service.TenantService;
 import pl.rentowne.user.service.UserService;
 
 @RestController
 @RequiredArgsConstructor
 @Tag(name = "Najemcy")
-public class TenantController extends AbstractController {
+class TenantController extends AbstractController {
 
     private final TenantService tenantService;
     private final TenantRepository tenantRepository;

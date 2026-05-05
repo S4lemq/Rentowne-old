@@ -23,7 +23,7 @@ import pl.rentowne.security.model.dto.AuthenticationRequest;
 import pl.rentowne.security.model.dto.AuthenticationResponse;
 import pl.rentowne.security.model.dto.RegisterRequest;
 import pl.rentowne.security.repository.TokenRepository;
-import pl.rentowne.tenant.model.dto.TenantDto;
+import pl.rentowne.tenant.TenantDto;
 import pl.rentowne.tfa.TwoFactorAuthenticationService;
 import pl.rentowne.user.model.PreferredLanguage;
 import pl.rentowne.user.model.Role;
@@ -51,9 +51,9 @@ public class AuthenticationService {
     @Transactional
     public void createTenantAccount(TenantDto tenantDto) {
         User user = User.builder()
-                .firstname(tenantDto.getFirstname())
-                .lastname(tenantDto.getLastname())
-                .email(tenantDto.getEmail())
+                .firstname(tenantDto.firstname())
+                .lastname(tenantDto.lastname())
+                .email(tenantDto.email())
                 .password(passwordEncoder.encode(PasswordGenerator.generatePassword()))
                 .role(Role.USER)
                 .mfaEnabled(false)

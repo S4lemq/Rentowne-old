@@ -1,11 +1,9 @@
-package pl.rentowne.tenant.service.impl;
+package pl.rentowne.tenant;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.lang.NonNull;
 import org.springframework.stereotype.Service;
-import pl.rentowne.tenant.repository.TenantRepository;
-import pl.rentowne.tenant.service.CifGeneratorService;
 
 import java.security.SecureRandom;
 

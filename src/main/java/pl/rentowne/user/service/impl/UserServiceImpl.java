@@ -15,7 +15,7 @@ import pl.rentowne.exception.RentowneErrorCode;
 import pl.rentowne.exception.RentowneNotFoundException;
 import pl.rentowne.payment_card.PaymentCardDto;
 import pl.rentowne.payment_card.PaymentCardService;
-import pl.rentowne.tenant.repository.TenantRepository;
+import pl.rentowne.tenant.TenantRepository;
 import pl.rentowne.user.model.User;
 import pl.rentowne.user.model.dto.UserBasicDto;
 import pl.rentowne.user.model.dto.UserDto;

@@ -1,8 +1,7 @@
-package pl.rentowne.tenant.service;
+package pl.rentowne.tenant;
 
 import pl.rentowne.exception.RentowneBusinessException;
 import pl.rentowne.exception.RentowneNotFoundException;
-import pl.rentowne.tenant.model.dto.TenantDto;
 
 /**
  * Serwis najemców

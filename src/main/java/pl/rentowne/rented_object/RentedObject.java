@@ -24,7 +24,7 @@ import pl.rentowne.apartment.Apartment;
 import pl.rentowne.common.model.BaseEntity;
 import pl.rentowne.meter.Meter;
 import pl.rentowne.settlement.Settlement;
-import pl.rentowne.tenant.model.Tenant;
+import pl.rentowne.tenant.Tenant;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;

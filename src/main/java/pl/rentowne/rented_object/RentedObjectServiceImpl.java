@@ -7,8 +7,8 @@ import pl.rentowne.exception.RentowneBusinessException;
 import pl.rentowne.lease_agreement.LeaseAgreement;
 import pl.rentowne.settlement.Settlement;
 import pl.rentowne.settlement.SettlementRepository;
-import pl.rentowne.tenant.model.Tenant;
-import pl.rentowne.tenant.repository.TenantRepository;
+import pl.rentowne.tenant.Tenant;
+import pl.rentowne.tenant.TenantRepository;
 import pl.rentowne.user.service.UserService;
 import pl.rentowne.util.DateUtils;
 

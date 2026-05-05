@@ -1,4 +1,4 @@
-package pl.rentowne.tenant.model;
+package pl.rentowne.tenant;
 
 import jakarta.persistence.CascadeType;
 import jakarta.persistence.Column;

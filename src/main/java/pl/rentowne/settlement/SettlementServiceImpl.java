@@ -21,8 +21,8 @@ import pl.rentowne.provider_field.BillingMethod;
 import pl.rentowne.provider_field.ProviderField;
 import pl.rentowne.rented_object.RentedObject;
 import pl.rentowne.rented_object.RentedObjectRepository;
-import pl.rentowne.tenant.model.Tenant;
-import pl.rentowne.tenant.repository.TenantRepository;
+import pl.rentowne.tenant.Tenant;
+import pl.rentowne.tenant.TenantRepository;
 
 import java.math.BigDecimal;
 import java.math.RoundingMode;

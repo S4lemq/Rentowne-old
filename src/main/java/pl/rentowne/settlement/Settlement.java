@@ -21,7 +21,7 @@ import lombok.NoArgsConstructor;
 import lombok.Setter;
 import pl.rentowne.common.model.BaseEntity;
 import pl.rentowne.rented_object.RentedObject;
-import pl.rentowne.tenant.model.Tenant;
+import pl.rentowne.tenant.Tenant;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;

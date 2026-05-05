@@ -1,13 +1,10 @@
-package pl.rentowne.tenant.repository;
+package pl.rentowne.tenant;
 
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
-import pl.rentowne.tenant.model.Tenant;
-import pl.rentowne.tenant.model.dto.TenantRowDto;
-import pl.rentowne.tenant.model.dto.TenantSettlementRowDto;
 
 import java.util.List;
 import java.util.Optional;
@@ -87,7 +84,7 @@ public interface TenantRepository extends JpaRepository<Tenant, Long> {
      * @return strona z listą najemców
      */
     @Query("""
-            SELECT new pl.rentowne.tenant.model.dto.TenantRowDto(
+            SELECT new pl.rentowne.tenant.TenantRowDto(
                 t.id, t.firstname, t.lastname, a.apartmentName, ro.rentedObjectName,
                 t.phoneNumber, t.email, la.endContractDate
             )
@@ -115,7 +112,7 @@ public interface TenantRepository extends JpaRepository<Tenant, Long> {
      * @return strona z listą rozliczeń
      */
     @Query("""
-            SELECT new pl.rentowne.tenant.model.dto.TenantSettlementRowDto(
+            SELECT new pl.rentowne.tenant.TenantSettlementRowDto(
                 s.id, s.settlementDate, s.totalAmount, s.settlementStatus
             )
             FROM Settlement s

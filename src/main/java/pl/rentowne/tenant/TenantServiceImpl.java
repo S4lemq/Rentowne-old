@@ -1,4 +1,4 @@
-package pl.rentowne.tenant.service.impl;
+package pl.rentowne.tenant;
 
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -17,11 +17,6 @@ import pl.rentowne.meter_reading.MeterReadingRepository;
 import pl.rentowne.rented_object.RentedObject;
 import pl.rentowne.rented_object.RentedObjectRepository;
 import pl.rentowne.security.service.AuthenticationService;
-import pl.rentowne.tenant.model.Tenant;
-import pl.rentowne.tenant.model.dto.TenantDto;
-import pl.rentowne.tenant.repository.TenantRepository;
-import pl.rentowne.tenant.service.CifGeneratorService;
-import pl.rentowne.tenant.service.TenantService;
 import pl.rentowne.util.DateUtils;
 
 import java.math.BigDecimal;
@@ -44,17 +39,17 @@ public class TenantServiceImpl implements TenantService {
     @Override
     @Transactional
     public Long addTenantAndLeaseAgreement(TenantDto tenantDto) throws RentowneBusinessException {
-        Long rentedObjectId = tenantDto.getRentedObjectDto().id();
+        Long rentedObjectId = tenantDto.rentedObjectDto().id();
         apartmentService.updateRentedFlagOnApartment(rentedObjectId);
         Tenant tenant = TenantDto.asEntity(tenantDto);
         tenant.setActive(true);
         tenant.setCif(cifGeneratorService.generateCif());
         Long tenantId = tenantRepository.save(tenant).getId();
-        LocalDateTime currentReadingDate = tenantDto.getLeaseAgreementDto().startContractDate();
+        LocalDateTime currentReadingDate = tenantDto.leaseAgreementDto().startContractDate();
 
-        processMeterReading(tenantDto.getLeaseAgreementDto().initialWaterMeterReading(), MeterType.WATER_COLD, rentedObjectId, currentReadingDate);
-        processMeterReading(tenantDto.getLeaseAgreementDto().initialEnergyMeterReading(), MeterType.ELECTRIC, rentedObjectId, currentReadingDate);
-        processMeterReading(tenantDto.getLeaseAgreementDto().initialGasMeterReading(), MeterType.GAS, rentedObjectId, currentReadingDate);
+        processMeterReading(tenantDto.leaseAgreementDto().initialWaterMeterReading(), MeterType.WATER_COLD, rentedObjectId, currentReadingDate);
+        processMeterReading(tenantDto.leaseAgreementDto().initialEnergyMeterReading(), MeterType.ELECTRIC, rentedObjectId, currentReadingDate);
+        processMeterReading(tenantDto.leaseAgreementDto().initialGasMeterReading(), MeterType.GAS, rentedObjectId, currentReadingDate);
 
         authenticationService.createTenantAccount(tenantDto);
         return tenantId;
@@ -69,10 +64,10 @@ public class TenantServiceImpl implements TenantService {
     @Override
     @Transactional
     public void updateTenantAndLeaseAgreement(TenantDto dto) {
-        Long rentedObjectIdInDB = tenantRepository.getRentedObjectId(dto.getId());
+        Long rentedObjectIdInDB = tenantRepository.getRentedObjectId(dto.id());
         this.firstUpdateFlags(rentedObjectIdInDB);
 
-        Tenant existingTenant = tenantRepository.findById(dto.getId())
+        Tenant existingTenant = tenantRepository.findById(dto.id())
                 .orElseThrow(() -> new RentowneBusinessException(RentowneErrorCode.ITEM_NOT_FOUND));
 
         Tenant updatedTenant = TenantDto.asEntity(dto);
@@ -111,9 +106,9 @@ public class TenantServiceImpl implements TenantService {
     }
 
     private void secondUpdateFlags(TenantDto dto) {
-        Long rentedObjectId = dto.getRentedObjectDto().id();
+        Long rentedObjectId = dto.rentedObjectDto().id();
         rentedObjectRepository.updateRentedFlag(rentedObjectId, true);
-        Long apartmentId = dto.getApartment().id();
+        Long apartmentId = dto.apartment().id();
         List<Long> ids = rentedObjectRepository.findByApartmentIdAndIsRented(apartmentId, false)
                 .stream().map(RentedObject::getId).toList();
         if (ids.isEmpty()) {

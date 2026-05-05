@@ -4,7 +4,7 @@ import lombok.AccessLevel;
 import lombok.NoArgsConstructor;
 import lombok.NonNull;
 import pl.rentowne.settlement.Settlement;
-import pl.rentowne.tenant.model.Tenant;
+import pl.rentowne.tenant.Tenant;
 
 import java.math.BigDecimal;
 import java.math.RoundingMode;
