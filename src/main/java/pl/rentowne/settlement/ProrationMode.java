@@ -1,4 +1,4 @@
-package pl.rentowne.settlement.model;
+package pl.rentowne.settlement;
 
 public enum ProrationMode {
     FULL("Pełny miesiąc"),
@@ -14,4 +14,5 @@ public enum ProrationMode {
         return description;
     }
 }
+
 

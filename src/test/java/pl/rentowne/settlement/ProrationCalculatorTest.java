@@ -1,7 +1,6 @@
-package pl.rentowne.settlement.service.impl;
+package pl.rentowne.settlement;
 
 import org.junit.jupiter.api.Test;
-import pl.rentowne.settlement.model.ProrationMode;
 
 import java.math.BigDecimal;
 import java.math.RoundingMode;
@@ -175,4 +174,5 @@ class ProrationCalculatorTest {
         assertEquals(new BigDecimal("2.74"), proratedWater);
     }
 }
+
 

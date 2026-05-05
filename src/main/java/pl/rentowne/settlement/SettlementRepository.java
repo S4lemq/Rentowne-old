@@ -1,4 +1,4 @@
-package pl.rentowne.settlement.repository;
+package pl.rentowne.settlement;
 
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -8,9 +8,6 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import pl.rentowne.meter.MeterReadingData;
 import pl.rentowne.meter.MeterType;
-import pl.rentowne.settlement.model.Settlement;
-import pl.rentowne.settlement.model.SettlementStatus;
-import pl.rentowne.settlement.model.dto.SettlementDateAmountDto;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
@@ -194,7 +191,7 @@ public interface SettlementRepository extends JpaRepository<Settlement, Long> {
      * @return lista rozliczeń
      */
     @Query("""
-            SELECT new pl.rentowne.settlement.model.dto.SettlementDateAmountDto(
+            SELECT new pl.rentowne.settlement.SettlementDateAmountDto(
                 s.rentedObject.id, s.settlementDate, s.totalAmount
             )
             FROM Settlement s
@@ -277,3 +274,4 @@ public interface SettlementRepository extends JpaRepository<Settlement, Long> {
         return findById(id).orElseThrow(() -> new IllegalArgumentException("Entity not found with id " + id));
     }
 }
+

@@ -1,6 +1,5 @@
-package pl.rentowne.settlement.service;
+package pl.rentowne.settlement;
 
-import pl.rentowne.settlement.model.dto.SettlementStats;
 
 public interface SettlementStatsService {
     /**
@@ -10,3 +9,4 @@ public interface SettlementStatsService {
     SettlementStats getStatistics();
 
 }
+

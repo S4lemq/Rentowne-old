@@ -19,7 +19,7 @@ import lombok.NoArgsConstructor;
 import lombok.Setter;
 import pl.rentowne.common.model.BaseEntity;
 import pl.rentowne.meter.Meter;
-import pl.rentowne.settlement.model.Settlement;
+import pl.rentowne.settlement.Settlement;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;

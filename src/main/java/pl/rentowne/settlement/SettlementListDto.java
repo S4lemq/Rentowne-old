@@ -1,11 +1,11 @@
-package pl.rentowne.settlement.model.dto;
+package pl.rentowne.settlement;
 
 import java.math.BigDecimal;
 
 /**
  * DTO dla listy rozliczeń
  */
-public record SettlementListDto(
+record SettlementListDto(
         Long id,
         String date, // data rozliczenia
         BigDecimal compensationAmount, // kwota odstępnego
@@ -21,3 +21,4 @@ public record SettlementListDto(
         String prorationDescription // opis proporcjonalności rozliczenia
 ) {
 }
+

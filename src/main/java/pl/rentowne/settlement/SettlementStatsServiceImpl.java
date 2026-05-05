@@ -1,20 +1,19 @@
-package pl.rentowne.settlement.service.impl;
+package pl.rentowne.settlement;
 
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import pl.rentowne.exception.RentowneBusinessException;
 import pl.rentowne.exception.RentowneErrorCode;
-import pl.rentowne.settlement.model.dto.SettlementDateAmountDto;
-import pl.rentowne.settlement.model.dto.SettlementStats;
-import pl.rentowne.settlement.repository.SettlementRepository;
-import pl.rentowne.settlement.service.SettlementStatsService;
 import pl.rentowne.user.service.UserService;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.time.Month;
 import java.time.format.TextStyle;
-import java.util.*;
+import java.util.Comparator;
+import java.util.List;
+import java.util.Locale;
+import java.util.TreeMap;
 import java.util.stream.Collectors;
 
 @Service
@@ -34,11 +33,11 @@ public class SettlementStatsServiceImpl implements SettlementStatsService {
         }
 
         LocalDateTime from = settlements.stream()
-                .map(SettlementDateAmountDto::getDate)
+                .map(SettlementDateAmountDto::date)
                 .min(Comparator.naturalOrder()).get();
 
         LocalDateTime to = settlements.stream()
-                .map(SettlementDateAmountDto::getDate)
+                .map(SettlementDateAmountDto::date)
                 .max(Comparator.naturalOrder()).get();
 
         TreeMap<Integer, SettlementStatsValue> result = new TreeMap<>();
@@ -65,8 +64,8 @@ public class SettlementStatsServiceImpl implements SettlementStatsService {
         Long tenantCount = 0L;
 
         for (SettlementDateAmountDto settlement : settlements) {
-            if (i == settlement.getDate().getMonthValue()) {
-                totalAmount = totalAmount.add(settlement.getTotalAmount());
+            if (i == settlement.date().getMonthValue()) {
+                totalAmount = totalAmount.add(settlement.totalAmount());
                 tenantCount++;
             }
         }
@@ -75,3 +74,4 @@ public class SettlementStatsServiceImpl implements SettlementStatsService {
 
     private record SettlementStatsValue(BigDecimal totalAmount, Long tenants){}
 }
+

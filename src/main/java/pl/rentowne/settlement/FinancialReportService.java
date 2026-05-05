@@ -1,4 +1,4 @@
-package pl.rentowne.settlement.service;
+package pl.rentowne.settlement;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -9,12 +9,6 @@ import pl.rentowne.apartment.ApartmentRepository;
 import pl.rentowne.housing_provider.ProviderType;
 import pl.rentowne.invoice.Invoice;
 import pl.rentowne.invoice.InvoiceRepository;
-import pl.rentowne.settlement.model.dto.ApartmentFinancialDetailDto;
-import pl.rentowne.settlement.model.dto.MonthlyFinancialDetailDto;
-import pl.rentowne.settlement.model.dto.MonthlyFinancialReportDto;
-import pl.rentowne.settlement.model.dto.MonthlyFinancialSummaryDto;
-import pl.rentowne.settlement.model.dto.YearlyFinancialReportDto;
-import pl.rentowne.settlement.repository.SettlementRepository;
 
 import java.math.BigDecimal;
 import java.math.RoundingMode;
@@ -144,8 +138,8 @@ public class FinancialReportService {
 
         // Sortuj po nazwie mieszkania - najpierw alfabetycznie po ulicy, potem numerycznie po numerze
         apartmentDetails.sort((a1, a2) -> {
-            String street1 = extractStreetNameFromApartmentName(a1.getApartmentName());
-            String street2 = extractStreetNameFromApartmentName(a2.getApartmentName());
+            String street1 = extractStreetNameFromApartmentName(a1.apartmentName());
+            String street2 = extractStreetNameFromApartmentName(a2.apartmentName());
 
             // Najpierw porównaj nazwy ulic
             int streetComparison = street1.compareTo(street2);
@@ -154,15 +148,15 @@ public class FinancialReportService {
             }
 
             // Jeśli ulice są takie same, porównaj numery
-            Integer num1 = extractNumberFromApartmentName(a1.getApartmentName());
-            Integer num2 = extractNumberFromApartmentName(a2.getApartmentName());
+            Integer num1 = extractNumberFromApartmentName(a1.apartmentName());
+            Integer num2 = extractNumberFromApartmentName(a2.apartmentName());
 
             if (num1 != null && num2 != null) {
                 return num1.compareTo(num2);
             }
 
             // Jeśli nie ma numerów, sortuj alfabetycznie
-            return a1.getApartmentName().compareTo(a2.getApartmentName());
+            return a1.apartmentName().compareTo(a2.apartmentName());
         });
 
         // Oblicz sumyz
@@ -233,18 +227,18 @@ public class FinancialReportService {
 
         for (ApartmentFinancialDetailDto detail : apartmentDetails) {
             totalAdministrativeFee = totalAdministrativeFee.add(
-                    detail.getAdministrativeFee() != null ? detail.getAdministrativeFee() : BigDecimal.ZERO);
+                    detail.administrativeFee() != null ? detail.administrativeFee() : BigDecimal.ZERO);
             totalInternet = totalInternet.add(
-                    detail.getInternet() != null ? detail.getInternet() : BigDecimal.ZERO);
+                    detail.internet() != null ? detail.internet() : BigDecimal.ZERO);
             totalElectricity = totalElectricity.add(
-                    detail.getElectricity() != null ? detail.getElectricity() : BigDecimal.ZERO);
+                    detail.electricity() != null ? detail.electricity() : BigDecimal.ZERO);
             totalGas = totalGas.add(
-                    detail.getGas() != null ? detail.getGas() : BigDecimal.ZERO);
+                    detail.gas() != null ? detail.gas() : BigDecimal.ZERO);
             totalTax = totalTax.add(
-                    detail.getTax() != null ? detail.getTax() : BigDecimal.ZERO);
-            totalRevenue = totalRevenue.add(detail.getRevenue());
-            totalCosts = totalCosts.add(detail.getCosts());
-            netIncome = netIncome.add(detail.getNetIncome());
+                    detail.tax() != null ? detail.tax() : BigDecimal.ZERO);
+            totalRevenue = totalRevenue.add(detail.revenue());
+            totalCosts = totalCosts.add(detail.costs());
+            netIncome = netIncome.add(detail.netIncome());
         }
 
         // Oblicz sumę narastającą dochodu (od początku do tego miesiąca włącznie)
@@ -357,3 +351,4 @@ public class FinancialReportService {
         }
     }
 }
+

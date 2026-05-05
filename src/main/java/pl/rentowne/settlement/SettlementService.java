@@ -1,10 +1,7 @@
-package pl.rentowne.settlement.service;
+package pl.rentowne.settlement;
 
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
-import pl.rentowne.settlement.CalculateRequestDto;
-import pl.rentowne.settlement.model.dto.SettlementListDto;
-import pl.rentowne.settlement.model.dto.UtilityCostsDto;
 
 public interface SettlementService {
 
@@ -48,3 +45,4 @@ public interface SettlementService {
      */
     boolean existsSettlementsByTenantId(Long tenantId);
 }
+

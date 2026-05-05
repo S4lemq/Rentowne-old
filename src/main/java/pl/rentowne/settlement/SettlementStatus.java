@@ -1,4 +1,4 @@
-package pl.rentowne.settlement.model;
+package pl.rentowne.settlement;
 
 public enum SettlementStatus {
     TO_PAY("Do zapłaty"),
@@ -15,3 +15,4 @@ public enum SettlementStatus {
         return value;
     }
 }
+

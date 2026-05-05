@@ -1,4 +1,4 @@
-package pl.rentowne.settlement.controller;
+package pl.rentowne.settlement;
 
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.media.Content;
@@ -18,14 +18,11 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
-import pl.rentowne.settlement.CalculateRequestDto;
-import pl.rentowne.settlement.model.dto.SettlementListDto;
-import pl.rentowne.settlement.service.SettlementService;
 
 @RestController
 @RequiredArgsConstructor
 @Tag(name = "Rozliczenia")
-public class SettlementController {
+class SettlementController {
 
     private final SettlementService settlementService;
 
@@ -76,3 +73,4 @@ public class SettlementController {
         return new ResponseEntity<>(settlementService.existsSettlementsByTenantId(tenantId), HttpStatus.OK);
     }
 }
+

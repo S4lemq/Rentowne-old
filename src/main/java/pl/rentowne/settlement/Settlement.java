@@ -1,4 +1,4 @@
-package pl.rentowne.settlement.model;
+package pl.rentowne.settlement;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
@@ -99,3 +99,4 @@ public class Settlement extends BaseEntity {
     private String prorationDescription;
 
 }
+

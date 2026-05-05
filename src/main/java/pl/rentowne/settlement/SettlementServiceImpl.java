@@ -1,4 +1,4 @@
-package pl.rentowne.settlement.service.impl;
+package pl.rentowne.settlement;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -21,15 +21,6 @@ import pl.rentowne.provider_field.BillingMethod;
 import pl.rentowne.provider_field.ProviderField;
 import pl.rentowne.rented_object.RentedObject;
 import pl.rentowne.rented_object.RentedObjectRepository;
-import pl.rentowne.settlement.CalculateRequestDto;
-import pl.rentowne.settlement.mapper.SettlementMapper;
-import pl.rentowne.settlement.model.ProrationMode;
-import pl.rentowne.settlement.model.Settlement;
-import pl.rentowne.settlement.model.SettlementStatus;
-import pl.rentowne.settlement.model.dto.SettlementListDto;
-import pl.rentowne.settlement.model.dto.UtilityCostsDto;
-import pl.rentowne.settlement.repository.SettlementRepository;
-import pl.rentowne.settlement.service.SettlementService;
 import pl.rentowne.tenant.model.Tenant;
 import pl.rentowne.tenant.repository.TenantRepository;
 
@@ -64,7 +55,7 @@ public class SettlementServiceImpl implements SettlementService {
     @Override
     public void calculate(Long rentedObjectId, CalculateRequestDto dto) {
         // Check if this is a partial month settlement
-        if (Boolean.TRUE.equals(dto.getIsPartialMonth())) {
+        if (Boolean.TRUE.equals(dto.isPartialMonth())) {
             calculatePartialMonth(rentedObjectId, dto);
             return;
         }
@@ -82,14 +73,14 @@ public class SettlementServiceImpl implements SettlementService {
             BigDecimal gasResult;
             BigDecimal waterResult = BigDecimal.ZERO;
 
-            if (dto.isElectricityIncluded()) {
+            if (dto.electricityIncluded()) {
                 elecCtx = this.calculateElectricityCost(
                         providerWithProviderFields, rentedObjectId, allMeterReadingIds);
                 electricResult = (elecCtx != null) ? elecCtx.amount() : BigDecimal.ZERO;
                 distributedElectricResult = (elecCtx != null) ? elecCtx.distributedAmount() : BigDecimal.ZERO;
             }
 
-            if (dto.isWaterIncluded()) {
+            if (dto.waterIncluded()) {
                 waterResult = this.calculateWaterCost(
                         providerWithProviderFields, rentedObjectId, waterResult, allMeterReadingIds);
             }
@@ -104,7 +95,7 @@ public class SettlementServiceImpl implements SettlementService {
 
             // Logi dla standardowych logów aplikacji
             log.info("Rozliczenie obiektu o id: {}", rentedObjectId);
-            log.info("Rozliczano: wodę-{}, prąd-{}", dto.isWaterIncluded(), dto.isElectricityIncluded());
+            log.info("Rozliczano: wodę-{}, prąd-{}", dto.waterIncluded(), dto.electricityIncluded());
             log.info("Kwota za prąd: {}", electricResult);
             log.info("Kwota za prąd z licznika mieszkania: {}", distributedElectricResult);
             log.info("Kwota za wodę: {}", waterResult);
@@ -126,7 +117,7 @@ public class SettlementServiceImpl implements SettlementService {
                     .rentAmount(leaseAgreement.rentAmount())
                     .internetFee(leaseAgreement.internetFee())
                     .gasDeposit(leaseAgreement.gasDeposit())
-                    .settlementDate(dto.getSettlementDate())
+                    .settlementDate(dto.settlementDate())
                     .rentedObject(RentedObject.builder().id(rentedObjectId).build())
                     .tenant(tenant)
                     .settlementStatus(SettlementStatus.TO_PAY)
@@ -159,7 +150,7 @@ public class SettlementServiceImpl implements SettlementService {
                 }
             }
 
-            rentedObjectRepository.updateSettlement(rentedObjectId, totalSum, dto.getSettlementDate());
+            rentedObjectRepository.updateSettlement(rentedObjectId, totalSum, dto.settlementDate());
 
         } catch (Exception e) {
             log.error("Błąd podczas rozliczenia obiektu {}", rentedObjectId, e);
@@ -217,7 +208,7 @@ public class SettlementServiceImpl implements SettlementService {
             log.info("Rozpoczynam rozliczenie niepełnego miesiąca dla obiektu: {}", rentedObjectId);
 
             // Walidacja dat
-            if (dto.getPeriodStartDate() == null || dto.getPeriodEndDate() == null) {
+            if (dto.periodStartDate() == null || dto.periodEndDate() == null) {
                 throw new IllegalArgumentException("Dla rozliczenia niepełnego miesiąca wymagane są daty: periodStartDate i periodEndDate");
             }
 
@@ -227,9 +218,9 @@ public class SettlementServiceImpl implements SettlementService {
 
             // Utworzenie kalkulatora proporcji
             ProrationCalculator prorationCalc = ProrationCalculator.builder()
-                    .periodStartDate(dto.getPeriodStartDate())
-                    .periodEndDate(dto.getPeriodEndDate())
-                    .settlementDate(dto.getSettlementDate())
+                    .periodStartDate(dto.periodStartDate())
+                    .periodEndDate(dto.periodEndDate())
+                    .settlementDate(dto.settlementDate())
                     .build();
 
             log.info("Okres rozliczenia: {} (dni: {}/{})",
@@ -244,7 +235,7 @@ public class SettlementServiceImpl implements SettlementService {
             BigDecimal waterResult = BigDecimal.ZERO;
 
             // Prąd - zawsze z liczników (rzeczywiste zużycie)
-            if (dto.isElectricityIncluded()) {
+            if (dto.electricityIncluded()) {
                 elecCtx = this.calculateElectricityCost(
                         providerWithProviderFields, rentedObjectId, allMeterReadingIds);
                 electricResult = (elecCtx != null) ? elecCtx.amount() : BigDecimal.ZERO;
@@ -252,16 +243,16 @@ public class SettlementServiceImpl implements SettlementService {
             }
 
             // Woda - rozliczana z liczników (jak prąd)
-            if (dto.isWaterIncluded()) {
+            if (dto.waterIncluded()) {
                 waterResult = this.calculateWaterCostForPartialMonth(
                         providerWithProviderFields, rentedObjectId, waterResult, allMeterReadingIds);
             }
 
             // Oblicz proporcjonalne kwoty z umowy
-            ProrationMode rentMode = Boolean.TRUE.equals(dto.getIsRentProrated()) ? ProrationMode.PRORATED : ProrationMode.FULL;
-            ProrationMode compensationMode = Boolean.TRUE.equals(dto.getIsCompensationProrated()) ? ProrationMode.PRORATED : ProrationMode.FULL;
-            ProrationMode gasMode = Boolean.TRUE.equals(dto.getIsGasDepositProrated()) ? ProrationMode.PRORATED : ProrationMode.FULL;
-            ProrationMode internetMode = Boolean.TRUE.equals(dto.getIsInternetFeeProrated()) ? ProrationMode.PRORATED : ProrationMode.FULL;
+            ProrationMode rentMode = Boolean.TRUE.equals(dto.isRentProrated()) ? ProrationMode.PRORATED : ProrationMode.FULL;
+            ProrationMode compensationMode = Boolean.TRUE.equals(dto.isCompensationProrated()) ? ProrationMode.PRORATED : ProrationMode.FULL;
+            ProrationMode gasMode = Boolean.TRUE.equals(dto.isGasDepositProrated()) ? ProrationMode.PRORATED : ProrationMode.FULL;
+            ProrationMode internetMode = Boolean.TRUE.equals(dto.isInternetFeeProrated()) ? ProrationMode.PRORATED : ProrationMode.FULL;
 
             BigDecimal rentAmount = prorationCalc.calculateAmount(leaseAgreement.rentAmount(), rentMode);
             BigDecimal compensationAmount = prorationCalc.calculateAmount(leaseAgreement.compensationAmount(), compensationMode);
@@ -292,7 +283,7 @@ public class SettlementServiceImpl implements SettlementService {
             log.info("Rozliczenie niepełnego miesiąca obiektu o id: {}", rentedObjectId);
             log.info("Okres: {}", prorationCalc.getPeriodDescription());
             log.info("Współczynnik proporcji: {}", prorationCalc.getProrationFactor());
-            log.info("Rozliczano: wodę-{}, prąd-{}", dto.isWaterIncluded(), dto.isElectricityIncluded());
+            log.info("Rozliczano: wodę-{}, prąd-{}", dto.waterIncluded(), dto.electricityIncluded());
             log.info("Kwota czynszu: {} ({})", rentAmount, rentMode.getDescription());
             log.info("Kwota odstępnego: {} ({})", compensationAmount, compensationMode.getDescription());
             log.info("Kwota za prąd: {}", electricResult);
@@ -314,7 +305,7 @@ public class SettlementServiceImpl implements SettlementService {
                     .rentAmount(rentAmount)
                     .internetFee(internetFee)
                     .gasDeposit(gasDeposit)
-                    .settlementDate(dto.getSettlementDate())
+                    .settlementDate(dto.settlementDate())
                     .rentedObject(RentedObject.builder().id(rentedObjectId).build())
                     .tenant(tenant)
                     .settlementStatus(SettlementStatus.TO_PAY)
@@ -348,7 +339,7 @@ public class SettlementServiceImpl implements SettlementService {
                 }
             }
 
-            rentedObjectRepository.updateSettlement(rentedObjectId, totalSum, dto.getSettlementDate());
+            rentedObjectRepository.updateSettlement(rentedObjectId, totalSum, dto.settlementDate());
 
         } catch (Exception e) {
             log.error("Błąd podczas rozliczenia niepełnego miesiąca obiektu {}", rentedObjectId, e);
@@ -760,3 +751,4 @@ public class SettlementServiceImpl implements SettlementService {
         return settlementRepository.existsByTenantId(tenantId);
     }
 }
+

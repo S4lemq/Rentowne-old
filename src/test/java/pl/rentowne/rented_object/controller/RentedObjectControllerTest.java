@@ -11,8 +11,8 @@ import pl.rentowne.IntegrationTest;
 import pl.rentowne.TestSecurityConfig;
 import pl.rentowne.WithMockRentowneUser;
 import pl.rentowne.settlement.CalculateRequestDto;
-import pl.rentowne.settlement.model.Settlement;
-import pl.rentowne.settlement.repository.SettlementRepository;
+import pl.rentowne.settlement.Settlement;
+import pl.rentowne.settlement.SettlementRepository;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;

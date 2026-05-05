@@ -23,7 +23,7 @@ import org.hibernate.annotations.SQLRestriction;
 import pl.rentowne.apartment.Apartment;
 import pl.rentowne.common.model.BaseEntity;
 import pl.rentowne.meter.Meter;
-import pl.rentowne.settlement.model.Settlement;
+import pl.rentowne.settlement.Settlement;
 import pl.rentowne.tenant.model.Tenant;
 
 import java.math.BigDecimal;

@@ -10,11 +10,11 @@ import pl.rentowne.invoice.InvoiceRepository;
 import pl.rentowne.meter.MeterType;
 import pl.rentowne.meter_reading.MeterReadingRepository;
 import pl.rentowne.rented_object.RentedObject;
-import pl.rentowne.settlement.model.Settlement;
-import pl.rentowne.settlement.model.SettlementStatus;
-import pl.rentowne.settlement.model.dto.UtilityCostsDto;
-import pl.rentowne.settlement.repository.SettlementRepository;
-import pl.rentowne.settlement.service.SettlementService;
+import pl.rentowne.settlement.Settlement;
+import pl.rentowne.settlement.SettlementRepository;
+import pl.rentowne.settlement.SettlementService;
+import pl.rentowne.settlement.SettlementStatus;
+import pl.rentowne.settlement.UtilityCostsDto;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
@@ -64,10 +64,10 @@ class LeaseAgreementServiceImpl implements LeaseAgreementService {
         } else {
             // Nie było częściowego rozliczenia - przelicz koszty mediów
             UtilityCostsDto utilityCosts = settlementService.calculateUtilityCostsOnly(rentedObjectId);
-            waterAmount = utilityCosts.getWaterAmount();
-            electricityAmount = utilityCosts.getElectricityAmount();
-            waterConsumption = utilityCosts.getWaterConsumption();
-            electricityConsumption = utilityCosts.getElectricityConsumption();
+            waterAmount = utilityCosts.waterAmount();
+            electricityAmount = utilityCosts.electricityAmount();
+            waterConsumption = utilityCosts.waterConsumption();
+            electricityConsumption = utilityCosts.electricityConsumption();
         }
 
         return LeaseTerminationInfoDto.builder()
@@ -112,8 +112,8 @@ class LeaseAgreementServiceImpl implements LeaseAgreementService {
         } else {
             // Nie było częściowego rozliczenia - przelicz koszty mediów
             UtilityCostsDto utilityCosts = settlementService.calculateUtilityCostsOnly(rentedObjectId);
-            electricityAmount = utilityCosts.getElectricityAmount();
-            waterAmount = utilityCosts.getWaterAmount();
+            electricityAmount = utilityCosts.electricityAmount();
+            waterAmount = utilityCosts.waterAmount();
 
             log.info("Zakończenie umowy {}: brak częściowego rozliczenia, przeliczono - woda={}, prąd={}",
                     leaseAgreementId, waterAmount, electricityAmount);
@@ -255,8 +255,8 @@ class LeaseAgreementServiceImpl implements LeaseAgreementService {
         } else {
             // Nie było częściowego rozliczenia - przelicz koszty mediów (bez zapisu)
             UtilityCostsDto utilityCosts = settlementService.calculateUtilityCostsOnly(rentedObjectId);
-            electricityAmount = utilityCosts.getElectricityAmount();
-            waterAmount = utilityCosts.getWaterAmount();
+            electricityAmount = utilityCosts.electricityAmount();
+            waterAmount = utilityCosts.waterAmount();
         }
 
         // Pobierz kwoty obciążeń z requestu

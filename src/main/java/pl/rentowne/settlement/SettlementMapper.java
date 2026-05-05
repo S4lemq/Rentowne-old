@@ -1,8 +1,6 @@
-package pl.rentowne.settlement.mapper;
+package pl.rentowne.settlement;
 
 import org.springframework.stereotype.Component;
-import pl.rentowne.settlement.model.Settlement;
-import pl.rentowne.settlement.model.dto.SettlementListDto;
 import pl.rentowne.util.DateUtils;
 
 import java.math.BigDecimal;
@@ -11,7 +9,7 @@ import java.math.BigDecimal;
  * Mapper dla Settlement
  */
 @Component
-public class SettlementMapper {
+class SettlementMapper {
 
     /**
      * Sumuje wartości BigDecimal pomijając null
@@ -64,3 +62,4 @@ public class SettlementMapper {
         );
     }
 }
+

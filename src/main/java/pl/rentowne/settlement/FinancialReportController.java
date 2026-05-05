@@ -1,4 +1,4 @@
-package pl.rentowne.settlement.controller;
+package pl.rentowne.settlement;
 
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.media.Content;
@@ -10,16 +10,13 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
-import pl.rentowne.settlement.model.dto.MonthlyFinancialDetailDto;
-import pl.rentowne.settlement.model.dto.YearlyFinancialReportDto;
-import pl.rentowne.settlement.service.FinancialReportService;
 
 import java.time.LocalDate;
 
 @RestController
 @RequiredArgsConstructor
 @Tag(name = "Raporty finansowe")
-public class FinancialReportController {
+class FinancialReportController {
 
     private final FinancialReportService financialReportService;
 
@@ -57,3 +54,4 @@ public class FinancialReportController {
         return new ResponseEntity<>(financialReportService.getMonthlyFinancialDetail(month), HttpStatus.OK);
     }
 }
+

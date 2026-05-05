@@ -1,8 +1,7 @@
-package pl.rentowne.settlement.service.impl;
+package pl.rentowne.settlement;
 
 import lombok.Builder;
 import lombok.Getter;
-import pl.rentowne.settlement.model.ProrationMode;
 
 import java.math.BigDecimal;
 import java.math.RoundingMode;
@@ -15,7 +14,7 @@ import java.time.temporal.ChronoUnit;
  */
 @Getter
 @Builder
-public class ProrationCalculator {
+class ProrationCalculator {
     private LocalDateTime periodStartDate;
     private LocalDateTime periodEndDate;
     private LocalDateTime settlementDate;
@@ -68,4 +67,5 @@ public class ProrationCalculator {
         return String.format("%02d-%02d.%02d.%d", startDay, endDay, month, year);
     }
 }
+
 

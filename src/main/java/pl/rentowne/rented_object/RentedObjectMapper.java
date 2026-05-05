@@ -3,7 +3,7 @@ package pl.rentowne.rented_object;
 import lombok.AccessLevel;
 import lombok.NoArgsConstructor;
 import lombok.NonNull;
-import pl.rentowne.settlement.model.Settlement;
+import pl.rentowne.settlement.Settlement;
 import pl.rentowne.tenant.model.Tenant;
 
 import java.math.BigDecimal;

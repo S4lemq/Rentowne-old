@@ -1,4 +1,4 @@
-package pl.rentowne.settlement.service;
+package pl.rentowne.settlement;
 
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
@@ -14,7 +14,7 @@ import java.time.format.DateTimeFormatter;
 
 @Slf4j
 @Component
-public class SettlementLogWriter {
+class SettlementLogWriter {
 
     private static final String BASE_LOG_DIR = "C:/Rentowne/settlement_logs";
     private static final DateTimeFormatter FILE_DATE_FORMATTER = DateTimeFormatter.ofPattern("yyyy-MM-dd_HH-mm-ss");
@@ -113,4 +113,5 @@ public class SettlementLogWriter {
         return currentWriter != null;
     }
 }
+
 
