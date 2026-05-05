@@ -1,4 +1,4 @@
-package pl.rentowne.tenant_settlement.controller;
+package pl.rentowne.tenant_settlement;
 
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.servlet.http.HttpServletRequest;
@@ -6,18 +6,13 @@ import lombok.RequiredArgsConstructor;
 import org.hibernate.validator.constraints.Length;
 import org.springframework.http.ResponseEntity;
 import org.springframework.validation.annotation.Validated;
-import org.springframework.web.bind.annotation.*;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RestController;
 import pl.rentowne.common.controler.AbstractController;
 import pl.rentowne.exception.RentowneBusinessException;
-import pl.rentowne.tenant_settlement.model.Payment;
-import pl.rentowne.tenant_settlement.model.TenantSettlement;
-import pl.rentowne.tenant_settlement.model.TenantSettlementStatus;
-import pl.rentowne.tenant_settlement.model.dto.NotificationDto;
-import pl.rentowne.tenant_settlement.model.dto.NotificationReceiveDto;
-import pl.rentowne.tenant_settlement.model.dto.TenantSettlementDto;
-import pl.rentowne.tenant_settlement.model.dto.TenantSettlementSummary;
-import pl.rentowne.tenant_settlement.service.PaymentService;
-import pl.rentowne.tenant_settlement.service.TenantSettlementService;
 
 import java.util.List;
 
@@ -27,7 +22,7 @@ import static org.apache.commons.lang3.StringUtils.isNotEmpty;
 @RequiredArgsConstructor
 @Tag(name = "Rozliczenia najemców")
 @Validated
-public class TenantSettlementController extends AbstractController {
+class TenantSettlementController extends AbstractController {
 
     private final TenantSettlementService tenantSettlementService;
     private final PaymentService paymentService;

@@ -1,4 +1,4 @@
-package pl.rentowne.tenant_settlement.service.payment.p24;
+package pl.rentowne.tenant_settlement;
 
 import lombok.Getter;
 import lombok.Setter;
@@ -14,7 +14,7 @@ import java.util.List;
 @Getter
 @Setter
 @ConfigurationProperties(prefix = "application.payments.p24")
-public class PaymentMethodP24Config {
+class PaymentMethodP24Config {
     private boolean testMode;
 
     private String url;

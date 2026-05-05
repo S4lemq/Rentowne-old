@@ -1,12 +1,10 @@
-package pl.rentowne.tenant_settlement.service.payment.p24;
+package pl.rentowne.tenant_settlement;
 
 import org.apache.commons.codec.digest.DigestUtils;
-import pl.rentowne.tenant_settlement.model.TenantSettlement;
-import pl.rentowne.tenant_settlement.model.dto.NotificationReceiveDto;
 
 import java.math.BigDecimal;
 
-public class RequestUtil {
+class RequestUtil {
 
     public static TransactionRegisterRequest createRegisterRequest(PaymentMethodP24Config config, TenantSettlement tenantSettlement) {
         return TransactionRegisterRequest.builder()

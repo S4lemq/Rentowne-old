@@ -24,7 +24,7 @@ import pl.rentowne.address.Address;
 import pl.rentowne.common.model.BaseEntity;
 import pl.rentowne.lease_agreement.LeaseAgreement;
 import pl.rentowne.rented_object.RentedObject;
-import pl.rentowne.tenant_settlement.model.TenantSettlement;
+import pl.rentowne.tenant_settlement.TenantSettlement;
 
 import java.util.List;
 

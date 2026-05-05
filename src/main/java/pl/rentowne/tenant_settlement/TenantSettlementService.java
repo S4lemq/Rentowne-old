@@ -1,9 +1,4 @@
-package pl.rentowne.tenant_settlement.service;
-
-import pl.rentowne.tenant_settlement.model.dto.NotificationReceiveDto;
-import pl.rentowne.tenant_settlement.model.TenantSettlement;
-import pl.rentowne.tenant_settlement.model.dto.TenantSettlementDto;
-import pl.rentowne.tenant_settlement.model.dto.TenantSettlementSummary;
+package pl.rentowne.tenant_settlement;
 
 public interface TenantSettlementService {
     /**

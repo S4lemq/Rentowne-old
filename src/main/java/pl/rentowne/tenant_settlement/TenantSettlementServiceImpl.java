@@ -1,4 +1,4 @@
-package pl.rentowne.tenant_settlement.service.impl;
+package pl.rentowne.tenant_settlement;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -10,19 +10,6 @@ import pl.rentowne.settlement.SettlementRepository;
 import pl.rentowne.settlement.SettlementStatus;
 import pl.rentowne.tenant.Tenant;
 import pl.rentowne.tenant.TenantRepository;
-import pl.rentowne.tenant_settlement.model.Payment;
-import pl.rentowne.tenant_settlement.model.PaymentType;
-import pl.rentowne.tenant_settlement.model.TenantSettlement;
-import pl.rentowne.tenant_settlement.model.TenantSettlementLog;
-import pl.rentowne.tenant_settlement.model.TenantSettlementStatus;
-import pl.rentowne.tenant_settlement.model.dto.NotificationReceiveDto;
-import pl.rentowne.tenant_settlement.model.dto.TenantSettlementDto;
-import pl.rentowne.tenant_settlement.model.dto.TenantSettlementSummary;
-import pl.rentowne.tenant_settlement.repository.PaymentRepository;
-import pl.rentowne.tenant_settlement.repository.TenantSettlementLogRepository;
-import pl.rentowne.tenant_settlement.repository.TenantSettlementRepository;
-import pl.rentowne.tenant_settlement.service.TenantSettlementService;
-import pl.rentowne.tenant_settlement.service.payment.p24.PaymentMethodP24;
 import pl.rentowne.user.service.UserService;
 
 import java.time.LocalDateTime;

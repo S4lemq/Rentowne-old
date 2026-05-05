@@ -1,11 +1,11 @@
-package pl.rentowne.tenant_settlement.service.payment.p24;
+package pl.rentowne.tenant_settlement;
 
 import lombok.Builder;
 import lombok.Getter;
 
 @Getter
 @Builder
-public class TransactionVerifyRequest {
+class TransactionVerifyRequest {
     private Integer merchantId;
     private Integer posId;
     private String sessionId;

@@ -1,6 +1,4 @@
-package pl.rentowne.tenant_settlement.service;
-
-import pl.rentowne.tenant_settlement.model.Payment;
+package pl.rentowne.tenant_settlement;
 
 import java.util.List;
 

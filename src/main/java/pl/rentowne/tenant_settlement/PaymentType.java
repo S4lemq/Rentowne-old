@@ -1,4 +1,4 @@
-package pl.rentowne.tenant_settlement.model;
+package pl.rentowne.tenant_settlement;
 
 public enum PaymentType {
     BANK_TRANSFER,

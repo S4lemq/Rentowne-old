@@ -1,10 +1,7 @@
-package pl.rentowne.tenant_settlement.service.impl;
+package pl.rentowne.tenant_settlement;
 
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
-import pl.rentowne.tenant_settlement.model.Payment;
-import pl.rentowne.tenant_settlement.repository.PaymentRepository;
-import pl.rentowne.tenant_settlement.service.PaymentService;
 
 import java.util.List;
 

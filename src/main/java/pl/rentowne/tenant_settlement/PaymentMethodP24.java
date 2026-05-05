@@ -1,4 +1,4 @@
-package pl.rentowne.tenant_settlement.service.payment.p24;
+package pl.rentowne.tenant_settlement;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -6,11 +6,12 @@ import org.springframework.http.HttpStatusCode;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import org.springframework.web.reactive.function.client.WebClient;
-import pl.rentowne.tenant_settlement.model.TenantSettlement;
-import pl.rentowne.tenant_settlement.model.dto.NotificationReceiveDto;
 import reactor.core.publisher.Mono;
 
-import static pl.rentowne.tenant_settlement.service.payment.p24.RequestUtil.*;
+import static pl.rentowne.tenant_settlement.RequestUtil.createRegisterRequest;
+import static pl.rentowne.tenant_settlement.RequestUtil.createVerifyRequest;
+import static pl.rentowne.tenant_settlement.RequestUtil.validate;
+import static pl.rentowne.tenant_settlement.RequestUtil.validateIpAddress;
 
 @Service
 @Slf4j
