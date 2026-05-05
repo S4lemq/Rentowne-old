@@ -70,9 +70,6 @@ public class Tenant extends BaseEntity {
     @Column(name = "ACTIVE", nullable = false)
     private boolean active = true;
 
-    @Column(name = "CIF", nullable = false, length = 10)
-    private String cif;
-
     @OneToOne(fetch = FetchType.LAZY, cascade = CascadeType.ALL, orphanRemoval = true)
     @JoinColumn(name = "ADDRESS_ID")
     private Address address;

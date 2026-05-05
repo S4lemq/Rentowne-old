@@ -67,5 +67,6 @@
     <include file="db/changelog/ddl-scripts/063-drop-included-water-meters.xml"/>
     <include file="db/changelog/ddl-scripts/064-add_cif_and_password_to_tenant.xml"/>
     <include file="db/changelog/ddl-scripts/065-drop_addt_info_value_from_tenant.xml"/>
+    <include file="db/changelog/ddl-scripts/066-drop_cif_from_tenant.xml"/>
 
 </databaseChangeLog>

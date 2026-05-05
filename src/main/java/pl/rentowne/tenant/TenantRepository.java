@@ -134,12 +134,4 @@ public interface TenantRepository extends JpaRepository<Tenant, Long> {
     default Tenant findByIdMandatory(Long id) throws IllegalArgumentException {
         return findById(id).orElseThrow(() -> new IllegalArgumentException("Entity not found with id " + id));
     }
-
-    /**
-     * Pobiera najemcę po numerze CIF
-     *
-     * @param cif numer CIF najemcy
-     * @return Optional encji najemcy
-     */
-    Optional<Tenant> findByCif(String cif);
 }

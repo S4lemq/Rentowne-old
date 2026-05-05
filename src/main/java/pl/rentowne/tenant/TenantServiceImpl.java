@@ -34,7 +34,6 @@ public class TenantServiceImpl implements TenantService {
     private final ApartmentRepository apartmentRepository;
     private final AuthenticationService authenticationService;
     private final MeterReadingRepository meterReadingRepository;
-    private final CifGeneratorService cifGeneratorService;
 
     @Override
     @Transactional
@@ -43,7 +42,6 @@ public class TenantServiceImpl implements TenantService {
         apartmentService.updateRentedFlagOnApartment(rentedObjectId);
         Tenant tenant = TenantDto.asEntity(tenantDto);
         tenant.setActive(true);
-        tenant.setCif(cifGeneratorService.generateCif());
         Long tenantId = tenantRepository.save(tenant).getId();
         LocalDateTime currentReadingDate = tenantDto.leaseAgreementDto().startContractDate();
 
@@ -71,7 +69,6 @@ public class TenantServiceImpl implements TenantService {
                 .orElseThrow(() -> new RentowneBusinessException(RentowneErrorCode.ITEM_NOT_FOUND));
 
         Tenant updatedTenant = TenantDto.asEntity(dto);
-        updatedTenant.setCif(existingTenant.getCif());
         updatedTenant.setActive(existingTenant.isActive());
 
         tenantRepository.save(updatedTenant);
