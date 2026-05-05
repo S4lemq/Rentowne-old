@@ -1,4 +1,4 @@
-package pl.rentowne.user.model.dto;
+package pl.rentowne.user;
 
 public record UploadResponse(String filename) {
 }

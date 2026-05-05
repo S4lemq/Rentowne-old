@@ -1,4 +1,4 @@
-package pl.rentowne.user.service.impl;
+package pl.rentowne.user;
 
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.core.Authentication;
@@ -16,12 +16,6 @@ import pl.rentowne.exception.RentowneNotFoundException;
 import pl.rentowne.payment_card.PaymentCardDto;
 import pl.rentowne.payment_card.PaymentCardService;
 import pl.rentowne.tenant.TenantRepository;
-import pl.rentowne.user.model.User;
-import pl.rentowne.user.model.dto.UserBasicDto;
-import pl.rentowne.user.model.dto.UserDto;
-import pl.rentowne.user.model.dto.UserProfileDto;
-import pl.rentowne.user.repository.UserRepository;
-import pl.rentowne.user.service.UserService;
 
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
@@ -32,7 +26,7 @@ import static pl.rentowne.util.StringUtils.isNotNullOrEmpty;
 
 @Service("USER_SERVICE")
 @RequiredArgsConstructor
-public class UserServiceImpl implements UserService {
+class UserServiceImpl implements UserService {
 
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
@@ -67,52 +61,55 @@ public class UserServiceImpl implements UserService {
     @Transactional(readOnly = true)
     public UserDto getFullUserData() {
         User user = userRepository.getFullUserDataByEmail(getLoggedUserEmail());
-        return UserDto.builder()
-                .id(user.getId())
-                .firstname(user.getFirstname())
-                .lastname(user.getLastname())
-                .email(user.getEmail())
-                .image(user.getImage())
-                .phoneNumber(user.getPhoneNumber())
-                .preferredLanguage(user.getPreferredLanguage())
-                .paymentCardDto(user.getPaymentCard() != null ? PaymentCardDto.asDto(user.getPaymentCard()) : null)
-                .addressDto(user.getAddress() != null ? AddressMapper.toDto(user.getAddress()) : null)
-                .build();
+        return new UserDto(
+                user.getId(),
+                user.getFirstname(),
+                user.getLastname(),
+                user.getEmail(),
+                null,
+                null,
+                null,
+                user.getImage(),
+                user.getPhoneNumber(),
+                user.getPreferredLanguage(),
+                user.getPaymentCard() != null ? PaymentCardDto.asDto(user.getPaymentCard()) : null,
+                user.getAddress() != null ? AddressMapper.toDto(user.getAddress()) : null
+        );
     }
 
     @Override
     @Transactional
     public void updateUser(UserDto userDto) {
-        User user = userRepository.findById(userDto.getId()).orElseThrow(() -> new RentowneNotFoundException(userDto.getEmail()));
-        if (validateAddress(userDto.getAddressDto())) {
-            user.setAddress(AddressMapper.toEntity(userDto.getAddressDto()));
+        User user = userRepository.findById(userDto.id()).orElseThrow(() -> new RentowneNotFoundException(userDto.email()));
+        if (validateAddress(userDto.addressDto())) {
+            user.setAddress(AddressMapper.toEntity(userDto.addressDto()));
         }
-        if (validatePaymentCard(userDto.getPaymentCardDto())) {
-            paymentCardService.save(userDto.getPaymentCardDto(), user);
+        if (validatePaymentCard(userDto.paymentCardDto())) {
+            paymentCardService.save(userDto.paymentCardDto(), user);
         }
 
-        boolean passwordToChange = userDto.getPassword() != null && userDto.getPassword().equals(userDto.getRepeatPassword());
+        boolean passwordToChange = userDto.password() != null && userDto.password().equals(userDto.repeatPassword());
         if (passwordToChange) {
-            if (userDto.getOldPassword() == null) {
+            if (userDto.oldPassword() == null) {
                 throw new RentowneBusinessException(RentowneErrorCode.BAD_OLD_PASSWORD);
             }
-            if (!passwordEncoder.matches(userDto.getOldPassword(), user.getPassword())) {
+            if (!passwordEncoder.matches(userDto.oldPassword(), user.getPassword())) {
                 throw new RentowneBusinessException(RentowneErrorCode.BAD_OLD_PASSWORD);
             }
-            user.setPassword(passwordEncoder.encode(userDto.getPassword()));
+            user.setPassword(passwordEncoder.encode(userDto.password()));
         }
 
-        user.setFirstname(userDto.getFirstname());
-        user.setLastname(userDto.getLastname());
-        user.setImage(userDto.getImage());
-        user.setPhoneNumber(userDto.getPhoneNumber());
-        user.setPreferredLanguage(userDto.getPreferredLanguage());
+        user.setFirstname(userDto.firstname());
+        user.setLastname(userDto.lastname());
+        user.setImage(userDto.image());
+        user.setPhoneNumber(userDto.phoneNumber());
+        user.setPreferredLanguage(userDto.preferredLanguage());
 
         userRepository.save(user);
 
         if (passwordToChange) {
             emailService.getInstance().send(
-                    userDto.getEmail(),
+                    userDto.email(),
                     "Aktualizacja hasła i danych osobowych w aplikacji Rentowne",
                     this.getChangePasswordAndPersonalDataMsg());
         }
@@ -123,10 +120,20 @@ public class UserServiceImpl implements UserService {
     public UserDto getUserProfileImageAndLang() {
         UserProfileDto userProfileData = userRepository.getUserProfileImageAndLang(getLoggedUserEmail());
 
-        return UserDto.builder()
-                .image(userProfileData.getImage())
-                .preferredLanguage(userProfileData.getPreferredLanguage())
-                .build();
+        return new UserDto(
+                null,
+                null,
+                null,
+                null,
+                null,
+                null,
+                null,
+                userProfileData.image(),
+                null,
+                userProfileData.preferredLanguage(),
+                null,
+                null
+        );
     }
 
     /**

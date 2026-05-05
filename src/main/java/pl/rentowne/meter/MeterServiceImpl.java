@@ -11,7 +11,7 @@ import pl.rentowne.exception.RentowneErrorCode;
 import pl.rentowne.exception.RentowneNotFoundException;
 import pl.rentowne.rented_object.RentedObject;
 import pl.rentowne.rented_object.RentedObjectDto;
-import pl.rentowne.user.service.UserService;
+import pl.rentowne.user.UserService;
 
 import java.util.List;
 
@@ -147,7 +147,7 @@ public class MeterServiceImpl implements MeterService {
     @Override
     @Transactional(readOnly = true)
     public Page<MeterListDto> getMetersList(final Pageable pageable, final Long apartmentId, final MeterType meterType, final String searchText) {
-        final Long userAccountId = userService.getLoggedUser().getId();
+        final Long userAccountId = userService.getLoggedUser().id();
         return meterRepository.getMetersList(pageable, userAccountId, apartmentId, meterType, searchText);
     }
 

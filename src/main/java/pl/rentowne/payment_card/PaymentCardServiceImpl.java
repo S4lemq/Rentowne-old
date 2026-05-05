@@ -2,7 +2,7 @@ package pl.rentowne.payment_card;
 
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
-import pl.rentowne.user.model.User;
+import pl.rentowne.user.User;
 
 @Service
 @RequiredArgsConstructor

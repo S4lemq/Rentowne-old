@@ -5,7 +5,7 @@ import lombok.NoArgsConstructor;
 import lombok.NonNull;
 import pl.rentowne.provider_field.ProviderField;
 import pl.rentowne.provider_field.ProviderFieldDto;
-import pl.rentowne.user.model.User;
+import pl.rentowne.user.User;
 
 import java.util.List;
 

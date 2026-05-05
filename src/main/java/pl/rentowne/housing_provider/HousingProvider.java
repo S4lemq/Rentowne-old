@@ -26,7 +26,7 @@ import lombok.Setter;
 import pl.rentowne.apartment.Apartment;
 import pl.rentowne.common.model.BaseEntity;
 import pl.rentowne.provider_field.ProviderField;
-import pl.rentowne.user.model.User;
+import pl.rentowne.user.User;
 
 import java.math.BigDecimal;
 import java.util.HashSet;

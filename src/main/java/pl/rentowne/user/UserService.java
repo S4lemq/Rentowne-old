@@ -1,10 +1,7 @@
-package pl.rentowne.user.service;
+package pl.rentowne.user;
 
 import pl.rentowne.exception.RentowneBusinessException;
 import pl.rentowne.exception.RentowneNotFoundException;
-import pl.rentowne.user.model.User;
-import pl.rentowne.user.model.dto.UserBasicDto;
-import pl.rentowne.user.model.dto.UserDto;
 
 import java.util.Optional;
 

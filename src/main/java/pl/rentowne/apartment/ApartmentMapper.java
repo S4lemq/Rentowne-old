@@ -6,7 +6,7 @@ import lombok.NonNull;
 import org.springframework.lang.Nullable;
 import pl.rentowne.address.AddressMapper;
 import pl.rentowne.rented_object.RentedObject;
-import pl.rentowne.user.model.User;
+import pl.rentowne.user.User;
 
 import java.util.HashSet;
 import java.util.List;

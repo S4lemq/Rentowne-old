@@ -1,11 +1,8 @@
-package pl.rentowne.user.repository;
+package pl.rentowne.user;
 
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
-import pl.rentowne.user.model.User;
-import pl.rentowne.user.model.dto.UserBasicDto;
-import pl.rentowne.user.model.dto.UserProfileDto;
 
 import java.util.Optional;
 
@@ -34,7 +31,7 @@ public interface UserRepository extends JpaRepository<User, Long> {
      * @param email email użytkownika
      * @return {@link UserBasicDto}
      */
-    @Query("SELECT new pl.rentowne.user.model.dto.UserBasicDto(u.id, u.email, u.role) FROM User u WHERE u.email = :email")
+    @Query("SELECT new pl.rentowne.user.UserBasicDto(u.id, u.email, u.role) FROM User u WHERE u.email = :email")
     UserBasicDto getByEmail(@Param("email") String email);
 
     /**
@@ -62,7 +59,7 @@ public interface UserRepository extends JpaRepository<User, Long> {
      * @param email email użytkownika
      * @return zdjęcie oraz preferowany język
      */
-    @Query("SELECT new pl.rentowne.user.model.dto.UserProfileDto(u.preferredLanguage, u.image) FROM User u WHERE u.email = :email")
+    @Query("SELECT new pl.rentowne.user.UserProfileDto(u.preferredLanguage, u.image) FROM User u WHERE u.email = :email")
     UserProfileDto getUserProfileImageAndLang(@Param("email") String email);
 
     /**

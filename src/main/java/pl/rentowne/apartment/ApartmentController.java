@@ -18,7 +18,7 @@ import pl.rentowne.common.controler.AbstractController;
 import pl.rentowne.exception.RentowneBusinessException;
 import pl.rentowne.exception.RentowneNotFoundException;
 import pl.rentowne.rented_object.RentedObjectService;
-import pl.rentowne.user.service.UserService;
+import pl.rentowne.user.UserService;
 
 import java.util.List;
 
@@ -104,7 +104,7 @@ class ApartmentController extends AbstractController {
                                                          @RequestParam(required = false) final String apartmentName,
                                                          @RequestParam(required = false) final Boolean isRented,
                                                          @RequestParam(required = false) final String searchText) throws RentowneBusinessException {
-        final Long userId = userService.getLoggedUser().getId();
+        final Long userId = userService.getLoggedUser().id();
         final Page<ApartmentDto> apartments = apartmentRepository.getApartmentsList(
                 pageable, userId, apartmentName, isRented, searchText
         );

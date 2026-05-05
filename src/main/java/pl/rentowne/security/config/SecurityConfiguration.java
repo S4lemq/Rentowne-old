@@ -14,8 +14,8 @@ import org.springframework.security.web.authentication.UsernamePasswordAuthentic
 import org.springframework.security.web.authentication.logout.LogoutHandler;
 
 import static org.springframework.security.config.http.SessionCreationPolicy.STATELESS;
-import static pl.rentowne.user.model.Role.ADMIN;
-import static pl.rentowne.user.model.Role.USER;
+import static pl.rentowne.user.Role.ADMIN;
+import static pl.rentowne.user.Role.USER;
 
 @Configuration
 //@EnableWebSecurity

@@ -1,4 +1,4 @@
-package pl.rentowne.user.model;
+package pl.rentowne.user;
 
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;

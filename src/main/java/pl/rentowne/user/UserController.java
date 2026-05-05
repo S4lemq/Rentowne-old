@@ -1,4 +1,4 @@
-package pl.rentowne.user.controller;
+package pl.rentowne.user;
 
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.media.Content;
@@ -12,13 +12,11 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RestController;
 import pl.rentowne.common.controler.AbstractController;
 import pl.rentowne.exception.RentowneNotFoundException;
-import pl.rentowne.user.model.dto.UserDto;
-import pl.rentowne.user.service.UserService;
 
 @RestController
 @RequiredArgsConstructor
 @Tag(name = "Użytkownik")
-public class UserController  extends AbstractController {
+class UserController extends AbstractController {
 
     private final UserService userService;
 

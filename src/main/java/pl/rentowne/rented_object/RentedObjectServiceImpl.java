@@ -9,7 +9,7 @@ import pl.rentowne.settlement.Settlement;
 import pl.rentowne.settlement.SettlementRepository;
 import pl.rentowne.tenant.Tenant;
 import pl.rentowne.tenant.TenantRepository;
-import pl.rentowne.user.service.UserService;
+import pl.rentowne.user.UserService;
 import pl.rentowne.util.DateUtils;
 
 import java.math.BigDecimal;
@@ -54,7 +54,7 @@ public class RentedObjectServiceImpl implements RentedObjectService {
 
     @Override
     public List<RentedObjectDto> getAllRentedObjectDtos() throws RentowneBusinessException {
-        final Long userId = userService.getLoggedUser().getId();
+        final Long userId = userService.getLoggedUser().id();
         return rentedObjectRepository.findAllByLoggedUser(userId).stream().map(RentedObjectMapper::toDto).toList();
     }
 
@@ -65,7 +65,7 @@ public class RentedObjectServiceImpl implements RentedObjectService {
 
     @Override
     public List<RentedObjectDetailsDto> getRentedObjectsDetails(final Long apartmentId, final Boolean active) {
-        final Long userId = userService.getLoggedUser().getId();
+        final Long userId = userService.getLoggedUser().id();
         final List<Tenant> tenants = tenantRepository.findTenantsWithDetailsForUser(userId, apartmentId, active);
 
         return tenants.stream()

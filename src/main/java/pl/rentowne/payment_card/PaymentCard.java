@@ -14,7 +14,7 @@ import jakarta.persistence.UniqueConstraint;
 import lombok.Getter;
 import lombok.Setter;
 import pl.rentowne.common.model.BaseEntity;
-import pl.rentowne.user.model.User;
+import pl.rentowne.user.User;
 
 @Getter
 @Setter

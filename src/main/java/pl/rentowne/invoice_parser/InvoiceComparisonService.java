@@ -10,7 +10,7 @@ import pl.rentowne.housing_provider.HousingProvider;
 import pl.rentowne.housing_provider.HousingProviderRepository;
 import pl.rentowne.housing_provider.ProviderType;
 import pl.rentowne.provider_field.ProviderField;
-import pl.rentowne.user.service.UserService;
+import pl.rentowne.user.UserService;
 
 import java.math.BigDecimal;
 import java.util.ArrayList;
@@ -33,7 +33,7 @@ public class InvoiceComparisonService {
         HousingProvider housingProvider = housingProviderRepository.findWithProviderFieldsById(housingProviderId)
                 .orElseThrow(() -> new RentowneBusinessException(RentowneErrorCode.HOUSING_PROVIDER_NOT_FOUND));
 
-        Long loggedUserId = userService.getLoggedUser().getId();
+        Long loggedUserId = userService.getLoggedUser().id();
         if (!housingProvider.getUser().getId().equals(loggedUserId)) {
             throw new RentowneBusinessException(RentowneErrorCode.NO_PERMISSION_TO_HOUSING_PROVIDER);
         }

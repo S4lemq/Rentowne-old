@@ -23,7 +23,7 @@ import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
 import pl.rentowne.exception.RentowneBusinessException;
 import pl.rentowne.exception.RentowneErrorCode;
-import pl.rentowne.user.model.dto.UploadResponse;
+import pl.rentowne.user.UploadResponse;
 
 import java.io.IOException;
 import java.io.InputStream;

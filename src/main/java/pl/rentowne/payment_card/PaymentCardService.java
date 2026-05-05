@@ -1,6 +1,6 @@
 package pl.rentowne.payment_card;
 
-import pl.rentowne.user.model.User;
+import pl.rentowne.user.User;
 
 public interface PaymentCardService {
     /**

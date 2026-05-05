@@ -4,7 +4,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import pl.rentowne.exception.RentowneBusinessException;
 import pl.rentowne.exception.RentowneErrorCode;
-import pl.rentowne.user.service.UserService;
+import pl.rentowne.user.UserService;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
@@ -25,7 +25,7 @@ public class SettlementStatsServiceImpl implements SettlementStatsService {
 
     @Override
     public SettlementStats getStatistics() {
-        Long id = userService.getLoggedUser().getId();
+        Long id = userService.getLoggedUser().id();
         List<SettlementDateAmountDto> settlements = settlementRepository.getDataForStatistics(id);
 
         if (settlements.isEmpty()) {

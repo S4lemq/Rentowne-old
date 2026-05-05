@@ -15,7 +15,7 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import pl.rentowne.common.controler.AbstractController;
 import pl.rentowne.exception.RentowneBusinessException;
-import pl.rentowne.user.service.UserService;
+import pl.rentowne.user.UserService;
 
 @RestController
 @RequiredArgsConstructor
@@ -84,7 +84,7 @@ class LeaseAgreementController extends AbstractController {
             @RequestParam(required = false) Boolean isContractActive,
             @RequestParam(required = false) String searchText
     ) throws RentowneBusinessException {
-        Long userId = userService.getLoggedUser().getId();
+        Long userId = userService.getLoggedUser().id();
         Page<LeaseAgreementRowDto> leaseAgreements = leaseAgreementRepository.getLeaseAgreementsList(
                 pageable, userId, isContractActive, searchText
         );

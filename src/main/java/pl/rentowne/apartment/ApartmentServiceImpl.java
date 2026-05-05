@@ -11,7 +11,7 @@ import pl.rentowne.housing_provider.HousingProviderRepository;
 import pl.rentowne.rented_object.RentedObject;
 import pl.rentowne.rented_object.RentedObjectRepository;
 import pl.rentowne.rented_object.RentedObjectService;
-import pl.rentowne.user.service.UserService;
+import pl.rentowne.user.UserService;
 
 import java.util.HashSet;
 import java.util.List;
@@ -41,7 +41,7 @@ public class ApartmentServiceImpl implements ApartmentService {
     public Long addApartment(final ApartmentDto apartmentDto) throws RentowneBusinessException {
         validateRentedObjectNames(apartmentDto);
 
-        final Long loggedUserId = userService.getLoggedUser().getId();
+        final Long loggedUserId = userService.getLoggedUser().id();
         final Long savedApartmentId = apartmentRepository.saveAndFlush(ApartmentMapper.toEntity(apartmentDto, null, loggedUserId)).getId();
 
         final Set<RentedObject> rentedObjects = ApartmentMapper.toRentedObjectEntities(apartmentDto, savedApartmentId);
@@ -53,14 +53,14 @@ public class ApartmentServiceImpl implements ApartmentService {
     @Transactional
     public void updateApartment(final ApartmentDto apartmentDto, final Long apartmentId) throws RentowneBusinessException {
         updateRentedObjects(apartmentDto, apartmentId);
-        final Long loggedUserId = userService.getLoggedUser().getId();
+        final Long loggedUserId = userService.getLoggedUser().id();
         apartmentRepository.save(ApartmentMapper.toEntity(apartmentDto, apartmentId, loggedUserId));
     }
 
     @Override
     @Transactional(readOnly = true)
     public List<ApartmentDto> getAllApartmentsByLoggedUserAndApartment(final Long apartmentId) throws RentowneBusinessException {
-        final Long loggedUserId = userService.getLoggedUser().getId();
+        final Long loggedUserId = userService.getLoggedUser().id();
         return apartmentRepository.getAllApartmentsByLoggedUserAndApartment(loggedUserId, apartmentId).stream()
                 .map(ApartmentMapper::toBasicDto)
                 .toList();
@@ -100,7 +100,7 @@ public class ApartmentServiceImpl implements ApartmentService {
     @Override
     @Transactional(readOnly = true)
     public List<ApartmentDto> getAllApartmentsByLoggedUser() throws RentowneBusinessException {
-        final Long loggedUserId = userService.getLoggedUser().getId();
+        final Long loggedUserId = userService.getLoggedUser().id();
         return apartmentRepository.findByUser_IdOrderByApartmentName(loggedUserId)
                 .stream().map(ApartmentMapper::toBasicDto)
                 .toList();
@@ -109,7 +109,7 @@ public class ApartmentServiceImpl implements ApartmentService {
     @Override
     @Transactional(readOnly = true)
     public List<ApartmentDto> getAllFullApartmentsByLoggedUser() throws RentowneBusinessException {
-        final Long loggedUserId = userService.getLoggedUser().getId();
+        final Long loggedUserId = userService.getLoggedUser().id();
         final List<Apartment> apartments = apartmentRepository.findByUser_IdOrderByApartmentName(loggedUserId);
         return apartments.stream()
             .map(apartment -> {

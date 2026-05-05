@@ -19,7 +19,7 @@ import org.springframework.web.bind.annotation.RestController;
 import pl.rentowne.common.controler.AbstractController;
 import pl.rentowne.exception.RentowneBusinessException;
 import pl.rentowne.exception.RentowneNotFoundException;
-import pl.rentowne.user.service.UserService;
+import pl.rentowne.user.UserService;
 
 @RestController
 @RequiredArgsConstructor
@@ -91,7 +91,7 @@ class TenantController extends AbstractController {
             Pageable pageable,
             @RequestParam(required = false) String searchText
     ) throws RentowneBusinessException {
-        Long userId = userService.getLoggedUser().getId();
+        Long userId = userService.getLoggedUser().id();
         Page<TenantRowDto> tenants = tenantRepository.getTenantsList(pageable, userId, searchText);
         return ResponseEntity.ok(tenants);
     }

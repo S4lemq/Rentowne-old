@@ -12,7 +12,7 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import pl.rentowne.common.controler.AbstractController;
 import pl.rentowne.exception.RentowneBusinessException;
-import pl.rentowne.user.service.UserService;
+import pl.rentowne.user.UserService;
 
 import java.util.List;
 
@@ -90,7 +90,7 @@ class RentedObjectController extends AbstractController {
     @GetMapping("/api/rented-objects/settlements-list")
     ResponseEntity<Page<RentedObjectSettlementRowDto>> getRentedObjectSettlementsList(final Pageable pageable,
                                                                                       @RequestParam(required = false) final String searchText) throws RentowneBusinessException {
-        final Long userId = userService.getLoggedUser().getId();
+        final Long userId = userService.getLoggedUser().id();
         final Page<RentedObjectSettlementRowDto> rentedObjects = rentedObjectRepository.getRentedObjectSettlementsList(
                 pageable, userId, searchText
         );

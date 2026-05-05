@@ -9,7 +9,7 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.stereotype.Service;
-import pl.rentowne.user.model.Role;
+import pl.rentowne.user.Role;
 
 import java.security.Key;
 import java.util.Date;

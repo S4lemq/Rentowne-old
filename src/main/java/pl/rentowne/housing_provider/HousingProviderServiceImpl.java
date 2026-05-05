@@ -10,7 +10,7 @@ import pl.rentowne.exception.RentowneNotFoundException;
 import pl.rentowne.provider_field.ProviderField;
 import pl.rentowne.provider_field.ProviderFieldDto;
 import pl.rentowne.provider_field.ProviderFieldRepository;
-import pl.rentowne.user.service.UserService;
+import pl.rentowne.user.UserService;
 
 import java.util.List;
 import java.util.Map;
@@ -112,6 +112,6 @@ public class HousingProviderServiceImpl implements HousingProviderService {
     }
 
     private Long getLoggedUserId() {
-        return userService.getLoggedUser().getId();
+        return userService.getLoggedUser().id();
     }
 }

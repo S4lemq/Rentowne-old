@@ -13,8 +13,8 @@ import pl.rentowne.exception.RentowneErrorCode;
 import pl.rentowne.exception.RentowneNotFoundException;
 import pl.rentowne.security.model.dto.ChangePassword;
 import pl.rentowne.security.model.dto.LostPasswordRequest;
-import pl.rentowne.user.model.User;
-import pl.rentowne.user.service.UserService;
+import pl.rentowne.user.User;
+import pl.rentowne.user.UserService;
 
 import java.time.LocalDateTime;
 

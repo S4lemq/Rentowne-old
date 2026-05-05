@@ -26,7 +26,7 @@ import pl.rentowne.common.model.BaseEntity;
 import pl.rentowne.housing_provider.HousingProvider;
 import pl.rentowne.meter.Meter;
 import pl.rentowne.rented_object.RentedObject;
-import pl.rentowne.user.model.User;
+import pl.rentowne.user.User;
 
 import java.math.BigDecimal;
 import java.math.BigInteger;

@@ -25,10 +25,10 @@ import pl.rentowne.security.model.dto.RegisterRequest;
 import pl.rentowne.security.repository.TokenRepository;
 import pl.rentowne.tenant.TenantDto;
 import pl.rentowne.tfa.TwoFactorAuthenticationService;
-import pl.rentowne.user.model.PreferredLanguage;
-import pl.rentowne.user.model.Role;
-import pl.rentowne.user.model.User;
-import pl.rentowne.user.repository.UserRepository;
+import pl.rentowne.user.PreferredLanguage;
+import pl.rentowne.user.Role;
+import pl.rentowne.user.User;
+import pl.rentowne.user.UserRepository;
 import pl.rentowne.util.PasswordGenerator;
 
 import java.io.IOException;

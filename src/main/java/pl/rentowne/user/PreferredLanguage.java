@@ -1,4 +1,4 @@
-package pl.rentowne.user.model;
+package pl.rentowne.user;
 
 public enum PreferredLanguage {
     POLISH,

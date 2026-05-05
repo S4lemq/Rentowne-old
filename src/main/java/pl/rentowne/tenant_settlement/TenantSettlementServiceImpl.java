@@ -10,7 +10,7 @@ import pl.rentowne.settlement.SettlementRepository;
 import pl.rentowne.settlement.SettlementStatus;
 import pl.rentowne.tenant.Tenant;
 import pl.rentowne.tenant.TenantRepository;
-import pl.rentowne.user.service.UserService;
+import pl.rentowne.user.UserService;
 
 import java.time.LocalDateTime;
 
@@ -30,7 +30,7 @@ public class TenantSettlementServiceImpl implements TenantSettlementService {
     @Override
     @Transactional
     public TenantSettlementSummary placeSettlement(TenantSettlementDto dto) {
-        String loggedEmail = userService.getLoggedUser().getEmail();
+        String loggedEmail = userService.getLoggedUser().email();
         Tenant tenant = tenantRepository.getTenantByEmail(loggedEmail);
         Payment payment = paymentRepository.findById(dto.getPaymentId()).orElseThrow(() -> new RentowneNotFoundException(dto.getPaymentId()));
 
