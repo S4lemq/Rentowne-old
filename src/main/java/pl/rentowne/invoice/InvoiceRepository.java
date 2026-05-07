@@ -47,7 +47,8 @@ public interface InvoiceRepository extends JpaRepository<Invoice, Long> {
         left join fetch i.apartment a
         where (:#{#invoiceFilterDto.housingProviderId} is null or hp.id = :#{#invoiceFilterDto.housingProviderId})
           and (:#{#invoiceFilterDto.apartmentId} is null or a.id = :#{#invoiceFilterDto.apartmentId})
-          and (:#{#invoiceFilterDto.month} is null or cast(i.month as string) = :#{#invoiceFilterDto.month})
+          and (:#{#invoiceFilterDto.monthFrom} is null or cast(i.month as string) >= :#{#invoiceFilterDto.monthFrom})
+          and (:#{#invoiceFilterDto.monthTo} is null or cast(i.month as string) <= :#{#invoiceFilterDto.monthTo})
           and (:#{#invoiceFilterDto.payDay} is null or cast(i.payDay as string) = :#{#invoiceFilterDto.payDay})
           and (:#{#invoiceFilterDto.payDayMonth} is null or cast(i.payDayMonth as string) = :#{#invoiceFilterDto.payDayMonth})
           and (:#{#invoiceFilterDto.category} is null or hp.type = :#{#invoiceFilterDto.category})
@@ -58,7 +59,8 @@ public interface InvoiceRepository extends JpaRepository<Invoice, Long> {
         left join i.apartment a
         where (:#{#invoiceFilterDto.housingProviderId} is null or hp.id = :#{#invoiceFilterDto.housingProviderId})
           and (:#{#invoiceFilterDto.apartmentId} is null or a.id = :#{#invoiceFilterDto.apartmentId})
-          and (:#{#invoiceFilterDto.month} is null or cast(i.month as string) = :#{#invoiceFilterDto.month})
+          and (:#{#invoiceFilterDto.monthFrom} is null or cast(i.month as string) >= :#{#invoiceFilterDto.monthFrom})
+          and (:#{#invoiceFilterDto.monthTo} is null or cast(i.month as string) <= :#{#invoiceFilterDto.monthTo})
           and (:#{#invoiceFilterDto.payDay} is null or cast(i.payDay as string) = :#{#invoiceFilterDto.payDay})
           and (:#{#invoiceFilterDto.payDayMonth} is null or cast(i.payDayMonth as string) = :#{#invoiceFilterDto.payDayMonth})
           and (:#{#invoiceFilterDto.category} is null or hp.type = :#{#invoiceFilterDto.category})
@@ -169,7 +171,8 @@ public interface InvoiceRepository extends JpaRepository<Invoice, Long> {
             left join i.apartment a
             where (:#{#invoiceFilterDto.housingProviderId} is null or hp.id = :#{#invoiceFilterDto.housingProviderId})
               and (:#{#invoiceFilterDto.apartmentId} is null or a.id = :#{#invoiceFilterDto.apartmentId})
-              and (:#{#invoiceFilterDto.month} is null or cast(i.month as string) = :#{#invoiceFilterDto.month})
+              and (:#{#invoiceFilterDto.monthFrom} is null or cast(i.month as string) >= :#{#invoiceFilterDto.monthFrom})
+              and (:#{#invoiceFilterDto.monthTo} is null or cast(i.month as string) <= :#{#invoiceFilterDto.monthTo})
               and (:#{#invoiceFilterDto.payDay} is null or cast(i.payDay as string) = :#{#invoiceFilterDto.payDay})
               and (:#{#invoiceFilterDto.payDayMonth} is null or cast(i.payDayMonth as string) = :#{#invoiceFilterDto.payDayMonth})
               and (:#{#invoiceFilterDto.category} is null or hp.type = :#{#invoiceFilterDto.category})
@@ -186,7 +189,8 @@ public interface InvoiceRepository extends JpaRepository<Invoice, Long> {
             left join i.apartment a
             where (:#{#invoiceFilterDto.housingProviderId} is null or hp.id = :#{#invoiceFilterDto.housingProviderId})
               and (:#{#invoiceFilterDto.apartmentId} is null or a.id = :#{#invoiceFilterDto.apartmentId})
-              and (:#{#invoiceFilterDto.month} is null or cast(i.month as string) = :#{#invoiceFilterDto.month})
+              and (:#{#invoiceFilterDto.monthFrom} is null or cast(i.month as string) >= :#{#invoiceFilterDto.monthFrom})
+              and (:#{#invoiceFilterDto.monthTo} is null or cast(i.month as string) <= :#{#invoiceFilterDto.monthTo})
               and (:#{#invoiceFilterDto.payDay} is null or cast(i.payDay as string) = :#{#invoiceFilterDto.payDay})
               and (:#{#invoiceFilterDto.payDayMonth} is null or cast(i.payDayMonth as string) = :#{#invoiceFilterDto.payDayMonth})
               and (:#{#invoiceFilterDto.category} is null or hp.type = :#{#invoiceFilterDto.category})

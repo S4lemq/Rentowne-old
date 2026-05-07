@@ -43,6 +43,7 @@ public interface MeterRepository extends JpaRepository<Meter, Long> {
             AND (:searchText IS NULL OR :searchText = ''
                 OR LOWER(COALESCE(a.apartmentName, ma.apartmentName)) LIKE LOWER(CONCAT('%', :searchText, '%'))
                 OR LOWER(ro.rentedObjectName) LIKE LOWER(CONCAT('%', :searchText, '%')))
+            ORDER BY ma.apartmentName, ro.rentedObjectName
             """)
     Page<MeterListDto> getMetersList(Pageable pageable,
                                      @Param("userAccountId") Long userAccountId,

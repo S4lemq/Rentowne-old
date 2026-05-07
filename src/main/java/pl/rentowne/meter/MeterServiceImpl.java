@@ -57,6 +57,7 @@ public class MeterServiceImpl implements MeterService {
                     .meterType(meter.getMeterType())
                     .rentedObject(RentedObjectDto.builder()
                             .id(rentedObject.getId())
+                            .rentedObjectName(rentedObject.getRentedObjectName())
                             .build())
                     .apartment(ApartmentDto.builder()
                             .apartmentName(apartmentName)
