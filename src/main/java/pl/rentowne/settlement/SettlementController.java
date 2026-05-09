@@ -25,11 +25,14 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import java.nio.charset.StandardCharsets;
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 
 @RestController
 @RequiredArgsConstructor
 @Tag(name = "Rozliczenia")
 class SettlementController {
+    private static final DateTimeFormatter EXPORT_FILE_DATE_TIME_FORMATTER = DateTimeFormatter.ofPattern("yyyy-MM-dd_HH-mm-ss");
 
     private static final MediaType EXCEL_MEDIA_TYPE =
             MediaType.parseMediaType("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet");
@@ -66,13 +69,14 @@ class SettlementController {
     )
     @GetMapping(value = "/api/settlements/export/excel", produces = "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")
     public ResponseEntity<ByteArrayResource> exportSettlementsToExcel() {
-        byte[] content = settlementExcelExporter.export(settlementService.getAllSettlements());
+        //TODO dodac filtrowanie po najemcach danego uzytkownika bo teraz pobiera wszystkich
+        byte[] content = settlementExcelExporter.export(settlementService.getAllSettlementsForExport());
 
         HttpHeaders headers = new HttpHeaders();
         headers.setContentType(EXCEL_MEDIA_TYPE);
         headers.setContentLength(content.length);
         headers.setContentDisposition(ContentDisposition.attachment()
-                .filename("settlements.xlsx", StandardCharsets.UTF_8)
+                .filename("Rozliczenie najemców " + LocalDateTime.now().format(EXPORT_FILE_DATE_TIME_FORMATTER) + ".xlsx", StandardCharsets.UTF_8)
                 .build());
         headers.setCacheControl(CacheControl.noStore().getHeaderValue());
 

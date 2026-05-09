@@ -41,6 +41,13 @@ public interface SettlementService {
     List<SettlementListDto> getAllSettlements();
 
     /**
+     * Pobiera wszystkie rozliczenia przygotowane pod eksport do Excela.
+     *
+     * @return lista wierszy eksportu
+     */
+    List<SettlementExportRowDto> getAllSettlementsForExport();
+
+    /**
      * Oblicza koszty za media (prąd, woda) bez zapisu w bazie
      * @param rentedObjectId id obiektu do wynajęcia
      * @return koszty i zużycie mediów
@@ -54,4 +61,3 @@ public interface SettlementService {
      */
     boolean existsSettlementsByTenantId(Long tenantId);
 }
-

@@ -757,8 +757,16 @@ public class SettlementServiceImpl implements SettlementService {
 
     @Override
     @Transactional(readOnly = true)
+    public List<SettlementExportRowDto> getAllSettlementsForExport() {
+        return settlementRepository.findAll(Sort.by(Sort.Direction.DESC, "settlementDate"))
+                .stream()
+                .map(settlementMapper::toExportRowDto)
+                .toList();
+    }
+
+    @Override
+    @Transactional(readOnly = true)
     public boolean existsSettlementsByTenantId(Long tenantId) {
         return settlementRepository.existsByTenantId(tenantId);
     }
 }
-
