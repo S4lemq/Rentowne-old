@@ -143,6 +143,7 @@ class LeaseAgreementServiceImpl implements LeaseAgreementService {
                 .settlementDate(LocalDateTime.now())
                 .rentedObject(RentedObject.builder().id(rentedObjectId).build())
                 .settlementStatus(SettlementStatus.TO_PAY)
+                .tenant(leaseAgreement.getTenant())
                 .build();
 
         Long settlementId = settlementRepository.saveAndFlush(settlement).getId();
