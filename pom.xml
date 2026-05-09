@@ -30,8 +30,8 @@
 		<apacheCommons.version>2.15.1</apacheCommons.version>
 		<slugify.version>3.0.6</slugify.version>
 		<commons-codec.version>1.16.0</commons-codec.version>
-		<commons-csv.version>1.10.0</commons-csv.version>
 		<commons-text.version>1.12.0</commons-text.version>
+		<apache-poi.version>5.2.5</apache-poi.version>
 
 		<openhtmltopdf.version>1.1.36</openhtmltopdf.version>
 	</properties>
@@ -181,13 +181,13 @@
 		</dependency>
 		<dependency>
 			<groupId>org.apache.commons</groupId>
-			<artifactId>commons-csv</artifactId>
-			<version>${commons-csv.version}</version>
-		</dependency>
-		<dependency>
-			<groupId>org.apache.commons</groupId>
 			<artifactId>commons-text</artifactId>
 			<version>${commons-text.version}</version>
+		</dependency>
+		<dependency>
+			<groupId>org.apache.poi</groupId>
+			<artifactId>poi-ooxml</artifactId>
+			<version>${apache-poi.version}</version>
 		</dependency>
 
 		<!-- PDF (konwersja HTML -> PDF) -->

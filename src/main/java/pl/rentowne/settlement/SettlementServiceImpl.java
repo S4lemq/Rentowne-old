@@ -4,6 +4,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import pl.rentowne.apartment.ApartmentService;
@@ -743,6 +744,15 @@ public class SettlementServiceImpl implements SettlementService {
     public Page<SettlementListDto> getSettlements(Pageable pageable, Long rentedObjectId, Long tenantId) {
         Page<Settlement> settlementsPage = settlementRepository.findAllByRentedObjectIdAndTenantId(pageable, rentedObjectId, tenantId);
         return settlementsPage.map(settlementMapper::toListDto);
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public List<SettlementListDto> getAllSettlements() {
+        return settlementRepository.findAll(Sort.by(Sort.Direction.DESC, "settlementDate"))
+                .stream()
+                .map(settlementMapper::toListDto)
+                .toList();
     }
 
     @Override
