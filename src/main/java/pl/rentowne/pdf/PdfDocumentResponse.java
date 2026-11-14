@@ -35,20 +35,6 @@ public record PdfDocumentResponse(
     }
 
     /**
-     * Zwraca referencję do wewnętrznej tablicy bajtów bez klonowania.
-     * <p>
-     * <strong>UWAGA:</strong> Metoda package-private dla wydajności.
-     * Używać tylko w zaufanych klasach pakietu, które nie modyfikują tablicy.
-     * </p>
-     *
-     * @return referencja do wewnętrznej tablicy bajtów (NIE MODYFIKOWAĆ!)
-     */
-    @NonNull
-    byte[] contentUnsafe() {
-        return content;
-    }
-
-    /**
      * Zwraca rozmiar dokumentu w bajtach.
      *
      * @return rozmiar w bajtach

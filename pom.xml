@@ -33,7 +33,6 @@
 		<commons-text.version>1.12.0</commons-text.version>
 		<apache-poi.version>5.2.5</apache-poi.version>
 
-		<openhtmltopdf.version>1.1.36</openhtmltopdf.version>
 	</properties>
 
 	<!-- 1) Jedna wersja Spring AI dla całego projektu -->
@@ -94,11 +93,6 @@
 		<dependency>
 			<groupId>org.springframework.boot</groupId>
 			<artifactId>spring-boot-starter-mail</artifactId>
-		</dependency>
-
-		<dependency>
-			<groupId>org.springframework.boot</groupId>
-			<artifactId>spring-boot-starter-thymeleaf</artifactId>
 		</dependency>
 
 		<!-- Jeśli używasz WebClienta jako HTTP klienta -->
@@ -188,18 +182,6 @@
 			<groupId>org.apache.poi</groupId>
 			<artifactId>poi-ooxml</artifactId>
 			<version>${apache-poi.version}</version>
-		</dependency>
-
-		<!-- PDF (konwersja HTML -> PDF) -->
-		<dependency>
-			<groupId>io.github.openhtmltopdf</groupId>
-			<artifactId>openhtmltopdf-pdfbox</artifactId>
-			<version>${openhtmltopdf.version}</version>
-		</dependency>
-		<dependency>
-			<groupId>io.github.openhtmltopdf</groupId>
-			<artifactId>openhtmltopdf-slf4j</artifactId>
-			<version>${openhtmltopdf.version}</version>
 		</dependency>
 
 		<!-- PDFBox (wersja wymuszona przez dependencyManagement) -->

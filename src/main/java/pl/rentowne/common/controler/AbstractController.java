@@ -18,7 +18,6 @@ import pl.rentowne.exception.GeneralExceptionDto;
 import pl.rentowne.exception.RentowneBusinessException;
 import pl.rentowne.exception.RentowneErrorCode;
 import pl.rentowne.exception.RentowneNotFoundException;
-import pl.rentowne.pdf_template.exception.PdfTemplateException;
 import pl.rentowne.rental_payment.RentalPaymentException;
 
 import java.util.concurrent.ThreadLocalRandom;
@@ -67,23 +66,6 @@ public class AbstractController extends ResponseEntityExceptionHandler {
     public ResponseEntity<GeneralExceptionDto> notFoundExceptionHandle(RentowneNotFoundException e, WebRequest request) {
         log.info("RentowneNotFoundException, error number: {}; {}", e.getErrNumber(), e);
         return new ResponseEntity(new GeneralExceptionDto(e), HttpStatus.NOT_FOUND);
-    }
-
-    /**
-     * Przechwytuje i obsługuje wyjątek {@link PdfTemplateException}
-     *
-     * @param e       {@link PdfTemplateException}
-     * @param request request
-     * @return Obiekt wyjątku
-     */
-    @ExceptionHandler(PdfTemplateException.class)
-    public ResponseEntity<GeneralExceptionDto> pdfTemplateExceptionHandle(PdfTemplateException e, WebRequest request) {
-        long errNumber = ThreadLocalRandom.current().nextLong(10000000, 100000000);
-        log.error("PdfTemplateException - code: {}, error number: {}", e.getErrorCode(), errNumber, e);
-        return new ResponseEntity<>(
-                new GeneralExceptionDto(RentowneErrorCode.UNKNOWN_ERROR, null, e.getMessage(), errNumber),
-                HttpStatus.INTERNAL_SERVER_ERROR
-        );
     }
 
     /**
