@@ -8,7 +8,7 @@ interface MeterReadingService {
      * @param dto odczytu licznika
      * @throws RentowneBusinessException wyjątek biznesowy
      */
-    void addMeterReading(MeterReadingDto dto) throws RentowneBusinessException;
+    void addMeterReading(AddMeterReadingRequest dto) throws RentowneBusinessException;
 
     /**
      * Pobiera aktualny i poprzedni stan licznika

@@ -5,26 +5,45 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import pl.rentowne.exception.RentowneBusinessException;
 import pl.rentowne.exception.RentowneErrorCode;
-import pl.rentowne.meter.MeterType;
+import pl.rentowne.meter.Meter;
+import pl.rentowne.meter.MeterRepository;
+import pl.rentowne.exception.RentowneNotFoundException;
 import pl.rentowne.util.DateUtils;
+
+import java.math.BigDecimal;
+import java.time.LocalDateTime;
 
 @Service
 @RequiredArgsConstructor
 class MeterReadingServiceImpl implements MeterReadingService {
 
     private final MeterReadingRepository meterReadingRepository;
+    private final MeterRepository meterRepository;
 
     @Transactional
     @Override
-    public void addMeterReading(MeterReadingDto dto) throws RentowneBusinessException {
-        if (dto.previousReading() != null && dto.previousReadingDate() != null) {
-            if (dto.currentReading().compareTo(dto.previousReading()) <= 0) {
-                throw new RentowneBusinessException(RentowneErrorCode.BAD_METER_READING_VALUES);
-            }
-            DateUtils.compareDates(dto.readingDate(), dto.previousReadingDate(), false, MeterType.fromString(dto.meterType()));
+    public void addMeterReading(AddMeterReadingRequest dto) throws RentowneBusinessException {
+        // Lock the meter before reading its latest state so concurrent additions use a fresh baseline.
+        Meter meter = meterRepository.lockById(dto.meterId())
+                .orElseThrow(() -> new RentowneNotFoundException(dto.meterId()));
+        MeterReading previous = meterReadingRepository.getMeterReadingByMeter(meter.getId());
+        BigDecimal previousValue = previous != null ? previous.getCurrentReading() : meter.getInitialMeterReading();
+        LocalDateTime previousDate = previous != null ? previous.getReadingDate() : meter.getInstallationDate();
+
+        if (previousValue != null && dto.currentReading().compareTo(previousValue) <= 0) {
+            throw new RentowneBusinessException(RentowneErrorCode.BAD_METER_READING_VALUES);
+        }
+        if (previousDate != null) {
+            DateUtils.compareDates(dto.readingDate(), previousDate, false, meter.getMeterType());
         }
 
-        meterReadingRepository.save(MeterReadingDto.asEntity(dto));
+        BigDecimal baseline = previousValue != null ? previousValue : BigDecimal.ZERO;
+        meterReadingRepository.save(MeterReading.builder()
+                .meter(meter)
+                .currentReading(dto.currentReading())
+                .readingDate(dto.readingDate())
+                .consumption(dto.currentReading().subtract(baseline))
+                .build());
     }
 
     @Override

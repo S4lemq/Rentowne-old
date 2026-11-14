@@ -1,7 +1,6 @@
 package pl.rentowne.meter_reading;
 
 import lombok.Builder;
-import pl.rentowne.meter.Meter;
 import pl.rentowne.meter.MeterDto;
 
 import java.math.BigDecimal;
@@ -29,23 +28,6 @@ public record MeterReadingDto(
 
     public MeterReadingDto(BigDecimal currentReading, MeterDto meterDto, LocalDateTime readingDate) {
         this(null, currentReading, readingDate, null, meterDto, null, null, null);
-    }
-
-    public static MeterReading asEntity(MeterReadingDto dto) {
-        BigDecimal previousReading = dto.previousReading() != null ?
-                dto.previousReading() : BigDecimal.ZERO;
-        BigDecimal currentReading = dto.currentReading() != null ?
-                dto.currentReading() : BigDecimal.ZERO;
-
-        return MeterReading.builder()
-                .id(dto.id())
-                .currentReading(currentReading)
-                .readingDate(dto.readingDate())
-                .consumption(currentReading.subtract(previousReading))
-                .meter(Meter.builder()
-                        .id(dto.meterDto().getId())
-                        .build())
-                .build();
     }
 
 }

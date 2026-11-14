@@ -4,6 +4,7 @@ import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
+import jakarta.validation.Valid;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
@@ -37,7 +38,7 @@ class MeterReadingController extends AbstractController {
             }
     )
     @PostMapping("/api/meter-reading")
-    ResponseEntity<Void> addMeterReading(@RequestBody MeterReadingDto dto) throws RentowneBusinessException {
+    ResponseEntity<Void> addMeterReading(@Valid @RequestBody AddMeterReadingRequest dto) throws RentowneBusinessException {
         meterReadingService.addMeterReading(dto);
         return new ResponseEntity<>(HttpStatus.CREATED);
     }
