@@ -269,7 +269,8 @@ public class SettlementServiceImpl implements SettlementService {
             BigDecimal totalSum = electricResult.add(waterResult)
                     .add(compensationAmount)
                     .add(internetFee)
-                    .add(rentAmount);
+                    .add(rentAmount)
+                    .add(gasResult);
 
             // Generuj opis rozliczenia
             String prorationDescription = buildProrationDescription(

@@ -10,7 +10,7 @@ import java.time.LocalDate;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-@Sql("classpath:sql/init_data-2.sql")
+@Sql({"classpath:sql/cleanup.sql", "classpath:sql/init_data-2.sql"})
 @IntegrationTest
 class FinancialReportServiceTest {
 

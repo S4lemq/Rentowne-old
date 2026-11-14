@@ -13,16 +13,20 @@ import org.springframework.test.web.reactive.server.WebTestClient;
 import pl.rentowne.IntegrationTest;
 import pl.rentowne.TestSecurityConfig;
 import pl.rentowne.WithMockRentowneUser;
+import pl.rentowne.settlement.SettlementRepository;
 import pl.rentowne.util.Clock;
 import pl.rentowne.util.FixedClock;
 
-@Sql("classpath:sql/init_data-2.sql")
+@Sql({"classpath:sql/cleanup.sql", "classpath:sql/init_data-2.sql"})
 @IntegrationTest
 @Import({TestSecurityConfig.class, FinancialReportControllerTest.TestClockConfig.class})
 class FinancialReportControllerTest {
 
     @Autowired
     private WebTestClient webTestClient;
+
+    @Autowired
+    private SettlementRepository settlementRepository;
 
     @MockitoBean
     private AuditorAware<String> auditorAware;
@@ -46,34 +50,36 @@ class FinancialReportControllerTest {
                 .exchange()
                 .expectStatus().isOk()
                 .expectBody()
-                .jsonPath("$").isArray()
-                .jsonPath("$.length()").isEqualTo(3)
+                .jsonPath("$.months").isArray()
+                .jsonPath("$.months.length()").isEqualTo(3)
 
                 // Sprawdzenie grudnia 2024
-                .jsonPath("$[0].month").isEqualTo("2024-12-01")
-                .jsonPath("$[0].totalRevenue").isEqualTo(6300.00) // 3500 + 2800
-                .jsonPath("$[0].totalCosts").isEqualTo(437.41) // 139.83 (faktury) + 297.50 (8.5% z 3500 odstępnego) + 0.08 (zaokrąglenie)
-                .jsonPath("$[0].netIncome").isEqualTo(5862.59)
-                .jsonPath("$[0].netIncomeSum").isEqualTo(5862.59)
+                .jsonPath("$.months[0].month").isEqualTo("2024-12-01")
+                .jsonPath("$.months[0].totalRevenue").isEqualTo(6300.00) // 3500 + 2800
+                .jsonPath("$.months[0].totalCosts").isEqualTo(437.33) // 139.83 + 297.50
+                .jsonPath("$.months[0].netIncome").isEqualTo(5862.67)
+                .jsonPath("$.months[0].netIncomeSum").isEqualTo(5862.67)
 
                 // Sprawdzenie stycznia 2025
-                .jsonPath("$[1].month").isEqualTo("2025-01-01")
-                .jsonPath("$[1].totalRevenue").isEqualTo(6800.00) // 3800 + 3000
-                .jsonPath("$[1].totalCosts").isEqualTo(337.83) // 14.83 (faktura) + 323.00 (8.5% z 3800 odstępnego)
-                .jsonPath("$[1].netIncome").isEqualTo(6462.17)
-                .jsonPath("$[1].netIncomeSum").isEqualTo(12324.76) // suma narastająca
+                .jsonPath("$.months[1].month").isEqualTo("2025-01-01")
+                .jsonPath("$.months[1].totalRevenue").isEqualTo(6800.00) // 3800 + 3000
+                .jsonPath("$.months[1].totalCosts").isEqualTo(337.83) // 14.83 (faktura) + 323.00 (8.5% z 3800 odstępnego)
+                .jsonPath("$.months[1].netIncome").isEqualTo(6462.17)
+                .jsonPath("$.months[1].netIncomeSum").isEqualTo(12324.84) // suma narastająca
 
                 // Sprawdzenie lutego 2025
-                .jsonPath("$[2].month").isEqualTo("2025-02-01")
-                .jsonPath("$[2].totalRevenue").isEqualTo(4000.00)
-                .jsonPath("$[2].totalCosts").isEqualTo(204.00) // 8.5% z 2400 odstępnego
-                .jsonPath("$[2].netIncome").isEqualTo(3796.00)
-                .jsonPath("$[2].netIncomeSum").isEqualTo(16120.76); // suma narastająca
+                .jsonPath("$.months[2].month").isEqualTo("2025-02-01")
+                .jsonPath("$.months[2].totalRevenue").isEqualTo(4000.00)
+                .jsonPath("$.months[2].totalCosts").isEqualTo(204.00) // 8.5% z 2400 odstępnego
+                .jsonPath("$.months[2].netIncome").isEqualTo(3796.00)
+                .jsonPath("$.months[2].netIncomeSum").isEqualTo(16120.84)
+                .jsonPath("$.yearlyTotalRevenue").isEqualTo(17100.00)
+                .jsonPath("$.yearlyTotalCosts").isEqualTo(979.16); // suma narastająca
     }
 
     @Test
     @WithMockRentowneUser
-    void shouldReturnEmptyListWhenNoData() {
+    void shouldReturnInvoiceMonthsWhenSettlementsAreDeleted() {
         // given - czyszczenie danych
         webTestClient.delete()
                 .uri("/api/settlements/{id}", 1)
@@ -106,8 +112,8 @@ class FinancialReportControllerTest {
                 .exchange()
                 .expectStatus().isOk()
                 .expectBody()
-                .jsonPath("$").isArray()
-                .jsonPath("$.length()").isEqualTo(3); // Nadal 3 miesiące z faktur
+                .jsonPath("$.months").isArray()
+                .jsonPath("$.months.length()").isEqualTo(2); // Nadal 2 miesiące z faktur
     }
 
     @Test
@@ -121,15 +127,15 @@ class FinancialReportControllerTest {
                 .expectBody()
                 // Grudzień 2024: compensationAmount = 2000 + 1500 = 3500
                 // Podatek: 3500 * 0.085 = 297.50
-                .jsonPath("$[0].totalCosts").exists()
+                .jsonPath("$.months[0].totalCosts").isEqualTo(437.33)
 
                 // Styczeń 2025: compensationAmount = 2200 + 1600 = 3800
                 // Podatek: 3800 * 0.085 = 323.00
-                .jsonPath("$[1].totalCosts").exists()
+                .jsonPath("$.months[1].totalCosts").isEqualTo(337.83)
 
                 // Luty 2025: compensationAmount = 2400
                 // Podatek: 2400 * 0.085 = 204.00
-                .jsonPath("$[2].totalCosts").isEqualTo(204.00);
+                .jsonPath("$.months[2].totalCosts").isEqualTo(204.00);
     }
 
     @Test
@@ -141,14 +147,9 @@ class FinancialReportControllerTest {
                 .exchange()
                 .expectStatus().isOk()
                 .expectBody()
-                .jsonPath("$[0].netIncomeSum").isNumber()
-                .jsonPath("$[1].netIncomeSum").isNumber()
-                .jsonPath("$[2].netIncomeSum").isNumber()
-                .consumeWith(response -> {
-                    String body = new String(response.getResponseBody());
-                    // Weryfikacja, że każda następna suma jest większa
-                    // (zakładając dodatnie dochody)
-                });
+                .jsonPath("$.months[0].netIncomeSum").isEqualTo(5862.67)
+                .jsonPath("$.months[1].netIncomeSum").isEqualTo(12324.84)
+                .jsonPath("$.months[2].netIncomeSum").isEqualTo(16120.84);
     }
 
     @Test
@@ -160,9 +161,9 @@ class FinancialReportControllerTest {
                 .exchange()
                 .expectStatus().isOk()
                 .expectBody()
-                .jsonPath("$").isArray()
-                .jsonPath("$.length()").isEqualTo(3)
-                .jsonPath("$[*].month").exists();
+                .jsonPath("$.months").isArray()
+                .jsonPath("$.months.length()").isEqualTo(3)
+                .jsonPath("$.months[*].month").exists();
     }
 
     @Test
@@ -174,21 +175,28 @@ class FinancialReportControllerTest {
                 .exchange()
                 .expectStatus().isOk()
                 .expectBody()
-                .jsonPath("$[0].month").isEqualTo("2024-12-01")
-                .jsonPath("$[1].month").isEqualTo("2025-01-01")
-                .jsonPath("$[2].month").isEqualTo("2025-02-01");
+                .jsonPath("$.months[0].month").isEqualTo("2024-12-01")
+                .jsonPath("$.months[1].month").isEqualTo("2025-01-01")
+                .jsonPath("$.months[2].month").isEqualTo("2025-02-01");
     }
 
     @Test
     @WithMockRentowneUser
     void shouldHandleZeroRevenueMonth() {
+        settlementRepository.deleteAllInBatch();
         // Test dla miesiąca bez przychodów - tylko faktury
         webTestClient.get()
                 .uri("/api/financial-reports/monthly")
                 .exchange()
                 .expectStatus().isOk()
                 .expectBody()
-                .jsonPath("$").isArray();
+                .jsonPath("$.months.length()").isEqualTo(2)
+                .jsonPath("$.months[0].totalRevenue").isEqualTo(0)
+                .jsonPath("$.months[0].totalCosts").isEqualTo(139.83)
+                .jsonPath("$.months[0].netIncome").isEqualTo(-139.83)
+                .jsonPath("$.months[1].totalRevenue").isEqualTo(0)
+                .jsonPath("$.months[1].totalCosts").isEqualTo(14.83)
+                .jsonPath("$.months[1].netIncome").isEqualTo(-14.83);
     }
 
     @Test
@@ -200,13 +208,9 @@ class FinancialReportControllerTest {
                 .exchange()
                 .expectStatus().isOk()
                 .expectBody()
-                .jsonPath("$[0].totalRevenue").exists()
-                .jsonPath("$[0].totalCosts").exists()
-                .jsonPath("$[0].netIncome").exists()
-                .consumeWith(response -> {
-                    // Dodatkowa weryfikacja matematyczna w konsumerze
-                    // netIncome = totalRevenue - totalCosts
-                });
+                .jsonPath("$.months[0].totalRevenue").isEqualTo(6300.00)
+                .jsonPath("$.months[0].totalCosts").isEqualTo(437.33)
+                .jsonPath("$.months[0].netIncome").isEqualTo(5862.67);
     }
 
     @Test
@@ -221,10 +225,10 @@ class FinancialReportControllerTest {
                 .exchange()
                 .expectStatus().isOk()
                 .expectBody()
-                .jsonPath("$").isArray()
-                .jsonPath("$.length()").isEqualTo(1)
-                .jsonPath("$[0].month").isEqualTo("2024-12-01")
-                .jsonPath("$[0].totalRevenue").isEqualTo(6300.00);
+                .jsonPath("$.months").isArray()
+                .jsonPath("$.months.length()").isEqualTo(1)
+                .jsonPath("$.months[0].month").isEqualTo("2024-12-01")
+                .jsonPath("$.months[0].totalRevenue").isEqualTo(6300.00);
     }
 
     @Test
@@ -239,10 +243,10 @@ class FinancialReportControllerTest {
                 .exchange()
                 .expectStatus().isOk()
                 .expectBody()
-                .jsonPath("$").isArray()
-                .jsonPath("$.length()").isEqualTo(2)
-                .jsonPath("$[0].month").isEqualTo("2025-01-01")
-                .jsonPath("$[1].month").isEqualTo("2025-02-01");
+                .jsonPath("$.months").isArray()
+                .jsonPath("$.months.length()").isEqualTo(2)
+                .jsonPath("$.months[0].month").isEqualTo("2025-01-01")
+                .jsonPath("$.months[1].month").isEqualTo("2025-02-01");
     }
 
     @Test
@@ -257,8 +261,10 @@ class FinancialReportControllerTest {
                 .exchange()
                 .expectStatus().isOk()
                 .expectBody()
-                .jsonPath("$").isArray()
-                .jsonPath("$.length()").isEqualTo(0);
+                .jsonPath("$.months").isArray()
+                .jsonPath("$.months.length()").isEqualTo(0)
+                .jsonPath("$.yearlyTotalRevenue").isEqualTo(0)
+                .jsonPath("$.yearlyTotalCosts").isEqualTo(0);
     }
 
     @Test
@@ -273,10 +279,10 @@ class FinancialReportControllerTest {
                 .exchange()
                 .expectStatus().isOk()
                 .expectBody()
-                .jsonPath("$[0].netIncomeSum").isNumber()
-                .jsonPath("$[1].netIncomeSum").isNumber()
-                .jsonPath("$[0].netIncomeSum").isEqualTo(6462.17)
-                .jsonPath("$[1].netIncomeSum").isEqualTo(10258.17); // 6462.17 + 3796.00
+                .jsonPath("$.months[0].netIncomeSum").isNumber()
+                .jsonPath("$.months[1].netIncomeSum").isNumber()
+                .jsonPath("$.months[0].netIncomeSum").isEqualTo(6462.17)
+                .jsonPath("$.months[1].netIncomeSum").isEqualTo(10258.17); // 6462.17 + 3796.00
     }
 
     @Test
@@ -288,8 +294,8 @@ class FinancialReportControllerTest {
                 .exchange()
                 .expectStatus().isOk()
                 .expectBody()
-                .jsonPath("$").isArray()
-                .jsonPath("$.length()").isEqualTo(3);
+                .jsonPath("$.months").isArray()
+                .jsonPath("$.months.length()").isEqualTo(3);
     }
 
     @Test
@@ -304,13 +310,13 @@ class FinancialReportControllerTest {
                 .exchange()
                 .expectStatus().isOk()
                 .expectBody()
-                .jsonPath("$").isArray()
-                .jsonPath("$.length()").isEqualTo(1)
-                .jsonPath("$[0].month").isEqualTo("2024-12-01")
-                .jsonPath("$[0].totalRevenue").isEqualTo(6300.00)
-                .jsonPath("$[0].totalCosts").isEqualTo(437.33)
-                .jsonPath("$[0].netIncome").isEqualTo(5862.67)
-                .jsonPath("$[0].netIncomeSum").isEqualTo(5862.67); // dla jednego miesiąca = netIncome
+                .jsonPath("$.months").isArray()
+                .jsonPath("$.months.length()").isEqualTo(1)
+                .jsonPath("$.months[0].month").isEqualTo("2024-12-01")
+                .jsonPath("$.months[0].totalRevenue").isEqualTo(6300.00)
+                .jsonPath("$.months[0].totalCosts").isEqualTo(437.33)
+                .jsonPath("$.months[0].netIncome").isEqualTo(5862.67)
+                .jsonPath("$.months[0].netIncomeSum").isEqualTo(5862.67); // dla jednego miesiąca = netIncome
     }
 
     @Test
@@ -325,10 +331,10 @@ class FinancialReportControllerTest {
                 .exchange()
                 .expectStatus().isOk()
                 .expectBody()
-                .jsonPath("$[0].month").isEqualTo("2025-01-01")
-                .jsonPath("$[0].totalRevenue").isEqualTo(6800.00)
-                .jsonPath("$[1].month").isEqualTo("2025-02-01")
-                .jsonPath("$[1].totalRevenue").isEqualTo(4000.00);
+                .jsonPath("$.months[0].month").isEqualTo("2025-01-01")
+                .jsonPath("$.months[0].totalRevenue").isEqualTo(6800.00)
+                .jsonPath("$.months[1].month").isEqualTo("2025-02-01")
+                .jsonPath("$.months[1].totalRevenue").isEqualTo(4000.00);
     }
 }
 

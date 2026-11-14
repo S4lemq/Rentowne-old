@@ -36,7 +36,7 @@ class RentedObjectControllerTest {
 
     @Test
     @WithMockRentowneUser
-    @Sql("classpath:sql/init_data.sql")
+    @Sql({"classpath:sql/cleanup.sql", "classpath:sql/init_data.sql"})
     void shouldCalculateRentedObjectTwiceAndSaveTwoRows() {
         // given
         when(auditorAware.getCurrentAuditor()).thenReturn(Optional.of("peter.lubowicz@gmail.com"));
@@ -63,6 +63,8 @@ class RentedObjectControllerTest {
         // then
         var settlements = settlementRepository.findAll();
 
+        assertEquals(2, settlements.size());
+
         BigDecimal sum = settlements.stream()
                 .map(Settlement::getElectricityAmount)
                 .reduce(BigDecimal.ZERO, BigDecimal::add);
@@ -72,7 +74,7 @@ class RentedObjectControllerTest {
 
     @Test
     @WithMockRentowneUser
-    @Sql("classpath:sql/init_data.sql")
+    @Sql({"classpath:sql/cleanup.sql", "classpath:sql/init_data.sql"})
     void shouldCalculateRentedObjectThreeTimesAndSaveThreeRows() {
         // given
         when(auditorAware.getCurrentAuditor()).thenReturn(Optional.of("peter.lubowicz@gmail.com"));
@@ -104,6 +106,8 @@ class RentedObjectControllerTest {
 
         // then
         var settlements = settlementRepository.findAll();
+
+        assertEquals(3, settlements.size());
 
         BigDecimal sum = settlements.stream()
                 .map(Settlement::getElectricityAmount)

@@ -1,34 +1,3 @@
--- Czyszczenie danych przed każdym testem
-DELETE FROM settlement;
-DELETE FROM invoice;
-DELETE FROM tenant;
-DELETE FROM lease_agreement;
-DELETE FROM apartment_housing_provider;
-DELETE FROM provider_field;
-DELETE FROM housing_provider;
-DELETE FROM meter_reading;
-DELETE FROM meter;
-DELETE FROM rented_object;
-DELETE FROM apartment;
-DELETE FROM user_account;
-DELETE FROM address;
-
--- Resetowanie sekwencji
-ALTER SEQUENCE settlement_seq RESTART WITH 1;
-ALTER SEQUENCE address_seq RESTART WITH 1;
-ALTER SEQUENCE user_account_seq RESTART WITH 1;
-ALTER SEQUENCE apartment_seq RESTART WITH 1;
-ALTER SEQUENCE rented_object_seq RESTART WITH 1;
-ALTER SEQUENCE meter_seq RESTART WITH 1;
-ALTER SEQUENCE meter_reading_seq RESTART WITH 1;
-ALTER SEQUENCE housing_provider_seq RESTART WITH 1;
-ALTER SEQUENCE provider_field_seq RESTART WITH 1;
-ALTER SEQUENCE apartment_housing_provider_seq RESTART WITH 1;
-ALTER SEQUENCE lease_agreement_seq RESTART WITH 1;
-ALTER SEQUENCE tenant_seq RESTART WITH 1;
-ALTER SEQUENCE invoice_seq RESTART WITH 1;
-
-
 INSERT INTO public.address (address_id, street_name, building_number, apartment_number, zip_code, city_name, voivode_ship, insert_date, update_date, insert_operator, update_operator) VALUES
                                                                                                                                                                                            (1, 'Zwierzyniecka', '14/16', '18', '60-813', 'Poznań', 'Wielkopolskie', '2024-02-18 23:38:15.781204', null, 'peter.lubowicz@gmail.com', null),
                                                                                                                                                                                            (2, 'Kujawska', '2', '23', '84-835', 'Żory', 'Wielkopolskie', '2024-02-27 22:40:15.092124', null, 'peter.lubowicz@gmail.com', null),
