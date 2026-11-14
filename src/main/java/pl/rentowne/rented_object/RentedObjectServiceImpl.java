@@ -10,6 +10,7 @@ import pl.rentowne.settlement.SettlementRepository;
 import pl.rentowne.tenant.Tenant;
 import pl.rentowne.tenant.TenantRepository;
 import pl.rentowne.user.UserService;
+import pl.rentowne.rental_payment.RentalPaymentService;
 import pl.rentowne.util.DateUtils;
 
 import java.math.BigDecimal;
@@ -28,6 +29,7 @@ public class RentedObjectServiceImpl implements RentedObjectService {
     private final SettlementRepository settlementRepository;
     private final TenantRepository tenantRepository;
     private final UserService userService;
+    private final RentalPaymentService rentalPaymentService;
 
     @Override
     public void saveAll(final Set<RentedObject> rentedObjects) {
@@ -64,16 +66,19 @@ public class RentedObjectServiceImpl implements RentedObjectService {
     }
 
     @Override
+    @Transactional(readOnly = true)
     public List<RentedObjectDetailsDto> getRentedObjectsDetails(final Long apartmentId, final Boolean active) {
         final Long userId = userService.getLoggedUser().id();
         final List<Tenant> tenants = tenantRepository.findTenantsWithDetailsForUser(userId, apartmentId, active);
+        final var balances = rentalPaymentService.getBalances(tenants.stream().map(Tenant::getId).toList());
 
         return tenants.stream()
                 .map((final Tenant tenant) -> {
                     final Long tenantId = tenant.getId();
                     final Long rentedObjectId = tenant.getRentedObject().getId();
                     final Settlement latestSettlement = settlementRepository.findLatestByRentedObjectId(rentedObjectId, tenantId);
-                    return RentedObjectMapper.toDetailsDto(tenant, latestSettlement);
+                    return RentedObjectMapper.toDetailsDto(tenant, latestSettlement).toBuilder()
+                            .paymentSummary(balances.get(tenantId)).build();
                 })
                 .toList();
     }

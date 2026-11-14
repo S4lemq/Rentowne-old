@@ -3,16 +3,26 @@ package pl.rentowne.tenant;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Lock;
+import jakarta.persistence.LockModeType;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
 import java.util.List;
+import java.util.Collection;
 import java.util.Optional;
 
 /**
  * Repozytorium najemców
  */
 public interface TenantRepository extends JpaRepository<Tenant, Long> {
+
+    @Lock(LockModeType.PESSIMISTIC_WRITE)
+    @Query("select t from Tenant t where t.id = :id")
+    Optional<Tenant> lockById(@Param("id") Long id);
+
+    @Query("select t.id from Tenant t where t.id in :ids and t.rentedObject.apartment.user.id = :userId")
+    List<Long> findOwnedTenantIds(@Param("ids") Collection<Long> ids, @Param("userId") Long userId);
 
     /**
      * Pobiera najemców z powiązanymi encjami dla danego użytkownika

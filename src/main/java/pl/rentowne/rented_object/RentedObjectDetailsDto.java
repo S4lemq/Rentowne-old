@@ -1,10 +1,11 @@
 package pl.rentowne.rented_object;
 
 import lombok.Builder;
+import pl.rentowne.rental_payment.RentalBalanceDto;
 
 import java.math.BigDecimal;
 
-@Builder
+@Builder(toBuilder = true)
 record RentedObjectDetailsDto(
         Long id,
         String objectName, // obiekt
@@ -20,6 +21,7 @@ record RentedObjectDetailsDto(
         BigDecimal gasDeposit, // kwota za gaz
         BigDecimal waterAmount, // kwota za wodę
         BigDecimal profit, // zysk
-        boolean hasCurrentMonthSettlement // czy ma rozliczenie z bieżącego miesiąca
+        boolean hasCurrentMonthSettlement, // czy ma rozliczenie z bieżącego miesiąca
+        RentalBalanceDto paymentSummary
 ) {
 }

@@ -55,6 +55,9 @@ public class SettlementServiceImpl implements SettlementService {
     @Transactional
     @Override
     public void calculate(Long rentedObjectId, CalculateRequestDto dto) {
+        // Serialize financial changes for this tenancy, including server-calculated full receipts.
+        Tenant currentTenant = tenantRepository.getTenantByRentedObjectId(rentedObjectId);
+        if (currentTenant != null) tenantRepository.lockById(currentTenant.getId());
         // Check if this is a partial month settlement
         if (Boolean.TRUE.equals(dto.isPartialMonth())) {
             calculatePartialMonth(rentedObjectId, dto);
@@ -163,6 +166,8 @@ public class SettlementServiceImpl implements SettlementService {
     @Override
     @Transactional
     public void deleteCalculate(final Long settlementId) {
+        Settlement existing = settlementRepository.findByIdMandatory(settlementId);
+        if (existing.getTenant() != null) tenantRepository.lockById(existing.getTenant().getId());
 
         // 1) Ustal mieszkanie i datę rozliczenia (identyfikator „cyklu”)
         Long apartmentId = settlementRepository.getApartmentIdBySettlementId(settlementId);

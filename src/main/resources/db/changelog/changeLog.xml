@@ -69,4 +69,5 @@
     <include file="db/changelog/ddl-scripts/065-drop_addt_info_value_from_tenant.xml"/>
     <include file="db/changelog/ddl-scripts/066-drop_cif_from_tenant.xml"/>
 
+    <include file="db/changelog/ddl-scripts/067-rental-payments.sql"/>
 </databaseChangeLog>

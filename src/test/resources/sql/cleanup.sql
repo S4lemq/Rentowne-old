@@ -1,4 +1,5 @@
 -- Czyszczenie danych przed każdym testem
+DELETE FROM rental_payment;
 DELETE FROM meter_reading;
 DELETE FROM settlement;
 DELETE FROM invoice;
@@ -14,6 +15,7 @@ DELETE FROM user_account;
 DELETE FROM address;
 
 -- Resetowanie sekwencji
+ALTER SEQUENCE rental_payment_seq RESTART WITH 1;
 ALTER SEQUENCE settlement_seq RESTART WITH 1;
 ALTER SEQUENCE address_seq RESTART WITH 1;
 ALTER SEQUENCE user_account_seq RESTART WITH 1;
