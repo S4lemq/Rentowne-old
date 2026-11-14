@@ -7,6 +7,9 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.HttpStatusCode;
+import org.springframework.orm.ObjectOptimisticLockingFailureException;
+import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.ControllerAdvice;
 import org.springframework.web.bind.annotation.ExceptionHandler;
@@ -19,9 +22,11 @@ import pl.rentowne.exception.RentowneBusinessException;
 import pl.rentowne.exception.RentowneErrorCode;
 import pl.rentowne.exception.RentowneNotFoundException;
 import pl.rentowne.rental_payment.RentalPaymentException;
+import pl.rentowne.owner.OwnerException;
 
 import java.util.concurrent.ThreadLocalRandom;
 import java.util.Map;
+import java.util.LinkedHashMap;
 
 /**
  * Abstrakcyjny kontroller RESTowy
@@ -33,6 +38,27 @@ public class AbstractController extends ResponseEntityExceptionHandler {
     private static final Logger log = LoggerFactory.getLogger(AbstractController.class);
 
     public AbstractController() {
+    }
+
+    @ExceptionHandler(OwnerException.class)
+    public ResponseEntity<Map<String, String>> ownerExceptionHandle(OwnerException exception) {
+        return ResponseEntity.status(exception.getStatus()).body(Map.of("message", exception.getMessage()));
+    }
+
+    @ExceptionHandler(ObjectOptimisticLockingFailureException.class)
+    public ResponseEntity<Map<String, String>> optimisticLockHandle(ObjectOptimisticLockingFailureException exception) {
+        return ResponseEntity.status(HttpStatus.CONFLICT)
+                .body(Map.of("message", "Dane zostały zmienione przez inny zapis. Odśwież formularz przed ponowną edycją."));
+    }
+
+    @Override
+    protected ResponseEntity<Object> handleMethodArgumentNotValid(MethodArgumentNotValidException exception,
+            HttpHeaders headers, HttpStatusCode status, WebRequest request) {
+        Map<String, String> fields = new LinkedHashMap<>();
+        exception.getBindingResult().getFieldErrors()
+                .forEach(error -> fields.putIfAbsent(error.getField(), error.getDefaultMessage()));
+        String message = String.join(" ", fields.values().stream().distinct().toList());
+        return ResponseEntity.badRequest().body(Map.of("message", message, "fieldErrors", fields));
     }
 
     @ExceptionHandler(RentalPaymentException.class)

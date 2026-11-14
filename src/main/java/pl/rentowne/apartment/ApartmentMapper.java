@@ -5,6 +5,9 @@ import lombok.NoArgsConstructor;
 import lombok.NonNull;
 import org.springframework.lang.Nullable;
 import pl.rentowne.address.AddressMapper;
+import pl.rentowne.address.Address;
+import pl.rentowne.address.AddressDto;
+import pl.rentowne.owner.OwnerMapper;
 import pl.rentowne.rented_object.RentedObject;
 import pl.rentowne.user.User;
 
@@ -26,6 +29,7 @@ class ApartmentMapper {
             .image(apartment.getImage())
             .pinned(apartment.isPinned())
             .addressDto(AddressMapper.toDto(apartment.getAddress()))
+            .ownerDto(OwnerMapper.toDto(apartment.getOwner()))
             .rentedObjectDtos(apartment.getRentedObjects().stream()
                 .map(ApartmentMapper::toDto)
                 .toList())
@@ -57,6 +61,28 @@ class ApartmentMapper {
                 rentedObject.getId(),
                 rentedObject.getRentedObjectName()
         );
+    }
+
+    public static void updateEntity(@NonNull ApartmentDto dto, @NonNull Apartment apartment) {
+        apartment.setApartmentName(dto.apartmentName());
+        apartment.setLeasesNumber(dto.leasesNumber());
+        apartment.setArea(dto.area());
+        apartment.setImage(dto.image());
+        // Keep the existing address identity, occupancy, pin and associations.
+        if (dto.addressDto() != null) {
+            Address address = apartment.getAddress();
+            if (address == null) {
+                address = new Address();
+                apartment.setAddress(address);
+            }
+            AddressDto requested = dto.addressDto();
+            address.setStreetName(requested.streetName());
+            address.setBuildingNumber(requested.buildingNumber());
+            address.setApartmentNumber(requested.apartmentNumber());
+            address.setZipCode(requested.zipCode());
+            address.setCityName(requested.cityName());
+            address.setVoivodeship(requested.voivodeship());
+        }
     }
 
     public static Set<RentedObject> toRentedObjectEntities(@NonNull final ApartmentDto apartmentDto, @NonNull final Long apartmentId) {

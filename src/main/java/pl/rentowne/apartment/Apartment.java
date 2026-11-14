@@ -25,6 +25,7 @@ import pl.rentowne.address.Address;
 import pl.rentowne.common.model.BaseEntity;
 import pl.rentowne.housing_provider.HousingProvider;
 import pl.rentowne.meter.Meter;
+import pl.rentowne.owner.Owner;
 import pl.rentowne.rented_object.RentedObject;
 import pl.rentowne.user.User;
 
@@ -91,6 +92,10 @@ public class Apartment extends BaseEntity {
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "user_account_id")
     private User user;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "owner_id")
+    private Owner owner;
 
     @ManyToMany(mappedBy = "apartments", fetch = FetchType.LAZY)
     private Set<HousingProvider> housingProviders = new HashSet<>();

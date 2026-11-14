@@ -1,8 +1,10 @@
 package pl.rentowne.apartment;
 
 import lombok.Builder;
+import jakarta.validation.Valid;
 import org.springframework.lang.Nullable;
 import pl.rentowne.address.AddressDto;
+import pl.rentowne.owner.OwnerDto;
 
 import java.math.BigDecimal;
 import java.math.BigInteger;
@@ -22,5 +24,6 @@ record ApartmentDto(
     @Nullable String buildingNumber,
     @Nullable String apartmentNumber,
     @Nullable AddressDto addressDto,
-    @Nullable List<RentedObjectDto> rentedObjectDtos
+    @Nullable List<RentedObjectDto> rentedObjectDtos,
+    @Nullable @Valid OwnerDto ownerDto
 ) {}

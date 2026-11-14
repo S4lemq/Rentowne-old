@@ -2,12 +2,15 @@ package pl.rentowne.apartment;
 
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
+import org.springframework.http.HttpStatus;
 import org.springframework.transaction.annotation.Transactional;
 import pl.rentowne.exception.RentowneBusinessException;
 import pl.rentowne.exception.RentowneErrorCode;
 import pl.rentowne.exception.RentowneNotFoundException;
 import pl.rentowne.housing_provider.HousingProvider;
 import pl.rentowne.housing_provider.HousingProviderRepository;
+import pl.rentowne.owner.OwnerException;
+import pl.rentowne.owner.OwnerService;
 import pl.rentowne.rented_object.RentedObject;
 import pl.rentowne.rented_object.RentedObjectRepository;
 import pl.rentowne.rented_object.RentedObjectService;
@@ -28,17 +31,22 @@ public class ApartmentServiceImpl implements ApartmentService {
     private final RentedObjectService rentedObjectService;
     private final RentedObjectRepository rentedObjectRepository;
     private final HousingProviderRepository housingProviderRepository;
+    private final OwnerService ownerService;
 
     @Override
     @Transactional(readOnly = true)
     public ApartmentDto getApartment(final Long id) throws RentowneNotFoundException {
-        final Apartment apartment = apartmentRepository.findWithRentedObjectsById(id).orElseThrow(() -> new RentowneNotFoundException(id));
+        final Apartment apartment = apartmentRepository.findWithRentedObjectsByIdAndUser_Id(id, userService.getLoggedUser().id())
+                .orElseThrow(() -> new RentowneNotFoundException(id));
         return ApartmentMapper.toDto(apartment);
     }
 
     @Override
     @Transactional
     public Long addApartment(final ApartmentDto apartmentDto) throws RentowneBusinessException {
+        if (apartmentDto.ownerDto() != null) {
+            throw new OwnerException(HttpStatus.BAD_REQUEST, "Właściciela dodaj w edycji zapisanej nieruchomości.");
+        }
         validateRentedObjectNames(apartmentDto);
 
         final Long loggedUserId = userService.getLoggedUser().id();
@@ -52,9 +60,15 @@ public class ApartmentServiceImpl implements ApartmentService {
     @Override
     @Transactional
     public void updateApartment(final ApartmentDto apartmentDto, final Long apartmentId) throws RentowneBusinessException {
+        final Apartment apartment = apartmentRepository.findWithRentedObjectsByIdAndUser_Id(apartmentId, userService.getLoggedUser().id())
+                .orElseThrow(() -> new RentowneNotFoundException(apartmentId));
+        validateRentedObjectNames(apartmentDto);
+        if (apartmentDto.ownerDto() != null) {
+            apartment.setOwner(ownerService.save(apartmentDto.ownerDto()));
+        }
+        ApartmentMapper.updateEntity(apartmentDto, apartment);
         updateRentedObjects(apartmentDto, apartmentId);
-        final Long loggedUserId = userService.getLoggedUser().id();
-        apartmentRepository.save(ApartmentMapper.toEntity(apartmentDto, apartmentId, loggedUserId));
+        apartmentRepository.saveAndFlush(apartment);
     }
 
     @Override
@@ -183,7 +197,7 @@ public class ApartmentServiceImpl implements ApartmentService {
     }
 
     private void updateRentedObjects(final ApartmentDto apartmentDto, final Long apartmentId) {
-        if (apartmentId == null) {
+        if (apartmentId == null || apartmentDto.rentedObjectDtos() == null) {
             return;
         }
 

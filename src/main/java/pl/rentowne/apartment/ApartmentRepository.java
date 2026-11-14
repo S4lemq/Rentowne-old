@@ -40,6 +40,9 @@ public interface ApartmentRepository extends JpaRepository<Apartment, Long> {
     @EntityGraph(attributePaths = "rentedObjects")
     Optional<Apartment> findWithRentedObjectsById(Long id);
 
+    @EntityGraph(attributePaths = {"rentedObjects", "owner", "address"})
+    Optional<Apartment> findWithRentedObjectsByIdAndUser_Id(Long id, Long userId);
+
     /**
      * Pobiera listę mieszkań do tabeli (Page)
      * @param pageable informacje o stronicowaniu
@@ -54,7 +57,7 @@ public interface ApartmentRepository extends JpaRepository<Apartment, Long> {
                 a.id, a.apartmentName, a.leasesNumber, a.isRented,
                 null, a.image, a.pinned,
                 addr.cityName, addr.streetName, addr.buildingNumber, addr.apartmentNumber,
-                null, null
+                null, null, null
             )
             FROM Apartment a
             LEFT JOIN a.address addr

@@ -72,4 +72,5 @@
     <include file="db/changelog/ddl-scripts/067-rental-payments.sql"/>
     <include file="db/changelog/ddl-scripts/068-deposit-and-extra-charges.sql"/>
     <include file="db/changelog/ddl-scripts/069-manual-settlement-charges.sql"/>
+    <include file="db/changelog/ddl-scripts/070-property-owners.sql"/>
 </databaseChangeLog>

@@ -3,6 +3,7 @@ package pl.rentowne.apartment;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
+import jakarta.validation.Valid;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
@@ -56,7 +57,7 @@ class ApartmentController extends AbstractController {
         description = "Metoda służy do aktualizowania danych mieszkania"
     )
     @PutMapping("/api/apartments/{id}")
-    ResponseEntity<ApartmentDto> updateApartment(@RequestBody final ApartmentDto apartmentDto, @PathVariable final Long id) throws RentowneBusinessException {
+    ResponseEntity<ApartmentDto> updateApartment(@Valid @RequestBody final ApartmentDto apartmentDto, @PathVariable final Long id) throws RentowneBusinessException {
         apartmentService.updateApartment(apartmentDto, id);
         return ResponseEntity.ok(apartmentService.getApartment(id));
     }
