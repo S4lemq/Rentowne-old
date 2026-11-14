@@ -19,8 +19,10 @@ import pl.rentowne.exception.RentowneBusinessException;
 import pl.rentowne.exception.RentowneErrorCode;
 import pl.rentowne.exception.RentowneNotFoundException;
 import pl.rentowne.pdf_template.exception.PdfTemplateException;
+import pl.rentowne.rental_payment.RentalPaymentException;
 
 import java.util.concurrent.ThreadLocalRandom;
+import java.util.Map;
 
 /**
  * Abstrakcyjny kontroller RESTowy
@@ -32,6 +34,11 @@ public class AbstractController extends ResponseEntityExceptionHandler {
     private static final Logger log = LoggerFactory.getLogger(AbstractController.class);
 
     public AbstractController() {
+    }
+
+    @ExceptionHandler(RentalPaymentException.class)
+    public ResponseEntity<Map<String, String>> financialExceptionHandle(RentalPaymentException exception) {
+        return ResponseEntity.status(exception.getStatus()).body(Map.of("message", exception.getMessage()));
     }
 
     /**

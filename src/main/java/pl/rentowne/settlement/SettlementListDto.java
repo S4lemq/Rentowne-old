@@ -1,6 +1,7 @@
 package pl.rentowne.settlement;
 
 import java.math.BigDecimal;
+import java.util.List;
 
 /**
  * DTO dla listy rozliczeń
@@ -18,7 +19,11 @@ record SettlementListDto(
         BigDecimal gasAmount, // kwota za gaz z liczników
         BigDecimal totalAmount, // kwota całkowita
         BigDecimal rentAndUtilitiesAmount, // Czynsz i media – kwota czynszu + internet + gaz + prąd + woda
-        String prorationDescription // opis proporcjonalności rozliczenia
+        String prorationDescription, // opis proporcjonalności rozliczenia
+        BigDecimal depositTopUp,
+        BigDecimal additionalCharge,
+        String additionalChargeDescription,
+        List<SettlementChargeDto> additionalCharges
 ) {
 }
 

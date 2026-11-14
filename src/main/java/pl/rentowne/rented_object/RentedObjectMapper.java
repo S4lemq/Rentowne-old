@@ -61,7 +61,7 @@ class RentedObjectMapper {
         final BigDecimal compensationAmount = settlement.map(Settlement::getCompensationAmount).orElse(null);
         final LocalDateTime lastSettlementDate = settlement.map(Settlement::getSettlementDate).orElse(null);
 
-        final BigDecimal totalAmount = sumAmounts(electricityAmount, waterAmount, compensationAmount, internetFee, rentAmount, gasDeposit);
+        final BigDecimal totalAmount = settlement.map(Settlement::getTotalAmount).orElse(BigDecimal.ZERO);
         final BigDecimal sum = sumAmounts(rentAmount, internetFee, gasDeposit, electricityAmount, waterAmount);
         final BigDecimal profit = calculateProfit(compensationAmount);
         final boolean hasCurrentMonthSettlement = settlement.map(RentedObjectMapper::checkCurrentMonthSettlement).orElse(false);
@@ -73,6 +73,10 @@ class RentedObjectMapper {
                 .tenantId(tenantId)
                 .lastSettlementDate(formatPolishDate(lastSettlementDate))
                 .totalAmount(totalAmount.compareTo(BigDecimal.ZERO) > 0 ? totalAmount : null)
+                .depositTopUp(settlement.map(Settlement::getDepositTopUp).orElse(BigDecimal.ZERO))
+                .additionalCharge(settlement.map(Settlement::getAdditionalCharge).orElse(BigDecimal.ZERO))
+                .additionalChargeDescription(settlement.map(Settlement::getAdditionalChargeDescription).orElse(null))
+                .additionalCharges(settlement.map(Settlement::getAdditionalCharges).orElse(List.of()))
                 .compensationAmount(compensationAmount)
                 .sum(sum.compareTo(BigDecimal.ZERO) > 0 ? sum : null)
                 .rentAmount(rentAmount)

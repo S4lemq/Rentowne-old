@@ -2,6 +2,7 @@ package pl.rentowne.settlement;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
+import java.util.List;
 
 public record SettlementExportRowDto(
         String tenantFullName,
@@ -20,6 +21,10 @@ public record SettlementExportRowDto(
         BigDecimal distributedElectricityAmount,
         BigDecimal waterAmount,
         BigDecimal totalAmount,
-        String prorationDescription
+        String prorationDescription,
+        BigDecimal depositTopUp,
+        BigDecimal additionalCharge,
+        String additionalChargeDescription,
+        List<SettlementChargeDto> additionalCharges
 ) {
 }

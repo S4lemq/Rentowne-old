@@ -47,6 +47,9 @@ class RentalPayment extends BaseEntity {
     @Column(name = "AMOUNT", nullable = false, precision = 14, scale = 2)
     private BigDecimal amount;
 
+    @Column(name = "DEPOSIT_AMOUNT", nullable = false, precision = 14, scale = 2)
+    private BigDecimal depositAmount = BigDecimal.ZERO;
+
     @Column(name = "PAYMENT_DATE", nullable = false)
     private LocalDate paymentDate;
 

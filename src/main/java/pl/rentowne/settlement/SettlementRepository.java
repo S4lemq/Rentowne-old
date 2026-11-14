@@ -12,11 +12,16 @@ import pl.rentowne.meter.MeterType;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Optional;
 
 /**
  * Repozytorium odczytów stanu licznika
  */
 public interface SettlementRepository extends JpaRepository<Settlement, Long> {
+
+    List<Settlement> findAllByRentedObjectApartmentUserIdOrderBySettlementDateDescIdDesc(Long userId);
+
+    Optional<Settlement> findFirstByTenantIdAndRentedObjectIdAndDepositAssessmentTrueOrderByIdAsc(Long tenantId, Long rentedObjectId);
 
     @Query("select s.rentedObject.apartment.id from Settlement s where s.id = :settlementId")
     Long getApartmentIdBySettlementId(@Param("settlementId") Long settlementId);
@@ -167,7 +172,7 @@ public interface SettlementRepository extends JpaRepository<Settlement, Long> {
             from Settlement s
             where s.rentedObject.id = :rentedObjectId
               and s.tenant.id = :tenantId
-            order by s.settlementDate desc
+            order by s.settlementDate desc, s.id desc
             limit 1
             """)
     Settlement findLatestByRentedObjectId(@Param("rentedObjectId") Long rentedObjectId,

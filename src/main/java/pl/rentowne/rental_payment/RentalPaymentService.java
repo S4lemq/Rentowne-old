@@ -24,6 +24,7 @@ public class RentalPaymentService {
     private final RentalPaymentRepository paymentRepository;
     private final TenantRepository tenantRepository;
     private final UserService userService;
+    private final DepositAccountingService deposits;
 
     public Map<Long, RentalBalanceDto> getBalances(Collection<Long> tenantIds) {
         if (tenantIds.isEmpty()) return Map.of();
@@ -32,7 +33,7 @@ public class RentalPaymentService {
         if (ownedIds.isEmpty()) return Map.of();
         return paymentRepository.findBalances(ownedIds).stream().collect(Collectors.toMap(
                 RentalPaymentRepository.BalanceTotals::getTenantId,
-                t -> RentalBalanceDto.from(t.getTotalCharges(), t.getHistoricalCredit(), t.getTotalPayments())));
+                RentalBalanceDto::from));
     }
 
     @Transactional(readOnly = true, isolation = Isolation.REPEATABLE_READ)
@@ -56,8 +57,9 @@ public class RentalPaymentService {
             return RentalPaymentDto.from(payment);
         }
 
+        RentalBalanceDto before = balance(tenantId);
         BigDecimal amount = request.mode() == CreateRentalPaymentRequest.Mode.FULL
-                ? balance(tenantId).amountDue() : request.amount();
+                ? before.amountDue() : request.amount();
         if (amount == null || amount.signum() <= 0 || amount.scale() > 2 || amount.compareTo(new BigDecimal("999999999999.99")) > 0) {
             throw new RentalPaymentException(HttpStatus.BAD_REQUEST,
                     "Podaj dodatnią kwotę z maksymalnie dwoma miejscami po przecinku. Pełna wpłata wymaga zadłużenia.");
@@ -66,36 +68,77 @@ public class RentalPaymentService {
         payment.setTenant(tenant);
         payment.setRentedObject(tenant.getRentedObject());
         payment.setAmount(amount.setScale(2, RoundingMode.UNNECESSARY));
+        payment.setDepositAmount(allocateDeposit(before, amount, request.depositAmount(), BigDecimal.ZERO,
+                request.mode() == CreateRentalPaymentRequest.Mode.FULL));
         payment.setPaymentDate(request.paymentDate());
         payment.setDescription(request.normalizedDescription());
         payment.setRequestId(request.requestId());
         payment.setRequestPayload(request.payload());
-        return RentalPaymentDto.from(paymentRepository.saveAndFlush(payment));
+        paymentRepository.saveAndFlush(payment);
+        deposits.reconcileDeposit(tenant);
+        return RentalPaymentDto.from(payment);
     }
 
     @Transactional
     RentalPaymentDto update(Long tenantId, Long rentedObjectId, Long id, UpdateRentalPaymentRequest request) {
-        requireTenancy(tenantId, rentedObjectId, true);
+        Tenant tenant = requireTenancy(tenantId, rentedObjectId, true);
         RentalPayment payment = requirePayment(tenantId, rentedObjectId, id);
         checkVersion(payment, request.version());
+        var totals = paymentRepository.findBalances(List.of(tenantId)).getFirst();
+        RentalBalanceDto before = RentalBalanceDto.excluding(totals, payment.getAmount(), payment.getDepositAmount());
+        payment.setDepositAmount(allocateDeposit(before, request.amount(), request.depositAmount(), payment.getDepositAmount(), false));
         payment.setAmount(request.amount().setScale(2, RoundingMode.UNNECESSARY));
         payment.setPaymentDate(request.paymentDate());
         payment.setDescription(request.description() == null ? "" : request.description().strip());
-        return RentalPaymentDto.from(paymentRepository.saveAndFlush(payment));
+        paymentRepository.saveAndFlush(payment);
+        deposits.reconcileDeposit(tenant);
+        return RentalPaymentDto.from(payment);
     }
 
     @Transactional
     void delete(Long tenantId, Long rentedObjectId, Long id, Long version) {
-        requireTenancy(tenantId, rentedObjectId, true);
+        Tenant tenant = requireTenancy(tenantId, rentedObjectId, true);
         RentalPayment payment = requirePayment(tenantId, rentedObjectId, id);
         checkVersion(payment, version);
         payment.setDeleted(true);
         paymentRepository.saveAndFlush(payment);
+        deposits.reconcileDeposit(tenant);
     }
 
     private RentalBalanceDto balance(Long tenantId) {
         var totals = paymentRepository.findBalances(List.of(tenantId)).getFirst();
-        return RentalBalanceDto.from(totals.getTotalCharges(), totals.getHistoricalCredit(), totals.getTotalPayments());
+        return RentalBalanceDto.from(totals);
+    }
+
+    private BigDecimal allocateDeposit(RentalBalanceDto before, BigDecimal amount, BigDecimal requested,
+                                       BigDecimal previousDeposit, boolean full) {
+        BigDecimal due = before.depositDue();
+        if (!before.depositAssessed()) {
+            BigDecimal deposit = requested == null ? previousDeposit.min(amount) : requested;
+            if (deposit.signum() < 0 || deposit.compareTo(previousDeposit.min(amount)) > 0) {
+                throw new RentalPaymentException(HttpStatus.BAD_REQUEST, "Brak naliczonej kaucji. Potwierdź otrzymaną kwotę w umowie.");
+            }
+            return deposit;
+        }
+        BigDecimal uncoveredDeposit = due.min(before.amountDue());
+        BigDecimal minimum = amount.subtract(before.amountDue().subtract(uncoveredDeposit).max(BigDecimal.ZERO))
+                .max(BigDecimal.ZERO).min(uncoveredDeposit);
+        if (requested != null && (requested.signum() < 0 || requested.scale() > 2 || requested.compareTo(amount.min(due)) > 0)) {
+            throw new RentalPaymentException(HttpStatus.BAD_REQUEST, "Część na kaucję nie może przekraczać kwoty przelewu ani zaległej kaucji.");
+        }
+        // The current UI books a total amount only. Retain an existing assignment on
+        // corrections, bounded by the corrected transfer and the outstanding component.
+        BigDecimal deposit = requested == null ? previousDeposit.min(amount).min(due).max(minimum) : requested;
+        if (full) {
+            deposit = uncoveredDeposit;
+        } else if (amount.compareTo(before.amountDue()) >= 0) {
+            deposit = deposit.max(uncoveredDeposit).min(amount).min(due);
+        }
+        if (deposit.signum() < 0 || deposit.scale() > 2 || deposit.compareTo(amount.min(due)) > 0 || deposit.compareTo(minimum) < 0) {
+            throw new RentalPaymentException(HttpStatus.BAD_REQUEST,
+                    "Część na kaucję musi mieścić się w przelewie i zaległej kaucji oraz pokrywać nadwyżkę ponad pozostałe należności.");
+        }
+        return deposit;
     }
 
     private Tenant requireTenancy(Long tenantId, Long rentedObjectId, boolean lock) {

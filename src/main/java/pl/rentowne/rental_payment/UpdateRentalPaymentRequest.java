@@ -13,5 +13,6 @@ record UpdateRentalPaymentRequest(
         @NotNull @DecimalMin("0.01") @Digits(integer = 12, fraction = 2) BigDecimal amount,
         @NotNull LocalDate paymentDate,
         @Size(max = 500) String description,
-        @NotNull @PositiveOrZero Long version
+        @NotNull @PositiveOrZero Long version,
+        @DecimalMin("0") @Digits(integer = 12, fraction = 2) BigDecimal depositAmount
 ) {}

@@ -4,6 +4,8 @@ import lombok.Builder;
 import pl.rentowne.rental_payment.RentalBalanceDto;
 
 import java.math.BigDecimal;
+import java.util.List;
+import pl.rentowne.settlement.SettlementChargeDto;
 
 @Builder(toBuilder = true)
 record RentedObjectDetailsDto(
@@ -22,6 +24,10 @@ record RentedObjectDetailsDto(
         BigDecimal waterAmount, // kwota za wodę
         BigDecimal profit, // zysk
         boolean hasCurrentMonthSettlement, // czy ma rozliczenie z bieżącego miesiąca
-        RentalBalanceDto paymentSummary
+        RentalBalanceDto paymentSummary,
+        BigDecimal depositTopUp,
+        BigDecimal additionalCharge,
+        String additionalChargeDescription,
+        List<SettlementChargeDto> additionalCharges
 ) {
 }

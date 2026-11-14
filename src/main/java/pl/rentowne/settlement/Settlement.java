@@ -14,6 +14,9 @@ import jakarta.persistence.ManyToOne;
 import jakarta.persistence.SequenceGenerator;
 import jakarta.persistence.Table;
 import jakarta.persistence.UniqueConstraint;
+import jakarta.persistence.OneToMany;
+import jakarta.persistence.OrderBy;
+import jakarta.persistence.CascadeType;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
@@ -25,6 +28,8 @@ import pl.rentowne.tenant.Tenant;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
+import java.util.List;
+import java.util.ArrayList;
 
 @Getter
 @Setter
@@ -44,6 +49,37 @@ import java.time.LocalDateTime;
         }
 )
 public class Settlement extends BaseEntity {
+
+    @Builder.Default
+    @OneToMany(mappedBy = "settlement", cascade = CascadeType.ALL, orphanRemoval = true)
+    @OrderBy("position ASC, id ASC")
+    private List<SettlementCharge> charges = new ArrayList<>();
+
+    public void addCharge(SettlementChargeDto dto) {
+        charges.add(new SettlementCharge(this, charges.size(), dto));
+    }
+
+    public List<SettlementChargeDto> getAdditionalCharges() {
+        return charges.stream().map(SettlementCharge::toDto).toList();
+    }
+
+    @Builder.Default
+    @Column(name = "DEPOSIT_TOP_UP", nullable = false)
+    private BigDecimal depositTopUp = BigDecimal.ZERO;
+
+    @Builder.Default
+    @Column(name = "DEPOSIT_CARRY_IN", nullable = false)
+    private BigDecimal depositCarryIn = BigDecimal.ZERO;
+
+    @Column(name = "DEPOSIT_ASSESSMENT", nullable = false)
+    private boolean depositAssessment;
+
+    @Builder.Default
+    @Column(name = "ADDITIONAL_CHARGE", nullable = false)
+    private BigDecimal additionalCharge = BigDecimal.ZERO;
+
+    @Column(name = "ADDITIONAL_CHARGE_DESCRIPTION", length = 500)
+    private String additionalChargeDescription;
     @Id
     @SequenceGenerator(name = "settlement_seq", sequenceName = "SETTLEMENT_SEQ", allocationSize = 1)
     @GeneratedValue(strategy = GenerationType.SEQUENCE, generator = "settlement_seq")

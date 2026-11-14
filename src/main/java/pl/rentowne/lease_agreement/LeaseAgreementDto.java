@@ -26,7 +26,9 @@ public record LeaseAgreementDto(
         boolean contractActive, //czy aktywna umowa
         String chargeDescription, //opis obciążenia przy zakończeniu umowy
         BigDecimal chargeAmount, //kwota obciążenia przy zakończeniu umowy
-        BigDecimal gasChargeAmount //kwota obciążenia za gaz przy zakończeniu umowy
+        BigDecimal gasChargeAmount, //kwota obciążenia za gaz przy zakończeniu umowy
+        boolean depositBalanceConfirmed,
+        boolean depositAssessed
 ) {
 
     public LeaseAgreementDto(BigDecimal rentAmount, BigDecimal compensationAmount, BigDecimal internetFee, BigDecimal gasDeposit) {
@@ -50,7 +52,9 @@ public record LeaseAgreementDto(
                 false,
                 null,
                 null,
-                null
+                null,
+                false,
+                false
         );
     }
 
@@ -61,6 +65,7 @@ public record LeaseAgreementDto(
                 .endContractDate(dto.endContractDate())
                 .deposit(dto.deposit())
                 .depositPaid(dto.depositPaid())
+                .depositBalanceConfirmed(dto.depositBalanceConfirmed())
                 .paymentDueDayOfMonth(dto.paymentDueDayOfMonth())
                 .rentAmount(dto.rentAmount())
                 .compensationAmount(dto.compensationAmount())
@@ -86,6 +91,8 @@ public record LeaseAgreementDto(
                 .endContractDate(entity.getEndContractDate())
                 .deposit(entity.getDeposit())
                 .depositPaid(entity.getDepositPaid())
+                .depositBalanceConfirmed(entity.isDepositBalanceConfirmed())
+                .depositAssessed(entity.isDepositAssessed())
                 .paymentDueDayOfMonth(entity.getPaymentDueDayOfMonth())
                 .rentAmount(entity.getRentAmount())
                 .compensationAmount(entity.getCompensationAmount())

@@ -36,7 +36,10 @@ class SettlementExcelExporter {
             "Prąd z licznika",
             "Kwota za wodę",
             "Kwota całkowita",
-            "Opis proporcjonalności"
+            "Opis proporcjonalności",
+            "Dopłata kaucji",
+            "Dodatkowe naliczenie",
+            "Opis naliczenia"
     );
 
     byte[] export(List<SettlementExportRowDto> settlements) {
@@ -56,6 +59,22 @@ class SettlementExcelExporter {
             for (int i = 0; i < HEADERS.size(); i++) {
                 sheet.autoSizeColumn(i);
             }
+
+            Sheet positions = workbook.createSheet("Pozycje naliczeń");
+            Row header = positions.createRow(0);
+            List<String> positionHeaders = List.of("Id rozliczenia", "Rodzaj", "Kwota", "Opis");
+            for (int i = 0; i < positionHeaders.size(); i++) header.createCell(i).setCellValue(positionHeaders.get(i));
+            int positionIndex = 1;
+            for (SettlementExportRowDto settlement : settlements) {
+                for (SettlementChargeDto charge : settlement.additionalCharges()) {
+                    Row row = positions.createRow(positionIndex++);
+                    setCellValue(row, 0, settlement.settlementId());
+                    setCellValue(row, 1, charge.type() == SettlementChargeDto.Type.DEPOSIT ? "Kaucja" : "Dodatkowe naliczenie");
+                    setCellValue(row, 2, charge.amount(), amountCellStyle);
+                    setCellValue(row, 3, charge.description());
+                }
+            }
+            for (int i = 0; i < positionHeaders.size(); i++) positions.autoSizeColumn(i);
 
             workbook.write(output);
             return output.toByteArray();
@@ -95,6 +114,9 @@ class SettlementExcelExporter {
         setCellValue(row, 14, settlement.waterAmount(), amountCellStyle);
         setCellValue(row, 15, settlement.totalAmount(), amountCellStyle);
         setCellValue(row, 16, settlement.prorationDescription());
+        setCellValue(row, 17, settlement.depositTopUp(), amountCellStyle);
+        setCellValue(row, 18, settlement.additionalCharge(), amountCellStyle);
+        setCellValue(row, 19, settlement.additionalChargeDescription());
     }
 
     private void setCellValue(Row row, int column, Long value) {

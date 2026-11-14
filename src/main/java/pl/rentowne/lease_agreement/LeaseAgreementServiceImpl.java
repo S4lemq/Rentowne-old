@@ -4,6 +4,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.http.HttpStatus;
 import pl.rentowne.apartment.Apartment;
 import pl.rentowne.housing_provider.ProviderType;
 import pl.rentowne.invoice.InvoiceRepository;
@@ -15,6 +16,10 @@ import pl.rentowne.settlement.SettlementRepository;
 import pl.rentowne.settlement.SettlementService;
 import pl.rentowne.settlement.SettlementStatus;
 import pl.rentowne.settlement.UtilityCostsDto;
+import pl.rentowne.rental_payment.RentalPaymentException;
+import pl.rentowne.tenant.Tenant;
+import pl.rentowne.tenant.TenantRepository;
+import pl.rentowne.user.UserService;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
@@ -31,12 +36,13 @@ class LeaseAgreementServiceImpl implements LeaseAgreementService {
     private final SettlementRepository settlementRepository;
     private final MeterReadingRepository meterReadingRepository;
     private final InvoiceRepository invoiceRepository;
+    private final TenantRepository tenantRepository;
+    private final UserService userService;
 
     @Override
     @Transactional(readOnly = true)
     public LeaseTerminationInfoDto getLeaseTerminationInfo(Long leaseAgreementId) {
-        LeaseAgreement leaseAgreement = leaseAgreementRepository.findById(leaseAgreementId)
-                .orElseThrow(() -> new IllegalArgumentException("Nie znaleziono umowy o id: " + leaseAgreementId));
+        LeaseAgreement leaseAgreement = requireOwnedLease(leaseAgreementId);
 
         Long rentedObjectId = leaseAgreement.getTenant().getRentedObject().getId();
         Long tenantId = leaseAgreement.getTenant().getId();
@@ -83,11 +89,11 @@ class LeaseAgreementServiceImpl implements LeaseAgreementService {
     @Override
     @Transactional
     public void terminateLease(Long leaseAgreementId, TerminateLeaseRequestDto request) {
-        LeaseAgreement leaseAgreement = leaseAgreementRepository.findById(leaseAgreementId)
-                .orElseThrow(() -> new IllegalArgumentException("Nie znaleziono umowy o id: " + leaseAgreementId));
+        LeaseAgreement leaseAgreement = lockOwnedLease(leaseAgreementId);
+        BigDecimal depositPaid = requireKnownDeposit(leaseAgreement);
 
         if (!leaseAgreement.isContractActive()) {
-            throw new IllegalStateException("Umowa o id: " + leaseAgreementId + " jest już zakończona");
+            throw new RentalPaymentException(HttpStatus.CONFLICT, "Umowa jest już zakończona.");
         }
 
         Long rentedObjectId = leaseAgreement.getTenant().getRentedObject().getId();
@@ -124,7 +130,7 @@ class LeaseAgreementServiceImpl implements LeaseAgreementService {
         BigDecimal gasChargeAmount = request.gasChargeAmount() != null ? request.gasChargeAmount() : BigDecimal.ZERO;
 
         // Oblicz zwróconą kaucję
-        BigDecimal returnedDeposit = leaseAgreement.getDepositPaid()
+        BigDecimal returnedDeposit = depositPaid
                 .subtract(waterAmount)
                 .subtract(electricityAmount)
                 .subtract(chargeAmount)
@@ -186,8 +192,7 @@ class LeaseAgreementServiceImpl implements LeaseAgreementService {
     @Transactional(readOnly = true)
     public GasCheckResponseDto checkGasBalance(Long leaseAgreementId, GasCheckRequestDto request) {
         // Pobierz umowę najmu
-        LeaseAgreement leaseAgreement = leaseAgreementRepository.findById(leaseAgreementId)
-                .orElseThrow(() -> new IllegalArgumentException("Nie znaleziono umowy o id: " + leaseAgreementId));
+        LeaseAgreement leaseAgreement = requireOwnedLease(leaseAgreementId);
 
         // Pobierz mieszkanie z umowy
         Long apartmentId = leaseAgreement.getTenant().getRentedObject().getApartment().getId();
@@ -236,8 +241,8 @@ class LeaseAgreementServiceImpl implements LeaseAgreementService {
     @Transactional(readOnly = true)
     public String previewDepositReturn(Long leaseAgreementId, TerminateLeaseRequestDto request) {
         // Pobierz umowę najmu
-        LeaseAgreement leaseAgreement = leaseAgreementRepository.findById(leaseAgreementId)
-                .orElseThrow(() -> new IllegalArgumentException("Nie znaleziono umowy o id: " + leaseAgreementId));
+        LeaseAgreement leaseAgreement = requireOwnedLease(leaseAgreementId);
+        BigDecimal depositPaid = requireKnownDeposit(leaseAgreement);
 
         Long rentedObjectId = leaseAgreement.getTenant().getRentedObject().getId();
         Long tenantId = leaseAgreement.getTenant().getId();
@@ -265,7 +270,7 @@ class LeaseAgreementServiceImpl implements LeaseAgreementService {
         BigDecimal gasChargeAmount = request.gasChargeAmount() != null ? request.gasChargeAmount() : BigDecimal.ZERO;
 
         // Oblicz kwotę zwrotu kaucji
-        BigDecimal depositReturnAmount = leaseAgreement.getDepositPaid()
+        BigDecimal depositReturnAmount = depositPaid
                 .subtract(waterAmount)
                 .subtract(electricityAmount)
                 .subtract(chargeAmount)
@@ -288,9 +293,32 @@ class LeaseAgreementServiceImpl implements LeaseAgreementService {
         return message;
     }
 
-    /**
-     * Formatuje kwotę do wyświetlenia (usuwa niepotrzebne zera po przecinku)
-     */
+    private LeaseAgreement requireOwnedLease(Long leaseId) {
+        return leaseAgreementRepository.findByIdAndTenantRentedObjectApartmentUserId(leaseId, userService.getLoggedUser().id())
+                .orElseThrow(() -> new RentalPaymentException(HttpStatus.NOT_FOUND, "Nie znaleziono umowy."));
+    }
+
+    private LeaseAgreement lockOwnedLease(Long leaseId) {
+        Long userId = userService.getLoggedUser().id();
+        Long tenantId = tenantRepository.findOwnedTenantIdByLeaseAgreementId(leaseId, userId)
+                .orElseThrow(() -> new RentalPaymentException(HttpStatus.NOT_FOUND, "Nie znaleziono umowy."));
+        Tenant tenant = tenantRepository.lockById(tenantId).orElseThrow();
+        if (!leaseId.equals(tenant.getLeaseAgreement().getId()) || tenant.getRentedObject() == null
+                || !userId.equals(tenant.getRentedObject().getApartment().getUser().getId())) {
+            throw new RentalPaymentException(HttpStatus.NOT_FOUND, "Nie znaleziono umowy.");
+        }
+        return tenant.getLeaseAgreement();
+    }
+
+    private BigDecimal requireKnownDeposit(LeaseAgreement lease) {
+        if (lease.getDepositPaid() == null) {
+            throw new RentalPaymentException(HttpStatus.BAD_REQUEST,
+                    "Przed zwrotem kaucji potwierdź w umowie kwotę faktycznie otrzymanej kaucji (również 0 zł).");
+        }
+        return lease.getDepositPaid();
+    }
+
+    /** Formatuje kwotę do wyświetlenia (usuwa niepotrzebne zera po przecinku). */
     private String formatAmount(BigDecimal amount) {
         if (amount == null) {
             return "0";

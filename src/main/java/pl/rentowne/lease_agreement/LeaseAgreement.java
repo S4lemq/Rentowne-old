@@ -10,6 +10,7 @@ import jakarta.persistence.Index;
 import jakarta.persistence.OneToOne;
 import jakarta.persistence.SequenceGenerator;
 import jakarta.persistence.Table;
+import jakarta.persistence.Transient;
 import jakarta.persistence.UniqueConstraint;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -55,8 +56,17 @@ public class LeaseAgreement extends BaseEntity {
     @Column(name = "DEPOSIT", nullable = false)
     private BigDecimal deposit; //kaucja
 
-    @Column(name = "DEPOSIT_PAID", nullable = false)
+    @Column(name = "DEPOSIT_PAID")
     private BigDecimal depositPaid; //wpłacona kaucja
+
+    @Column(name = "DEPOSIT_OPENING_PAID")
+    private BigDecimal depositOpeningPaid;
+
+    @Column(name = "DEPOSIT_BALANCE_CONFIRMED", nullable = false)
+    private boolean depositBalanceConfirmed;
+
+    @Transient
+    private boolean depositAssessed;
 
     @Column(name = "PAYMENT_DUE_DAY_OF_MONTH", nullable = false)
     private int paymentDueDayOfMonth; //termin płatności

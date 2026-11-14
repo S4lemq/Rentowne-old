@@ -4,7 +4,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
-import org.springframework.data.domain.Sort;
+import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import pl.rentowne.apartment.ApartmentService;
@@ -20,10 +20,13 @@ import pl.rentowne.meter_reading.MeterReadingDto;
 import pl.rentowne.meter_reading.MeterReadingRepository;
 import pl.rentowne.provider_field.BillingMethod;
 import pl.rentowne.provider_field.ProviderField;
+import pl.rentowne.rental_payment.DepositAccountingService;
+import pl.rentowne.rental_payment.RentalPaymentException;
 import pl.rentowne.rented_object.RentedObject;
 import pl.rentowne.rented_object.RentedObjectRepository;
 import pl.rentowne.tenant.Tenant;
 import pl.rentowne.tenant.TenantRepository;
+import pl.rentowne.user.UserService;
 
 import java.math.BigDecimal;
 import java.math.RoundingMode;
@@ -51,13 +54,26 @@ public class SettlementServiceImpl implements SettlementService {
     private final ApartmentService apartmentService;
     private final SettlementMapper settlementMapper;
     private final TenantRepository tenantRepository;
+    private final DepositAccountingService deposits;
+    private final SettlementOperations operations;
+    private final UserService userService;
 
     @Transactional
     @Override
     public void calculate(Long rentedObjectId, CalculateRequestDto dto) {
+        requireOwnedObject(rentedObjectId);
         // Serialize financial changes for this tenancy, including server-calculated full receipts.
-        Tenant currentTenant = tenantRepository.getTenantByRentedObjectId(rentedObjectId);
-        if (currentTenant != null) tenantRepository.lockById(currentTenant.getId());
+        Long currentTenantId = tenantRepository.getActiveTenantIdByRentedObjectId(rentedObjectId);
+        if (currentTenantId == null || dto.tenantId() != null && !dto.tenantId().equals(currentTenantId)) {
+            throw new RentalPaymentException(HttpStatus.CONFLICT,
+                    "Najemca obiektu zmienił się. Odśwież dane przed rozliczeniem.");
+        }
+        Tenant currentTenant = tenantRepository.lockById(currentTenantId).orElseThrow();
+        if (!currentTenant.isActive() || currentTenant.getRentedObject() == null || !rentedObjectId.equals(currentTenant.getRentedObject().getId())) {
+            throw new RentalPaymentException(HttpStatus.CONFLICT,
+                    "Najemca obiektu zmienił się. Odśwież dane przed rozliczeniem.");
+        }
+        if (operations.alreadySaved(currentTenant.getId(), rentedObjectId, dto)) return;
         // Check if this is a partial month settlement
         if (Boolean.TRUE.equals(dto.isPartialMonth())) {
             calculatePartialMonth(rentedObjectId, dto);
@@ -127,7 +143,9 @@ public class SettlementServiceImpl implements SettlementService {
                     .settlementStatus(SettlementStatus.TO_PAY)
                     .build();
 
+            deposits.applyCharges(settlement, dto);
             Long settlementId = settlementRepository.saveAndFlush(settlement).getId();
+            operations.remember(settlement, dto);
 
             if (!allMeterReadingIds.isEmpty()) {
                 meterReadingRepository.updateSettled(allMeterReadingIds, settlementId);
@@ -154,7 +172,7 @@ public class SettlementServiceImpl implements SettlementService {
                 }
             }
 
-            rentedObjectRepository.updateSettlement(rentedObjectId, totalSum, dto.settlementDate());
+            rentedObjectRepository.updateSettlement(rentedObjectId, settlement.getTotalAmount(), dto.settlementDate());
 
         } catch (Exception e) {
             log.error("Błąd podczas rozliczenia obiektu {}", rentedObjectId, e);
@@ -167,6 +185,7 @@ public class SettlementServiceImpl implements SettlementService {
     @Transactional
     public void deleteCalculate(final Long settlementId) {
         Settlement existing = settlementRepository.findByIdMandatory(settlementId);
+        requireOwnedObject(existing.getRentedObject().getId());
         if (existing.getTenant() != null) tenantRepository.lockById(existing.getTenant().getId());
 
         // 1) Ustal mieszkanie i datę rozliczenia (identyfikator „cyklu”)
@@ -201,14 +220,15 @@ public class SettlementServiceImpl implements SettlementService {
 
         // 6) Usuń samo rozliczenie
         settlementRepository.deleteById(settlementId);
+        settlementRepository.flush();
+        if (existing.getTenant() != null) deposits.reconcileDeposit(existing.getTenant());
     }
 
 
     /**
      * Rozliczenie niepełnego miesiąca z proporcjonalnym przeliczeniem wybranych składników
      */
-    @Transactional
-    public void calculatePartialMonth(Long rentedObjectId, CalculateRequestDto dto) {
+    private void calculatePartialMonth(Long rentedObjectId, CalculateRequestDto dto) {
         ElectricityCalcResult elecCtx = null;
         try {
             log.info("Rozpoczynam rozliczenie niepełnego miesiąca dla obiektu: {}", rentedObjectId);
@@ -319,7 +339,9 @@ public class SettlementServiceImpl implements SettlementService {
                     .prorationDescription(prorationDescription)
                     .build();
 
+            deposits.applyCharges(settlement, dto);
             Long settlementId = settlementRepository.saveAndFlush(settlement).getId();
+            operations.remember(settlement, dto);
 
             if (!allMeterReadingIds.isEmpty()) {
                 meterReadingRepository.updateSettled(allMeterReadingIds, settlementId);
@@ -346,7 +368,7 @@ public class SettlementServiceImpl implements SettlementService {
                 }
             }
 
-            rentedObjectRepository.updateSettlement(rentedObjectId, totalSum, dto.settlementDate());
+            rentedObjectRepository.updateSettlement(rentedObjectId, settlement.getTotalAmount(), dto.settlementDate());
 
         } catch (Exception e) {
             log.error("Błąd podczas rozliczenia niepełnego miesiąca obiektu {}", rentedObjectId, e);
@@ -748,6 +770,7 @@ public class SettlementServiceImpl implements SettlementService {
     @Override
     @Transactional(readOnly = true)
     public Page<SettlementListDto> getSettlements(Pageable pageable, Long rentedObjectId, Long tenantId) {
+        requireOwnedObject(rentedObjectId);
         Page<Settlement> settlementsPage = settlementRepository.findAllByRentedObjectIdAndTenantId(pageable, rentedObjectId, tenantId);
         return settlementsPage.map(settlementMapper::toListDto);
     }
@@ -755,7 +778,7 @@ public class SettlementServiceImpl implements SettlementService {
     @Override
     @Transactional(readOnly = true)
     public List<SettlementListDto> getAllSettlements() {
-        return settlementRepository.findAll(Sort.by(Sort.Direction.DESC, "settlementDate"))
+        return settlementRepository.findAllByRentedObjectApartmentUserIdOrderBySettlementDateDescIdDesc(userService.getLoggedUser().id())
                 .stream()
                 .map(settlementMapper::toListDto)
                 .toList();
@@ -764,7 +787,7 @@ public class SettlementServiceImpl implements SettlementService {
     @Override
     @Transactional(readOnly = true)
     public List<SettlementExportRowDto> getAllSettlementsForExport() {
-        return settlementRepository.findAll(Sort.by(Sort.Direction.DESC, "settlementDate"))
+        return settlementRepository.findAllByRentedObjectApartmentUserIdOrderBySettlementDateDescIdDesc(userService.getLoggedUser().id())
                 .stream()
                 .map(settlementMapper::toExportRowDto)
                 .toList();
@@ -773,6 +796,15 @@ public class SettlementServiceImpl implements SettlementService {
     @Override
     @Transactional(readOnly = true)
     public boolean existsSettlementsByTenantId(Long tenantId) {
+        if (tenantRepository.findOwnedTenantIds(List.of(tenantId), userService.getLoggedUser().id()).isEmpty()) {
+            throw new RentalPaymentException(HttpStatus.NOT_FOUND, "Nie znaleziono najmu.");
+        }
         return settlementRepository.existsByTenantId(tenantId);
+    }
+
+    private void requireOwnedObject(Long rentedObjectId) {
+        if (!rentedObjectRepository.existsByIdAndApartmentUserId(rentedObjectId, userService.getLoggedUser().id())) {
+            throw new RentalPaymentException(HttpStatus.NOT_FOUND, "Nie znaleziono obiektu.");
+        }
     }
 }

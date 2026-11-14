@@ -5,6 +5,7 @@ import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
+import jakarta.validation.Valid;
 import org.springframework.core.io.ByteArrayResource;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -64,12 +65,11 @@ class SettlementController {
     }
 
     @Operation(
-            summary = "Eksportuje wszystkie rozliczenia do pliku Excel",
-            description = "Eksport zwraca wszystkie rozliczenia bez filtrowania."
+            summary = "Eksportuje rozliczenia właściciela do pliku Excel",
+            description = "Eksport zwraca rozliczenia zalogowanego właściciela."
     )
     @GetMapping(value = "/api/settlements/export/excel", produces = "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")
     public ResponseEntity<ByteArrayResource> exportSettlementsToExcel() {
-        //TODO dodac filtrowanie po najemcach danego uzytkownika bo teraz pobiera wszystkich
         byte[] content = settlementExcelExporter.export(settlementService.getAllSettlementsForExport());
 
         HttpHeaders headers = new HttpHeaders();
@@ -90,7 +90,7 @@ class SettlementController {
             description = "Wywołuje usługę rozliczeń dla wskazanego obiektu na podstawie danych przesłanych w CalculateRequestDto"
     )
     @PostMapping(value = "/api/rented-objects/{id}/calculate")
-    ResponseEntity<Void> calculate(@PathVariable final Long id, @RequestBody final CalculateRequestDto dto) {
+    ResponseEntity<Void> calculate(@PathVariable final Long id, @Valid @RequestBody final CalculateRequestDto dto) {
         settlementService.calculate(id, dto);
         return new ResponseEntity<>(HttpStatus.OK);
     }

@@ -14,6 +14,8 @@ import java.util.List;
 
 public interface RentedObjectRepository extends JpaRepository<RentedObject, Long> {
 
+    boolean existsByIdAndApartmentUserId(Long id, Long userId);
+
     @EntityGraph(attributePaths = "meters")
     List<RentedObject> findByApartmentId(Long apartmentId);
 

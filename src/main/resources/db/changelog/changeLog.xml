@@ -70,4 +70,6 @@
     <include file="db/changelog/ddl-scripts/066-drop_cif_from_tenant.xml"/>
 
     <include file="db/changelog/ddl-scripts/067-rental-payments.sql"/>
+    <include file="db/changelog/ddl-scripts/068-deposit-and-extra-charges.sql"/>
+    <include file="db/changelog/ddl-scripts/069-manual-settlement-charges.sql"/>
 </databaseChangeLog>

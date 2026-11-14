@@ -3,9 +3,7 @@ package pl.rentowne.rental_payment;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
-import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.DeleteMapping;
-import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -47,10 +45,4 @@ class RentalPaymentController {
         service.delete(tenantId, rentedObjectId, id, version);
     }
 
-    @ExceptionHandler(RentalPaymentException.class)
-    ResponseEntity<PaymentError> handle(RentalPaymentException exception) {
-        return ResponseEntity.status(exception.getStatus()).body(new PaymentError(exception.getMessage()));
-    }
-
-    record PaymentError(String message) {}
 }

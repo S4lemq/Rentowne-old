@@ -5,11 +5,14 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
+import java.util.Optional;
 
 /**
  * Repozytorium umów najmu
  */
 public interface LeaseAgreementRepository extends JpaRepository<LeaseAgreement, Long> {
+
+    Optional<LeaseAgreement> findByIdAndTenantRentedObjectApartmentUserId(Long id, Long userId);
 
     /**
      * Pobiera dane umowy do rozliczeń

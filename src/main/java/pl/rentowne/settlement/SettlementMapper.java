@@ -62,7 +62,11 @@ class SettlementMapper {
                 settlement.getGasAmount(),
                 settlement.getTotalAmount(),
                 rentAndUtilities,
-                settlement.getProrationDescription()
+                settlement.getProrationDescription(),
+                settlement.getDepositTopUp(),
+                settlement.getAdditionalCharge(),
+                settlement.getAdditionalChargeDescription(),
+                settlement.getAdditionalCharges()
         );
     }
 
@@ -108,7 +112,11 @@ class SettlementMapper {
                 settlement.getDistributedElectricityAmount(),
                 settlement.getWaterAmount(),
                 settlement.getTotalAmount(),
-                settlement.getProrationDescription()
+                settlement.getProrationDescription(),
+                settlement.getDepositTopUp(),
+                settlement.getAdditionalCharge(),
+                settlement.getAdditionalChargeDescription(),
+                settlement.getAdditionalCharges()
         );
     }
 

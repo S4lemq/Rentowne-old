@@ -4,6 +4,8 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.CsvSource;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -59,6 +61,7 @@ class RentalPaymentIntegrationTest {
     @MockitoBean AuditorAware<String> auditor;
     private long tenantId;
     private long objectId;
+    private long leaseId;
     private String url;
 
     @BeforeEach
@@ -68,7 +71,7 @@ class RentalPaymentIntegrationTest {
         long addressId = next("ADDRESS_SEQ");
         long apartmentId = next("APARTMENT_SEQ");
         objectId = next("RENTED_OBJECT_SEQ");
-        long leaseId = next("LEASE_AGREEMENT_SEQ");
+        leaseId = next("LEASE_AGREEMENT_SEQ");
         tenantId = next("TENANT_SEQ");
         jdbc.update("INSERT INTO address(address_id,street_name,building_number,zip_code,city_name,voivode_ship,insert_date,insert_operator) VALUES (?, 'Testowa','1','00-001','Warszawa','Mazowieckie',now(),'test')", addressId);
         jdbc.update("INSERT INTO user_account(user_account_id,first_name,last_name,email,password,role,mfa_enabled,preferred_language,insert_date,insert_operator) VALUES (?, 'Test','Owner',?,'test','ADMIN',false,'POLISH',now(),'test')", userId, "owner" + userId + "@test.local");
@@ -207,6 +210,562 @@ class RentalPaymentIntegrationTest {
         assertBalance("200", "2700", "OVERPAID");
         mvc.perform(get("/api/rented-objects/details").param("active", "true")).andExpect(status().isOk())
                 .andExpect(jsonPath("$[?(@.tenantId == " + tenantId + ")].paymentSummary.balance").value(200.0));
+    }
+
+    @ParameterizedTest
+    @CsvSource({"2509.79,0,500,500,2000", "300,100,2709.79,400,2100", "500,500,2509.79,0,2500", "3009.79,500,0,0,2500"})
+    void shouldMeetDepositAcceptanceExamples(String amount, String deposit, String due, String depositDue, String paid) throws Exception {
+        depositLease("2000", true);
+        JsonNode before = history();
+        assertThat(before.at("/summary/depositReminder").decimalValue()).isEqualByComparingTo("500");
+        assertThat(before.at("/summary/amountDue").decimalValue()).isZero();
+        long settlementId = calculateWithDepositAndExtra(UUID.randomUUID(), false, "75");
+        assertDepositState("3009.79", "500", "2000");
+        assertThat(history().get("payments")).isEmpty();
+        JsonNode payment = createSplit(amount, deposit);
+        assertThat(payment.get("depositAmount").decimalValue()).isEqualByComparingTo(deposit);
+        assertDepositState(due, depositDue, paid);
+        assertThat(jdbc.queryForObject("SELECT total_amount FROM settlement WHERE settlement_id=?", BigDecimal.class, settlementId)).isEqualByComparingTo("3009.79");
+        JsonNode card = json.readTree(mvc.perform(get("/api/rented-objects/details").param("active", "true"))
+                .andExpect(status().isOk()).andReturn().getResponse().getContentAsString()).get(0);
+        assertThat(card.get("totalAmount").decimalValue()).isEqualByComparingTo("3009.79");
+        assertThat(card.get("sum").decimalValue()).isEqualByComparingTo("434.79");
+        assertThat(card.get("profit").decimalValue()).isEqualByComparingTo("1830");
+        assertThat(card.at("/paymentSummary/depositDue").decimalValue()).isEqualByComparingTo(depositDue);
+        assertThat(card.at("/paymentSummary/depositRequired").decimalValue()).isEqualByComparingTo("2500");
+        assertThat(card.at("/paymentSummary/depositPaid").decimalValue()).isEqualByComparingTo(paid);
+        mvc.perform(get("/api/settlements").param("rentedObjectId", "" + objectId).param("tenantId", "" + tenantId))
+                .andExpect(jsonPath("$.content[0].depositTopUp").value(500))
+                .andExpect(jsonPath("$.content[0].additionalCharge").value(75))
+                .andExpect(jsonPath("$.content[0].additionalChargeDescription").value("Dorobienie klucza"));
+    }
+
+    @Test
+    void shouldBookTheRemainingTotalAndCarryPaidDepositAcrossMonths() throws Exception {
+        depositLease("2000", true);
+        calculateWithDepositAndExtra(UUID.randomUUID(), false, "75");
+        create("2509.79");
+        mvc.perform(post(url).contentType(MediaType.APPLICATION_JSON).content(fullRequest(UUID.randomUUID())))
+                .andExpect(status().isCreated()).andExpect(jsonPath("$.amount").value(500))
+                .andExpect(jsonPath("$.depositAmount").value(500));
+        assertDepositState("0", "0", "2500");
+        calculateWithDepositAndExtra(UUID.randomUUID(), false, "0", "0");
+        assertDepositState("2434.79", "0", "2500");
+    }
+
+    @ParameterizedTest
+    @CsvSource({"300,0,2709.79,500,2000", "2509.79,0,500,500,2000", "2709.79,200,300,300,2200",
+            "3009.79,500,0,0,2500", "3100,500,0,0,2500"})
+    void shouldBookOneAmountAndAccountForItsComponentsWithoutAnExplicitSplit(
+            String amount, String deposit, String due, String depositDue, String paid) throws Exception {
+        depositLease("2000", true);
+        calculateWithDepositAndExtra(UUID.randomUUID(), false, "75");
+
+        JsonNode receipt = create(amount);
+
+        assertThat(receipt.get("amount").decimalValue()).isEqualByComparingTo(amount);
+        assertThat(receipt.get("depositAmount").decimalValue()).isEqualByComparingTo(deposit);
+        assertDepositState(due, depositDue, paid);
+        JsonNode state = history();
+        assertThat(state.get("payments")).hasSize(1);
+        assertThat(state.at("/summary/totalPayments").decimalValue()).isEqualByComparingTo(amount);
+        assertThat(state.at("/summary/overpayment").decimalValue())
+                .isEqualByComparingTo(new BigDecimal(amount).subtract(new BigDecimal("3009.79")).max(BigDecimal.ZERO));
+    }
+
+    @Test
+    void shouldKeepHistoricalAllocationWhenCorrectingOnlyTheTotalAmountOrDescription() throws Exception {
+        depositLease("2000", true);
+        calculateWithDepositAndExtra(UUID.randomUUID(), false, "75");
+        JsonNode receipt = createSplit("300", "100");
+        String paymentUrl = url + "/" + receipt.get("id").asLong();
+
+        mvc.perform(put(paymentUrl).contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"amount\":300,\"paymentDate\":\"2026-05-13\",\"description\":\"Poprawiony opis\",\"version\":0}"))
+                .andExpect(status().isOk()).andExpect(jsonPath("$.depositAmount").value(100));
+        assertDepositState("2709.79", "400", "2100");
+
+        mvc.perform(put(paymentUrl).contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"amount\":50,\"paymentDate\":\"2026-05-13\",\"description\":\"Mniejsza wpłata\",\"version\":1}"))
+                .andExpect(status().isOk()).andExpect(jsonPath("$.depositAmount").value(50));
+        assertDepositState("2959.79", "450", "2050");
+
+        mvc.perform(delete(paymentUrl).param("version", "2")).andExpect(status().isNoContent());
+        assertDepositState("3009.79", "500", "2000");
+    }
+
+    @Test
+    void shouldKeepUnpaidDepositAcrossMonthsWithoutAssessingItAgain() throws Exception {
+        depositLease("2000", true);
+        calculateWithDepositAndExtra(UUID.randomUUID(), false, "75");
+        createSplit("2509.79", "0");
+        calculateWithDepositAndExtra(UUID.randomUUID(), false, "0", "0");
+        createSplit("2434.79", "0");
+        assertDepositState("500", "500", "2000");
+        assertThat(jdbc.queryForObject("SELECT SUM(deposit_top_up) FROM settlement WHERE tenant_id=?", BigDecimal.class, tenantId)).isEqualByComparingTo("500");
+    }
+
+    @Test
+    void shouldReverseSplitOnCorrectionAndDeletionAndDeduplicateRetries() throws Exception {
+        depositLease("2000", true);
+        calculateWithDepositAndExtra(UUID.randomUUID(), false, "75");
+        UUID key = UUID.randomUUID();
+        String body = splitRequest("300", "100", key);
+        JsonNode receipt = json.readTree(mvc.perform(post(url).contentType(MediaType.APPLICATION_JSON).content(body))
+                .andExpect(status().isCreated()).andReturn().getResponse().getContentAsString());
+        mvc.perform(post(url).contentType(MediaType.APPLICATION_JSON).content(body)).andExpect(status().isCreated());
+        assertDepositState("2709.79", "400", "2100");
+        mvc.perform(put(url + "/" + receipt.get("id").asLong()).contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"amount\":400,\"depositAmount\":200,\"paymentDate\":\"2026-05-12\",\"version\":0}"))
+                .andExpect(status().isOk());
+        assertDepositState("2609.79", "300", "2200");
+        mvc.perform(delete(url + "/" + receipt.get("id").asLong()).param("version", "1")).andExpect(status().isNoContent());
+        assertDepositState("3009.79", "500", "2000");
+        mvc.perform(post(url).contentType(MediaType.APPLICATION_JSON).content(body)).andExpect(status().isConflict());
+    }
+
+    @Test
+    void shouldReserveReceivedDepositWhenReversingAndReplacingASettlement() throws Exception {
+        depositLease("2000", true);
+        UUID key = UUID.randomUUID();
+        long original = calculateWithDepositAndExtra(key, false, "75");
+        JsonNode receipt = createSplit("300", "100");
+        mvc.perform(delete("/api/settlements/" + original)).andExpect(status().isOk());
+        assertBalance("200", "300", "OVERPAID");
+        assertThat(history().at("/summary/depositReminder").decimalValue()).isEqualByComparingTo("400");
+        mvc.perform(post("/api/rented-objects/" + objectId + "/calculate").contentType(MediaType.APPLICATION_JSON)
+                .content(calculationRequest(key, false, "75"))).andExpect(status().isConflict());
+        long replacement = calculateWithDepositAndExtra(UUID.randomUUID(), false, "400", "75");
+        assertThat(jdbc.queryForObject("SELECT deposit_top_up FROM settlement WHERE settlement_id=?", BigDecimal.class, replacement)).isEqualByComparingTo("400");
+        assertDepositState("2709.79", "400", "2100");
+        mvc.perform(delete(url + "/" + receipt.get("id").asLong()).param("version", "0")).andExpect(status().isNoContent());
+        assertDepositState("3009.79", "500", "2000");
+    }
+
+    @Test
+    void shouldAssignExistingOverpaymentToDepositAndReverseItWithItsReceipt() throws Exception {
+        depositLease("2000", true);
+        JsonNode receipt = create("3300");
+        calculateWithDepositAndExtra(UUID.randomUUID(), false, "75");
+        assertBalance("290.21", "3300", "OVERPAID");
+        assertDepositState("0", "0", "2500");
+        assertThat(history().at("/payments/0/depositAmount").decimalValue()).isEqualByComparingTo("500");
+        mvc.perform(delete(url + "/" + receipt.get("id").asLong()).param("version", "1")).andExpect(status().isNoContent());
+        assertDepositState("3009.79", "500", "2000");
+    }
+
+    @ParameterizedTest
+    @CsvSource({"0,true,2500", "2500,true,0", "2000,false,0"})
+    void shouldOnlyRemindForZeroFullAndUnconfirmedOpeningDeposit(String opening, boolean confirmed, String expected) throws Exception {
+        depositLease(opening, confirmed);
+        long id = calculateWithDepositAndExtra(UUID.randomUUID(), false, "0", "0");
+        assertThat(jdbc.queryForObject("SELECT deposit_top_up FROM settlement WHERE settlement_id=?", BigDecimal.class, id)).isZero();
+        if (confirmed) assertThat(history().at("/summary/depositReminder").decimalValue()).isEqualByComparingTo(expected);
+        else assertThat(history().at("/summary/depositReminder").isNull()).isTrue();
+        assertThat(jdbc.queryForObject("SELECT deposit_paid FROM lease_agreement WHERE lease_agreement_id=?", BigDecimal.class, leaseId)).isEqualByComparingTo(opening);
+    }
+
+    @Test
+    void shouldAddOneOffChargesInFullEvenForAPartialMonthAndKeepTaxBaseUnchanged() throws Exception {
+        depositLease("2000", true);
+        long id = calculateWithDepositAndExtra(UUID.randomUUID(), true, "75");
+        Map<String, Object> row = jdbc.queryForMap("SELECT * FROM settlement WHERE settlement_id=?", id);
+        assertThat((BigDecimal) row.get("deposit_top_up")).isEqualByComparingTo("500");
+        assertThat((BigDecimal) row.get("additional_charge")).isEqualByComparingTo("75");
+        BigDecimal compensation = (BigDecimal) row.get("compensation_amount");
+        BigDecimal total = (BigDecimal) row.get("total_amount");
+        mvc.perform(delete("/api/settlements/" + id)).andExpect(status().isOk());
+        long withoutExtra = calculateWithDepositAndExtra(UUID.randomUUID(), true, "0");
+        assertThat(jdbc.queryForObject("SELECT compensation_amount FROM settlement WHERE settlement_id=?", BigDecimal.class, withoutExtra)).isEqualByComparingTo(compensation);
+        assertThat(total.subtract(jdbc.queryForObject("SELECT total_amount FROM settlement WHERE settlement_id=?", BigDecimal.class, withoutExtra))).isEqualByComparingTo("75");
+    }
+
+    @Test
+    void shouldDeduplicateConcurrentSettlementRetriesAndValidateNewMoneyFields() throws Exception {
+        depositLease("2000", true);
+        UUID key = UUID.randomUUID();
+        String request = calculationRequest(key, false, "75");
+        try (var executor = Executors.newFixedThreadPool(2)) {
+            var first = executor.submit(() -> mvc.perform(post("/api/rented-objects/" + objectId + "/calculate").contentType(MediaType.APPLICATION_JSON).content(request)).andReturn());
+            var second = executor.submit(() -> mvc.perform(post("/api/rented-objects/" + objectId + "/calculate").contentType(MediaType.APPLICATION_JSON).content(request)).andReturn());
+            assertThat(first.get().getResponse().getStatus()).isEqualTo(200);
+            assertThat(second.get().getResponse().getStatus()).isEqualTo(200);
+        }
+        assertDepositState("3009.79", "500", "2000");
+        assertThat(jdbc.queryForObject("SELECT COUNT(*) FROM settlement WHERE tenant_id=?", Integer.class, tenantId)).isEqualTo(1);
+        for (String extra : new String[]{"-1", "1.001"}) {
+            mvc.perform(post("/api/rented-objects/" + objectId + "/calculate").contentType(MediaType.APPLICATION_JSON)
+                    .content(calculationRequest(UUID.randomUUID(), false, extra))).andExpect(status().isBadRequest());
+        }
+        for (String deposit : new String[]{"-1", "300.01", "501", "1.001"}) {
+            mvc.perform(post(url).contentType(MediaType.APPLICATION_JSON).content(splitRequest("300", deposit, UUID.randomUUID()))).andExpect(status().isBadRequest());
+        }
+        assertDepositState("3009.79", "500", "2000");
+    }
+
+    @Test
+    void shouldConfirmUnknownLegacyDepositAndApplyAnAdditionalReceiptBeforeAssessmentOnlyOnce() throws Exception {
+        depositLease("0", false);
+        jdbc.update("UPDATE lease_agreement SET deposit_paid=NULL, deposit_opening_paid=NULL WHERE lease_agreement_id=?", leaseId);
+        long historical = settle("2500");
+        jdbc.update("INSERT INTO settlement_opening_credit(settlement_id,amount) VALUES (?,2500)", historical);
+        assertThat(history().at("/summary/depositReminder").isNull()).isTrue();
+        assertThat(history().at("/summary/depositRequired").decimalValue()).isEqualByComparingTo("2500");
+        assertThat(history().at("/summary/depositPaid").isNull()).isTrue();
+        var tenant = (com.fasterxml.jackson.databind.node.ObjectNode) json.readTree(mvc.perform(get("/api/tenants/" + tenantId))
+                .andExpect(status().isOk()).andReturn().getResponse().getContentAsString());
+        var lease = (com.fasterxml.jackson.databind.node.ObjectNode) tenant.get("leaseAgreementDto");
+        lease.put("depositBalanceConfirmed", true);
+        mvc.perform(put("/api/tenants").contentType(MediaType.APPLICATION_JSON).content(json.writeValueAsString(tenant)))
+                .andExpect(status().isBadRequest());
+        lease.put("depositPaid", 2000);
+        mvc.perform(put("/api/tenants").contentType(MediaType.APPLICATION_JSON).content(json.writeValueAsString(tenant)))
+                .andExpect(status().isOk());
+        assertThat(history().at("/summary/depositReminder").decimalValue()).isEqualByComparingTo("500");
+        lease.put("depositPaid", 2200);
+        mvc.perform(put("/api/tenants").contentType(MediaType.APPLICATION_JSON).content(json.writeValueAsString(tenant)))
+                .andExpect(status().isOk());
+        assertThat(history().at("/summary/depositReminder").decimalValue()).isEqualByComparingTo("300");
+        calculateWithDepositAndExtra(UUID.randomUUID(), false, "300", "75");
+        assertDepositState("2809.79", "300", "2200");
+        // Ordinary agreement edits preserve the opening amount and machine allocation.
+        mvc.perform(put("/api/tenants").contentType(MediaType.APPLICATION_JSON).content(json.writeValueAsString(tenant)))
+                .andExpect(status().isOk());
+        assertDepositState("2809.79", "300", "2200");
+        lease.put("depositPaid", 2300);
+        mvc.perform(put("/api/tenants").contentType(MediaType.APPLICATION_JSON).content(json.writeValueAsString(tenant)))
+                .andExpect(status().isBadRequest());
+        assertThat(jdbc.queryForObject("SELECT total_amount FROM settlement WHERE settlement_id=?", BigDecimal.class, historical)).isEqualByComparingTo("2500");
+    }
+
+    @Test
+    void shouldKeepDepositPendingAfterValidationFailureAndRejectChangedRetryPayload() throws Exception {
+        depositLease("2000", true);
+        UUID key = UUID.randomUUID();
+        var staleTenantRequest = (com.fasterxml.jackson.databind.node.ObjectNode) json.readTree(calculationRequest(key, false, "75"));
+        staleTenantRequest.put("tenantId", -1);
+        mvc.perform(post("/api/rented-objects/" + objectId + "/calculate").contentType(MediaType.APPLICATION_JSON)
+                .content(json.writeValueAsString(staleTenantRequest))).andExpect(status().isConflict());
+        mvc.perform(post("/api/rented-objects/" + objectId + "/calculate").contentType(MediaType.APPLICATION_JSON)
+                .content(calculationRequest(key, false, "-75"))).andExpect(status().isBadRequest());
+        assertThat(history().at("/summary/depositReminder").decimalValue()).isEqualByComparingTo("500");
+        long id = calculateWithDepositAndExtra(key, false, "75");
+        assertThat(calculateWithDepositAndExtra(key, false, "75")).isEqualTo(id);
+        mvc.perform(post("/api/rented-objects/" + objectId + "/calculate").contentType(MediaType.APPLICATION_JSON)
+                .content(calculationRequest(key, false, "80"))).andExpect(status().isConflict());
+        assertDepositState("3009.79", "500", "2000");
+        JsonNode receipt = createSplit("4000", "0");
+        assertThat(receipt.get("depositAmount").decimalValue()).isEqualByComparingTo("500");
+        assertBalance("990.21", "4000", "OVERPAID");
+        assertDepositState("0", "0", "2500");
+    }
+
+    @Test
+    void shouldChargeDepositForFullMonthWithUtilitiesEnabledAsWellAsInitialAndPartialTypes() throws Exception {
+        depositLease("2000", true);
+        var request = (com.fasterxml.jackson.databind.node.ObjectNode) json.readTree(calculationRequest(UUID.randomUUID(), false, "75"));
+        request.put("waterIncluded", true).put("electricityIncluded", true);
+        mvc.perform(post("/api/rented-objects/" + objectId + "/calculate").contentType(MediaType.APPLICATION_JSON)
+                .content(json.writeValueAsString(request))).andExpect(status().isOk());
+        assertDepositState("3009.79", "500", "2000");
+    }
+
+    @Test
+    void shouldUseRemainingOverpaymentForDepositAfterDeletingADepositReceipt() throws Exception {
+        depositLease("2000", true);
+        calculateWithDepositAndExtra(UUID.randomUUID(), false, "75");
+        JsonNode deposit = createSplit("500", "500");
+        createSplit("3000", "0");
+        mvc.perform(delete(url + "/" + deposit.get("id").asLong()).param("version", "0")).andExpect(status().isNoContent());
+        assertDepositState("9.79", "9.79", "2490.21");
+        assertThat(history().at("/payments/0/depositAmount").decimalValue()).isEqualByComparingTo("490.21");
+        mvc.perform(post(url).contentType(MediaType.APPLICATION_JSON).content(fullRequest(UUID.randomUUID())))
+                .andExpect(status().isCreated()).andExpect(jsonPath("$.amount").value(9.79))
+                .andExpect(jsonPath("$.depositAmount").value(9.79));
+        assertDepositState("0", "0", "2500");
+    }
+
+    @Test
+    void shouldReallocateCreditOnReceiptCorrectionWithoutRequiringMoreThanTheTransfer() throws Exception {
+        depositLease("2000", true);
+        calculateWithDepositAndExtra(UUID.randomUUID(), false, "75");
+        JsonNode deposit = createSplit("500", "500");
+        createSplit("3000", "0");
+        mvc.perform(put(url + "/" + deposit.get("id").asLong()).contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"amount\":100,\"depositAmount\":100,\"paymentDate\":\"2026-05-12\",\"version\":0}"))
+                .andExpect(status().isOk());
+        assertBalance("90.21", "3100", "OVERPAID");
+        assertDepositState("0", "0", "2500");
+    }
+
+    @Test
+    void shouldApplyCreditReleasedByDeletingAnotherMonthlyChargeToDeposit() throws Exception {
+        depositLease("2000", true);
+        calculateWithDepositAndExtra(UUID.randomUUID(), false, "75");
+        long otherMonth = calculateWithDepositAndExtra(UUID.randomUUID(), false, "0", "0");
+        createSplit("4944.58", "0");
+        assertDepositState("500", "500", "2000");
+        mvc.perform(delete("/api/settlements/" + otherMonth)).andExpect(status().isOk());
+        assertBalance("1934.79", "4944.58", "OVERPAID");
+        assertDepositState("0", "0", "2500");
+    }
+
+    @Test
+    void shouldScopeSettlementMutationsHistoryAndExportToItsOwner() throws Exception {
+        depositLease("2000", true);
+        long id = calculateWithDepositAndExtra(UUID.randomUUID(), false, "75");
+        String tenantBody = mvc.perform(get("/api/tenants/" + tenantId)).andExpect(status().isOk())
+                .andReturn().getResponse().getContentAsString();
+        var owner = users.getLoggedUser();
+        when(users.getLoggedUser()).thenReturn(new UserBasicDto(-1L, "other@test.local", Role.ADMIN));
+        mvc.perform(post("/api/rented-objects/" + objectId + "/calculate").contentType(MediaType.APPLICATION_JSON)
+                .content(calculationRequest(UUID.randomUUID(), false, "75"))).andExpect(status().isNotFound());
+        mvc.perform(delete("/api/settlements/" + id)).andExpect(status().isNotFound());
+        mvc.perform(get("/api/settlements").param("rentedObjectId", "" + objectId).param("tenantId", "" + tenantId)).andExpect(status().isNotFound());
+        mvc.perform(get("/api/settlements/tenant/" + tenantId + "/exists")).andExpect(status().isNotFound());
+        mvc.perform(get("/api/tenants/" + tenantId)).andExpect(status().isNotFound());
+        mvc.perform(put("/api/tenants").contentType(MediaType.APPLICATION_JSON).content(tenantBody)).andExpect(status().isNotFound());
+        byte[] export = mvc.perform(get("/api/settlements/export/excel")).andExpect(status().isOk()).andReturn().getResponse().getContentAsByteArray();
+        try (var workbook = new org.apache.poi.xssf.usermodel.XSSFWorkbook(new java.io.ByteArrayInputStream(export))) {
+            assertThat(workbook.getSheetAt(0).getLastRowNum()).isZero();
+        }
+        mvc.perform(get("/api/lease-agreements/" + leaseId + "/termination-info")).andExpect(status().isNotFound());
+        mvc.perform(post("/api/lease-agreements/" + leaseId + "/terminate").contentType(MediaType.APPLICATION_JSON).content("{}"))
+                .andExpect(status().isNotFound());
+        when(users.getLoggedUser()).thenReturn(owner);
+        assertDepositState("3009.79", "500", "2000");
+        byte[] ownExport = mvc.perform(get("/api/settlements/export/excel")).andExpect(status().isOk()).andReturn().getResponse().getContentAsByteArray();
+        try (var workbook = new org.apache.poi.xssf.usermodel.XSSFWorkbook(new java.io.ByteArrayInputStream(ownExport))) {
+            assertThat(workbook.getSheetAt(0).getLastRowNum()).isEqualTo(1);
+            assertThat(workbook.getSheetAt(0).getRow(1).getCell(4).getNumericCellValue()).isEqualTo(id);
+        }
+    }
+
+    @Test
+    void shouldNotTreatUnknownReceivedDepositAsZeroOnTermination() throws Exception {
+        jdbc.update("UPDATE lease_agreement SET deposit_paid=NULL, deposit_opening_paid=NULL WHERE lease_agreement_id=?", leaseId);
+        String leaseUrl = "/api/lease-agreements/" + leaseId;
+        mvc.perform(post(leaseUrl + "/deposit-return-preview").contentType(MediaType.APPLICATION_JSON).content("{}"))
+                .andExpect(status().isBadRequest());
+        mvc.perform(post(leaseUrl + "/terminate").contentType(MediaType.APPLICATION_JSON).content("{}"))
+                .andExpect(status().isBadRequest());
+        assertThat(jdbc.queryForObject("SELECT is_contract_active FROM lease_agreement WHERE lease_agreement_id=?", Boolean.class, leaseId)).isTrue();
+        assertThat(jdbc.queryForObject("SELECT COUNT(*) FROM settlement WHERE tenant_id=?", Integer.class, tenantId)).isZero();
+        jdbc.update("UPDATE lease_agreement SET deposit_paid=0, deposit_opening_paid=0 WHERE lease_agreement_id=?", leaseId);
+        mvc.perform(post(leaseUrl + "/deposit-return-preview").contentType(MediaType.APPLICATION_JSON).content("{}"))
+                .andExpect(status().isOk());
+        mvc.perform(post(leaseUrl + "/terminate").contentType(MediaType.APPLICATION_JSON).content("{}"))
+                .andExpect(status().isOk());
+        mvc.perform(post(leaseUrl + "/terminate").contentType(MediaType.APPLICATION_JSON).content("{}"))
+                .andExpect(status().isConflict());
+        assertThat(jdbc.queryForObject("SELECT returned_deposit_amount FROM lease_agreement WHERE lease_agreement_id=?", BigDecimal.class, leaseId)).isZero();
+        assertThat(jdbc.queryForObject("SELECT COUNT(*) FROM settlement WHERE tenant_id=? AND deposit_assessment=true", Integer.class, tenantId)).isZero();
+    }
+
+    @Test
+    void shouldShowNewestSettlementWhenTwoHaveTheSameDate() throws Exception {
+        depositLease("2000", true);
+        calculateWithDepositAndExtra(UUID.randomUUID(), false, "75");
+        calculateWithDepositAndExtra(UUID.randomUUID(), false, "0", "0");
+        JsonNode card = json.readTree(mvc.perform(get("/api/rented-objects/details").param("active", "true"))
+                .andExpect(status().isOk()).andReturn().getResponse().getContentAsString()).get(0);
+        assertThat(card.get("totalAmount").decimalValue()).isEqualByComparingTo("2434.79");
+        assertThat(card.get("depositTopUp").decimalValue()).isZero();
+        assertThat(card.at("/paymentSummary/depositDue").decimalValue()).isEqualByComparingTo("500");
+    }
+
+    @Test
+    void shouldRejectDepositAmountsOutsideTheLedgerPrecisionBeforeSaving() throws Exception {
+        var tenant = (com.fasterxml.jackson.databind.node.ObjectNode) json.readTree(mvc.perform(get("/api/tenants/" + tenantId))
+                .andExpect(status().isOk()).andReturn().getResponse().getContentAsString());
+        var lease = (com.fasterxml.jackson.databind.node.ObjectNode) tenant.get("leaseAgreementDto");
+        for (String invalid : new String[]{"-1", "1.001", "100000", "1000000000000"}) {
+            lease.put("depositPaid", new BigDecimal(invalid));
+            mvc.perform(put("/api/tenants").contentType(MediaType.APPLICATION_JSON).content(json.writeValueAsString(tenant)))
+                    .andExpect(status().isBadRequest());
+        }
+        lease.put("depositPaid", 0).put("id", leaseId + 1000000);
+        mvc.perform(put("/api/tenants").contentType(MediaType.APPLICATION_JSON).content(json.writeValueAsString(tenant)))
+                .andExpect(status().isBadRequest());
+        assertThat(jdbc.queryForObject("SELECT deposit_paid FROM lease_agreement WHERE lease_agreement_id=?", BigDecimal.class, leaseId)).isZero();
+    }
+
+    @Test
+    void shouldRejectInvalidPartialPeriodsWithoutAssessingDeposit() throws Exception {
+        depositLease("2000", true);
+        for (String start : new String[]{"2026-06-30T00:00:00", "2026-05-15T00:00:00", ""}) {
+            var request = (com.fasterxml.jackson.databind.node.ObjectNode) json.readTree(calculationRequest(UUID.randomUUID(), true, "75"));
+            request.put("periodStartDate", start).put("periodEndDate", "2026-06-15T00:00:00");
+            mvc.perform(post("/api/rented-objects/" + objectId + "/calculate").contentType(MediaType.APPLICATION_JSON)
+                    .content(json.writeValueAsString(request))).andExpect(status().isBadRequest());
+        }
+        assertThat(jdbc.queryForObject("SELECT COUNT(*) FROM settlement WHERE tenant_id=?", Integer.class, tenantId)).isZero();
+        assertThat(history().at("/summary/depositReminder").decimalValue()).isEqualByComparingTo("500");
+    }
+
+    @Test
+    void shouldOnlyRemindUntilDepositIsManuallyAddedAndNeverIncludeItInFullPayment() throws Exception {
+        depositLease("2000", true);
+        calculateWithDepositAndExtra(UUID.randomUUID(), false, "0", "0");
+        assertDepositState("2434.79", "0", "2000");
+        assertThat(history().at("/summary/depositReminder").decimalValue()).isEqualByComparingTo("500");
+        assertThat(history().at("/summary/depositToCharge").decimalValue()).isEqualByComparingTo("500");
+        mvc.perform(post(url).contentType(MediaType.APPLICATION_JSON).content(fullRequest(UUID.randomUUID())))
+                .andExpect(status().isCreated()).andExpect(jsonPath("$.amount").value(2434.79)).andExpect(jsonPath("$.depositAmount").value(0));
+        calculateWithDepositAndExtra(UUID.randomUUID(), false, "0", "0");
+        assertDepositState("2434.79", "0", "2000");
+        assertThat(history().at("/summary/depositReminder").decimalValue()).isEqualByComparingTo("500");
+        assertThat(jdbc.queryForObject("SELECT SUM(deposit_top_up) FROM settlement WHERE tenant_id=?", BigDecimal.class, tenantId)).isZero();
+    }
+
+    @Test
+    void shouldAllowManualDepositInstalmentsAndRemindAboutTheUnbilledRemainderNextMonth() throws Exception {
+        depositLease("2000", true);
+        calculateWithDepositAndExtra(UUID.randomUUID(), false, "300", "30");
+        assertDepositState("2764.79", "300", "2000");
+        mvc.perform(post(url).contentType(MediaType.APPLICATION_JSON).content(fullRequest(UUID.randomUUID())))
+                .andExpect(status().isCreated()).andExpect(jsonPath("$.depositAmount").value(300));
+        assertDepositState("0", "0", "2300");
+        calculateWithDepositAndExtra(UUID.randomUUID(), false, "0", "0");
+        assertDepositState("2434.79", "0", "2300");
+        assertThat(history().at("/summary/depositReminder").decimalValue()).isEqualByComparingTo("200");
+        assertThat(history().at("/summary/depositToCharge").decimalValue()).isEqualByComparingTo("200");
+        calculateWithDepositAndExtra(UUID.randomUUID(), false, "200", "0");
+        assertDepositState("5069.58", "200", "2300");
+        mvc.perform(post(url).contentType(MediaType.APPLICATION_JSON).content(fullRequest(UUID.randomUUID())))
+                .andExpect(status().isCreated()).andExpect(jsonPath("$.depositAmount").value(200));
+        assertDepositState("0", "0", "2500");
+        assertThat(history().at("/summary/depositReminder").decimalValue()).isZero();
+    }
+
+    @Test
+    void shouldRemindAboutPartlyPaidBilledDepositWithoutChargingItAgain() throws Exception {
+        depositLease("2000", true);
+        calculateWithDepositAndExtra(UUID.randomUUID(), false, "500", "0");
+        createSplit("300", "300");
+        assertThat(history().at("/summary/depositReminder").decimalValue()).isEqualByComparingTo("200");
+        assertThat(history().at("/summary/depositToCharge").decimalValue()).isZero();
+        calculateWithDepositAndExtra(UUID.randomUUID(), false, "0", "0");
+        assertDepositState("5069.58", "200", "2300");
+        mvc.perform(post("/api/rented-objects/" + objectId + "/calculate").contentType(MediaType.APPLICATION_JSON)
+                .content(calculationRequest(UUID.randomUUID(), false, "200", "0"))).andExpect(status().isBadRequest());
+        assertDepositState("5069.58", "200", "2300");
+        assertThat(history().at("/summary/depositReminder").decimalValue()).isEqualByComparingTo("200");
+    }
+
+    @Test
+    void shouldStoreEveryPositionAndExportItsTypeAmountAndDescription() throws Exception {
+        depositLease("2000", true);
+        var request = (com.fasterxml.jackson.databind.node.ObjectNode) json.readTree(calculationRequest(UUID.randomUUID(), false, "0", "0"));
+        request.set("additionalCharges", json.valueToTree(java.util.List.of(
+                Map.of("type", "DEPOSIT", "amount", 100, "description", "Kaucja - część 1"),
+                Map.of("type", "DEPOSIT", "amount", 100, "description", "Kaucja - część 2"),
+                Map.of("type", "OTHER", "amount", 30, "description", "Klucze"),
+                Map.of("type", "OTHER", "amount", 75, "description", "Krzesło"))));
+        mvc.perform(post("/api/rented-objects/" + objectId + "/calculate").contentType(MediaType.APPLICATION_JSON)
+                .content(json.writeValueAsString(request))).andExpect(status().isOk());
+        assertDepositState("2739.79", "200", "2000");
+        mvc.perform(get("/api/settlements").param("rentedObjectId", "" + objectId).param("tenantId", "" + tenantId))
+                .andExpect(jsonPath("$.content[0].additionalCharges.length()").value(4))
+                .andExpect(jsonPath("$.content[0].additionalCharges[2].description").value("Klucze"))
+                .andExpect(jsonPath("$.content[0].additionalCharges[3].amount").value(75));
+        mvc.perform(get("/api/rented-objects/details").param("active", "true"))
+                .andExpect(jsonPath("$[0].additionalCharges.length()").value(4));
+        byte[] exported = mvc.perform(get("/api/settlements/export/excel")).andExpect(status().isOk()).andReturn().getResponse().getContentAsByteArray();
+        try (var workbook = new org.apache.poi.xssf.usermodel.XSSFWorkbook(new java.io.ByteArrayInputStream(exported))) {
+            var positions = workbook.getSheet("Pozycje naliczeń");
+            assertThat(positions.getLastRowNum()).isEqualTo(4);
+            assertThat(positions.getRow(1).getCell(1).getStringCellValue()).isEqualTo("Kaucja");
+            assertThat(positions.getRow(3).getCell(2).getNumericCellValue()).isEqualTo(30);
+            assertThat(positions.getRow(4).getCell(3).getStringCellValue()).isEqualTo("Krzesło");
+        }
+        // Validate the combined deposit amount, not just each individual position.
+        ((com.fasterxml.jackson.databind.node.ArrayNode) request.get("additionalCharges")).removeAll()
+                .add(json.valueToTree(Map.of("type", "DEPOSIT", "amount", 200)))
+                .add(json.valueToTree(Map.of("type", "DEPOSIT", "amount", 200)));
+        request.put("requestId", UUID.randomUUID().toString());
+        mvc.perform(post("/api/rented-objects/" + objectId + "/calculate").contentType(MediaType.APPLICATION_JSON)
+                .content(json.writeValueAsString(request))).andExpect(status().isBadRequest());
+        assertDepositState("2739.79", "200", "2000");
+    }
+
+    @Test
+    void shouldPreserveDepositHeldWhenOneOfSeveralManualBillsIsDeleted() throws Exception {
+        depositLease("2000", true);
+        long first = calculateWithDepositAndExtra(UUID.randomUUID(), false, "300", "0");
+        calculateWithDepositAndExtra(UUID.randomUUID(), false, "200", "0");
+        createSplit("300", "300");
+        mvc.perform(delete("/api/settlements/" + first)).andExpect(status().isOk());
+        assertDepositState("2434.79", "0", "2300");
+        assertThat(history().at("/summary/depositToCharge").decimalValue()).isEqualByComparingTo("200");
+        calculateWithDepositAndExtra(UUID.randomUUID(), false, "200", "0");
+        assertDepositState("5069.58", "200", "2300");
+        mvc.perform(post(url).contentType(MediaType.APPLICATION_JSON).content(fullRequest(UUID.randomUUID())))
+                .andExpect(status().isCreated()).andExpect(jsonPath("$.depositAmount").value(200));
+        assertDepositState("0", "0", "2500");
+    }
+
+    @Test
+    void shouldKeepLegacySingleChargeOrdinaryEvenIfItsDescriptionSaysDeposit() throws Exception {
+        depositLease("2000", true);
+        mvc.perform(post("/api/rented-objects/" + objectId + "/calculate").contentType(MediaType.APPLICATION_JSON)
+                .content("{\"settlementDate\":\"2026-06-01T00:00:00\",\"additionalCharge\":200,\"additionalChargeDescription\":\"Kaucja\"}"))
+                .andExpect(status().isOk());
+        assertDepositState("2634.79", "0", "2000");
+        assertThat(history().at("/summary/depositReminder").decimalValue()).isEqualByComparingTo("500");
+    }
+
+    @ParameterizedTest
+    @CsvSource({"0,865.21,2000,500", "200,665.21,2200,300"})
+    void shouldUseOverpaymentOnlyForManuallyRequestedDeposit(String deposit, String credit, String received, String reminder) throws Exception {
+        depositLease("2000", true);
+        create("3300");
+        calculateWithDepositAndExtra(UUID.randomUUID(), false, deposit, "0");
+        assertBalance(credit, "3300", "OVERPAID");
+        assertDepositState("0", "0", received);
+        assertThat(history().at("/summary/depositReminder").decimalValue()).isEqualByComparingTo(reminder);
+        assertThat(history().at("/payments/0/depositAmount").decimalValue()).isEqualByComparingTo(deposit);
+    }
+
+    private void depositLease(String opening, boolean confirmed) {
+        jdbc.update("UPDATE lease_agreement SET deposit=2500, deposit_paid=?, deposit_opening_paid=?, deposit_balance_confirmed=?, gas_deposit=94.79 WHERE lease_agreement_id=?",
+                new BigDecimal(opening), new BigDecimal(opening), confirmed, leaseId);
+    }
+    private JsonNode history() throws Exception {
+        return json.readTree(mvc.perform(get(url)).andExpect(status().isOk()).andReturn().getResponse().getContentAsString());
+    }
+    private void assertDepositState(String due, String depositDue, String paid) throws Exception {
+        JsonNode state = history();
+        assertThat(state.at("/summary/amountDue").decimalValue()).isEqualByComparingTo(due);
+        assertThat(state.at("/summary/depositDue").decimalValue()).isEqualByComparingTo(depositDue);
+        assertThat(state.at("/summary/depositRequired").decimalValue()).isEqualByComparingTo("2500");
+        assertThat(state.at("/summary/depositPaid").decimalValue()).isEqualByComparingTo(paid);
+        assertThat(jdbc.queryForObject("SELECT deposit_paid FROM lease_agreement WHERE lease_agreement_id=?", BigDecimal.class, leaseId)).isEqualByComparingTo(paid);
+    }
+    private JsonNode createSplit(String amount, String deposit) throws Exception {
+        return json.readTree(mvc.perform(post(url).contentType(MediaType.APPLICATION_JSON).content(splitRequest(amount, deposit, UUID.randomUUID())))
+                .andExpect(status().isCreated()).andReturn().getResponse().getContentAsString());
+    }
+    private String splitRequest(String amount, String deposit, UUID key) throws Exception {
+        return json.writeValueAsString(Map.of("requestId", key, "mode", "CUSTOM", "amount", new BigDecimal(amount), "depositAmount", new BigDecimal(deposit), "paymentDate", "2026-05-12"));
+    }
+    private long calculateWithDepositAndExtra(UUID key, boolean partial, String extra) throws Exception {
+        return calculateWithDepositAndExtra(key, partial, "500", extra);
+    }
+    private long calculateWithDepositAndExtra(UUID key, boolean partial, String deposit, String extra) throws Exception {
+        mvc.perform(post("/api/rented-objects/" + objectId + "/calculate").contentType(MediaType.APPLICATION_JSON)
+                .content(calculationRequest(key, partial, deposit, extra))).andExpect(status().isOk());
+        return jdbc.queryForObject("SELECT MAX(settlement_id) FROM settlement WHERE tenant_id=?", Long.class, tenantId);
+    }
+    private String calculationRequest(UUID key, boolean partial, String extra) throws Exception {
+        return calculationRequest(key, partial, "500", extra);
+    }
+    private String calculationRequest(UUID key, boolean partial, String deposit, String extra) throws Exception {
+        return json.writeValueAsString(Map.of("requestId", key, "settlementDate", "2026-06-01T00:00:00", "isPartialMonth", partial,
+                "periodStartDate", "2026-06-15T00:00:00", "periodEndDate", "2026-06-30T00:00:00", "isRentProrated", partial,
+                "additionalCharges", java.util.List.of(
+                        Map.of("type", "DEPOSIT", "amount", new BigDecimal(deposit), "description", "Kaucja"),
+                        Map.of("type", "OTHER", "amount", new BigDecimal(extra), "description", "Dorobienie klucza"))));
     }
 
     private long next(String sequence) { return jdbc.queryForObject("SELECT nextval('" + sequence + "')", Long.class); }

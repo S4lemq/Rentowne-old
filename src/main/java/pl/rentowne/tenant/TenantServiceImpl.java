@@ -2,7 +2,9 @@ package pl.rentowne.tenant;
 
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
+import org.springframework.http.HttpStatus;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.transaction.annotation.Isolation;
 import pl.rentowne.apartment.Apartment;
 import pl.rentowne.apartment.ApartmentRepository;
 import pl.rentowne.apartment.ApartmentService;
@@ -16,6 +18,9 @@ import pl.rentowne.meter_reading.MeterReadingDto;
 import pl.rentowne.meter_reading.MeterReadingRepository;
 import pl.rentowne.rented_object.RentedObject;
 import pl.rentowne.rented_object.RentedObjectRepository;
+import pl.rentowne.rental_payment.DepositAccountingService;
+import pl.rentowne.rental_payment.RentalPaymentException;
+import pl.rentowne.user.UserService;
 import pl.rentowne.security.service.AuthenticationService;
 import pl.rentowne.util.DateUtils;
 
@@ -34,13 +39,21 @@ public class TenantServiceImpl implements TenantService {
     private final ApartmentRepository apartmentRepository;
     private final AuthenticationService authenticationService;
     private final MeterReadingRepository meterReadingRepository;
+    private final DepositAccountingService depositAccounting;
+    private final UserService userService;
 
     @Override
     @Transactional
     public Long addTenantAndLeaseAgreement(TenantDto tenantDto) throws RentowneBusinessException {
         Long rentedObjectId = tenantDto.rentedObjectDto().id();
+        requireOwnedObject(rentedObjectId);
+        if (tenantDto.id() != null || tenantDto.leaseAgreementDto().id() != null
+                || tenantDto.addressDto() != null && tenantDto.addressDto().id() != null) {
+            throw new RentalPaymentException(HttpStatus.BAD_REQUEST, "Nowy najem nie może wskazywać istniejącego najemcy, umowy ani adresu.");
+        }
         apartmentService.updateRentedFlagOnApartment(rentedObjectId);
         Tenant tenant = TenantDto.asEntity(tenantDto);
+        depositAccounting.initializeLease(tenant.getLeaseAgreement());
         tenant.setActive(true);
         Long tenantId = tenantRepository.save(tenant).getId();
         LocalDateTime currentReadingDate = tenantDto.leaseAgreementDto().startContractDate();
@@ -54,23 +67,33 @@ public class TenantServiceImpl implements TenantService {
     }
 
     @Override
+    @Transactional(readOnly = true, isolation = Isolation.REPEATABLE_READ)
     public TenantDto getTenantAndLeaseAgreement(Long id) throws RentowneNotFoundException {
         Tenant tenantEntity = tenantRepository.findByTenantId(id).orElseThrow(() -> new RentowneNotFoundException(id));
+        requireOwnedTenant(tenantEntity);
+        tenantEntity.getLeaseAgreement().setDepositAssessed(depositAccounting.isAssessed(id));
         return TenantDto.asDto(tenantEntity);
     }
 
     @Override
     @Transactional
     public void updateTenantAndLeaseAgreement(TenantDto dto) {
-        Long rentedObjectIdInDB = tenantRepository.getRentedObjectId(dto.id());
-        this.firstUpdateFlags(rentedObjectIdInDB);
-
-        Tenant existingTenant = tenantRepository.findById(dto.id())
+        Tenant existingTenant = tenantRepository.lockById(dto.id())
                 .orElseThrow(() -> new RentowneBusinessException(RentowneErrorCode.ITEM_NOT_FOUND));
+        requireOwnedTenant(existingTenant);
+        requireOwnedObject(dto.rentedObjectDto().id());
+        if (!existingTenant.getLeaseAgreement().getId().equals(dto.leaseAgreementDto().id())
+                || dto.addressDto() != null && dto.addressDto().id() != null
+                && (existingTenant.getAddress() == null || !dto.addressDto().id().equals(existingTenant.getAddress().getId()))) {
+            throw new RentalPaymentException(HttpStatus.BAD_REQUEST, "Edycja najmu nie może wskazywać innej umowy ani cudzego adresu.");
+        }
+        Long rentedObjectIdInDB = existingTenant.getRentedObject().getId();
 
         Tenant updatedTenant = TenantDto.asEntity(dto);
+        depositAccounting.prepareLeaseUpdate(existingTenant, updatedTenant.getLeaseAgreement());
         updatedTenant.setActive(existingTenant.isActive());
 
+        this.firstUpdateFlags(rentedObjectIdInDB);
         tenantRepository.save(updatedTenant);
         this.secondUpdateFlags(dto);
     }
@@ -105,7 +128,7 @@ public class TenantServiceImpl implements TenantService {
     private void secondUpdateFlags(TenantDto dto) {
         Long rentedObjectId = dto.rentedObjectDto().id();
         rentedObjectRepository.updateRentedFlag(rentedObjectId, true);
-        Long apartmentId = dto.apartment().id();
+        Long apartmentId = rentedObjectRepository.findApartmentIdByRentedObjectId(rentedObjectId);
         List<Long> ids = rentedObjectRepository.findByApartmentIdAndIsRented(apartmentId, false)
                 .stream().map(RentedObject::getId).toList();
         if (ids.isEmpty()) {
@@ -120,5 +143,17 @@ public class TenantServiceImpl implements TenantService {
             idByRentedObjectsId.orElseThrow(() -> new RentowneNotFoundException(rentedObjectIdInDB)).getId(),
             false
         );
+    }
+
+    private void requireOwnedObject(Long rentedObjectId) {
+        if (!rentedObjectRepository.existsByIdAndApartmentUserId(rentedObjectId, userService.getLoggedUser().id())) {
+            throw new RentalPaymentException(HttpStatus.NOT_FOUND, "Nie znaleziono obiektu.");
+        }
+    }
+
+    private void requireOwnedTenant(Tenant tenant) {
+        if (tenant.getRentedObject() == null || !tenant.getRentedObject().getApartment().getUser().getId().equals(userService.getLoggedUser().id())) {
+            throw new RentalPaymentException(HttpStatus.NOT_FOUND, "Nie znaleziono najmu.");
+        }
     }
 }

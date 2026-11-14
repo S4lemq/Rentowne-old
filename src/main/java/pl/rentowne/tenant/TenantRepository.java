@@ -17,6 +17,12 @@ import java.util.Optional;
  */
 public interface TenantRepository extends JpaRepository<Tenant, Long> {
 
+    @Query("select t.id from Tenant t where t.rentedObject.id = :rentedObjectId and t.active = true")
+    Long getActiveTenantIdByRentedObjectId(@Param("rentedObjectId") Long rentedObjectId);
+
+    @Query("select t.id from Tenant t where t.leaseAgreement.id = :leaseId and t.rentedObject.apartment.user.id = :userId")
+    Optional<Long> findOwnedTenantIdByLeaseAgreementId(@Param("leaseId") Long leaseId, @Param("userId") Long userId);
+
     @Lock(LockModeType.PESSIMISTIC_WRITE)
     @Query("select t from Tenant t where t.id = :id")
     Optional<Tenant> lockById(@Param("id") Long id);

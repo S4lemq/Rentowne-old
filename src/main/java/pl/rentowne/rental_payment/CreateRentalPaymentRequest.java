@@ -15,7 +15,8 @@ record CreateRentalPaymentRequest(
         @NotNull Mode mode,
         @DecimalMin("0.01") @Digits(integer = 12, fraction = 2) BigDecimal amount,
         @NotNull LocalDate paymentDate,
-        @Size(max = 500) String description
+        @Size(max = 500) String description,
+        @DecimalMin("0") @Digits(integer = 12, fraction = 2) BigDecimal depositAmount
 ) {
     enum Mode { FULL, CUSTOM }
 
@@ -26,7 +27,8 @@ record CreateRentalPaymentRequest(
 
     String payload() {
         return mode + "|" + (amount == null ? "" : amount.stripTrailingZeros().toPlainString())
-                + "|" + paymentDate + "|" + normalizedDescription();
+                + "|" + paymentDate + "|" + normalizedDescription()
+                + (depositAmount == null ? "" : "|deposit=" + depositAmount.stripTrailingZeros().toPlainString());
     }
 
     String normalizedDescription() {
