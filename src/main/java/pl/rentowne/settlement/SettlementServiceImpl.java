@@ -21,6 +21,7 @@ import pl.rentowne.meter_reading.MeterReadingRepository;
 import pl.rentowne.provider_field.BillingMethod;
 import pl.rentowne.provider_field.ProviderField;
 import pl.rentowne.rental_payment.DepositAccountingService;
+import pl.rentowne.rental_document.RentalDocumentService;
 import pl.rentowne.rental_payment.RentalPaymentException;
 import pl.rentowne.rented_object.RentedObject;
 import pl.rentowne.rented_object.RentedObjectRepository;
@@ -57,6 +58,7 @@ public class SettlementServiceImpl implements SettlementService {
     private final DepositAccountingService deposits;
     private final SettlementOperations operations;
     private final UserService userService;
+    private final RentalDocumentService documents;
 
     @Transactional
     @Override
@@ -146,6 +148,7 @@ public class SettlementServiceImpl implements SettlementService {
             deposits.applyCharges(settlement, dto);
             Long settlementId = settlementRepository.saveAndFlush(settlement).getId();
             operations.remember(settlement, dto);
+            documents.issueReceipt(settlement, dto);
 
             if (!allMeterReadingIds.isEmpty()) {
                 meterReadingRepository.updateSettled(allMeterReadingIds, settlementId);
@@ -218,6 +221,7 @@ public class SettlementServiceImpl implements SettlementService {
         // 5) Wyczyść 'lastSettlement*' dla obiektu tego rozliczenia
         rentedObjectRepository.clearLastSettlementData(settlementId);
 
+        documents.cancelReceipt(settlementId);
         // 6) Usuń samo rozliczenie
         settlementRepository.deleteById(settlementId);
         settlementRepository.flush();
@@ -342,6 +346,7 @@ public class SettlementServiceImpl implements SettlementService {
             deposits.applyCharges(settlement, dto);
             Long settlementId = settlementRepository.saveAndFlush(settlement).getId();
             operations.remember(settlement, dto);
+            documents.issueReceipt(settlement, dto);
 
             if (!allMeterReadingIds.isEmpty()) {
                 meterReadingRepository.updateSettled(allMeterReadingIds, settlementId);

@@ -22,6 +22,7 @@
 
 		<!-- Ważne: Tika 3.2.3 używa PDFBox 3.0.5 -->
 		<pdfbox.version>3.0.5</pdfbox.version>
+		<fop.version>2.12</fop.version>
 
 		<springdoc.version>2.1.0</springdoc.version>
 		<jjwt.version>0.11.5</jjwt.version>
@@ -186,6 +187,11 @@
 
 		<!-- PDFBox (wersja wymuszona przez dependencyManagement) -->
 		<dependency>
+			<groupId>org.apache.xmlgraphics</groupId>
+			<artifactId>fop</artifactId>
+			<version>${fop.version}</version>
+		</dependency>
+		<dependency>
 			<groupId>org.apache.pdfbox</groupId>
 			<artifactId>pdfbox</artifactId>
 		</dependency>
@@ -201,6 +207,12 @@
 		</dependency>
 
 		<!-- Testy -->
+		<dependency>
+			<groupId>com.icegreen</groupId>
+			<artifactId>greenmail</artifactId>
+			<version>2.1.15</version>
+			<scope>test</scope>
+		</dependency>
 		<dependency>
 			<groupId>org.springframework.boot</groupId>
 			<artifactId>spring-boot-starter-test</artifactId>

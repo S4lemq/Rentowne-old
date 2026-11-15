@@ -34,6 +34,9 @@ spring:
                     auth: true
                     starttls:
                         enable: true
+                    connectiontimeout: 5000
+                    timeout: 10000
+                    writetimeout: 10000
     ai:
         openai:
             api-key: ${OPENAI_API_KEY}
@@ -43,6 +46,14 @@ spring:
                     temperature: 0.1
 
 application:
+    documents:
+        enabled: ${DOCUMENTS_ENABLED:true}
+        deposit-mail-enabled: ${DEPOSIT_DOCUMENT_MAIL_ENABLED:false}
+        worker-enabled: ${DOCUMENT_WORKER_ENABLED:true}
+        directory: ${DOCUMENT_PDF_DIRECTORY:data/rentalDocuments}
+        issue-city: ${DOCUMENT_ISSUE_CITY:Poznań}
+        from: "${DOCUMENT_MAIL_FROM:Rentowne <rentowneApp@gmail.com>}"
+        reply-to: ${DOCUMENT_MAIL_REPLY_TO:rentowneApp@gmail.com}
     security:
         jwt:
             secret-key: secret-key

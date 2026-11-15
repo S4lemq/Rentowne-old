@@ -22,6 +22,7 @@ import pl.rentowne.tenant.Tenant;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
+import java.time.LocalDate;
 
 @Getter
 @Setter
@@ -94,6 +95,12 @@ public class LeaseAgreement extends BaseEntity {
 
     @Column(name = "DEPOSIT_RETURN_DATE")
     private LocalDateTime depositReturnDate; //data zwrotu kaucji
+
+    @Column(name = "ACTUAL_TERMINATION_DATE")
+    private LocalDate actualTerminationDate;
+
+    @Column(name = "DEPOSIT_REFUND_DUE_DATE")
+    private LocalDate depositRefundDueDate;
 
     @Column(name = "RETURNED_DEPOSIT_AMOUNT")
     private BigDecimal returnedDepositAmount; //kwota zwróconej kaucji

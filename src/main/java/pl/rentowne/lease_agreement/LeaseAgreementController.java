@@ -4,6 +4,7 @@ import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
+import jakarta.validation.Valid;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.ResponseEntity;
@@ -42,7 +43,7 @@ class LeaseAgreementController extends AbstractController {
     @PostMapping("/api/lease-agreements/{leaseAgreementId}/terminate")
     ResponseEntity<Void> terminateLease(
             @PathVariable Long leaseAgreementId,
-            @RequestBody TerminateLeaseRequestDto request) {
+            @Valid @RequestBody TerminateLeaseRequestDto request) {
         leaseAgreementService.terminateLease(leaseAgreementId, request);
         return ResponseEntity.ok().build();
     }
@@ -64,7 +65,7 @@ class LeaseAgreementController extends AbstractController {
     @PostMapping("/api/lease-agreements/{leaseAgreementId}/deposit-return-preview")
     ResponseEntity<String> previewDepositReturn(
             @PathVariable Long leaseAgreementId,
-            @RequestBody TerminateLeaseRequestDto request) {
+            @Valid @RequestBody TerminateLeaseRequestDto request) {
         String message = leaseAgreementService.previewDepositReturn(leaseAgreementId, request);
         return ResponseEntity.ok(message);
     }

@@ -2,3 +2,7 @@ spring:
     ai:
         openai:
             api-key: test-key
+application:
+    documents:
+        enabled: false
+        worker-enabled: false

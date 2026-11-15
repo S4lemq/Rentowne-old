@@ -90,6 +90,8 @@ public class TenantServiceImpl implements TenantService {
         Long rentedObjectIdInDB = existingTenant.getRentedObject().getId();
 
         Tenant updatedTenant = TenantDto.asEntity(dto);
+        updatedTenant.getLeaseAgreement().setActualTerminationDate(existingTenant.getLeaseAgreement().getActualTerminationDate());
+        updatedTenant.getLeaseAgreement().setDepositRefundDueDate(existingTenant.getLeaseAgreement().getDepositRefundDueDate());
         depositAccounting.prepareLeaseUpdate(existingTenant, updatedTenant.getLeaseAgreement());
         updatedTenant.setActive(existingTenant.isActive());
 

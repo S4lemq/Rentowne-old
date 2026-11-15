@@ -17,12 +17,15 @@ import pl.rentowne.settlement.SettlementService;
 import pl.rentowne.settlement.SettlementStatus;
 import pl.rentowne.settlement.UtilityCostsDto;
 import pl.rentowne.rental_payment.RentalPaymentException;
+import pl.rentowne.rental_document.RentalDocumentService;
 import pl.rentowne.tenant.Tenant;
 import pl.rentowne.tenant.TenantRepository;
 import pl.rentowne.user.UserService;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
+import java.time.LocalDate;
+import java.time.Clock;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -38,6 +41,8 @@ class LeaseAgreementServiceImpl implements LeaseAgreementService {
     private final InvoiceRepository invoiceRepository;
     private final TenantRepository tenantRepository;
     private final UserService userService;
+    private final RentalDocumentService documents;
+    private final Clock documentClock;
 
     @Override
     @Transactional(readOnly = true)
@@ -83,6 +88,8 @@ class LeaseAgreementServiceImpl implements LeaseAgreementService {
                 .electricityAmount(electricityAmount)
                 .depositPaid(leaseAgreement.getDepositPaid())
                 .hasPartialSettlement(hasPartialSettlement)
+                .suggestedTerminationDate(LocalDate.now(documentClock))
+                .suggestedRefundDueDate(LocalDate.now(documentClock).plusDays(14))
                 .build();
     }
 
@@ -95,6 +102,18 @@ class LeaseAgreementServiceImpl implements LeaseAgreementService {
         if (!leaseAgreement.isContractActive()) {
             throw new RentalPaymentException(HttpStatus.CONFLICT, "Umowa jest już zakończona.");
         }
+
+        LocalDate termination = request.terminationDate() == null ? LocalDate.now(documentClock) : request.terminationDate();
+        LocalDate refundDue = request.refundDueDate() == null ? termination.plusDays(14) : request.refundDueDate();
+        if (termination.isBefore(leaseAgreement.getStartContractDate().toLocalDate()) || refundDue.isBefore(termination)) {
+            throw new RentalPaymentException(HttpStatus.BAD_REQUEST, "Sprawdź datę zakończenia umowy i termin zwrotu kaucji.");
+        }
+        if (request.chargeAmount() != null && request.chargeAmount().signum() > 0
+                && (request.chargeDescription() == null || request.chargeDescription().isBlank())) {
+            throw new RentalPaymentException(HttpStatus.BAD_REQUEST, "Podaj opis dodatkowego obciążenia kaucji.");
+        }
+        leaseAgreement.setActualTerminationDate(termination);
+        leaseAgreement.setDepositRefundDueDate(refundDue);
 
         Long rentedObjectId = leaseAgreement.getTenant().getRentedObject().getId();
         Long tenantId = leaseAgreement.getTenant().getId();
@@ -177,6 +196,8 @@ class LeaseAgreementServiceImpl implements LeaseAgreementService {
         leaseAgreement.setContractActive(false);
 
         leaseAgreementRepository.save(leaseAgreement);
+
+        documents.issueDeposit(leaseAgreement, settlement);
 
         // Ustaw active na false dla tenant
         leaseAgreement.getTenant().setActive(false);

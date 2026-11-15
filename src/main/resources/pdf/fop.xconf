@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<fop version="1.0">
+    <strict-validation>true</strict-validation>
+    <strict-configuration>true</strict-configuration>
+    <use-cache>false</use-cache>
+    <renderers>
+        <renderer mime="application/pdf">
+            <fonts>
+                <font embed-url="classpath:/fonts/Inter-Regular.ttf" kerning="yes">
+                    <font-triplet name="Inter" style="normal" weight="normal"/>
+                </font>
+                <font embed-url="classpath:/fonts/Inter-Bold.ttf" kerning="yes">
+                    <font-triplet name="Inter" style="normal" weight="bold"/>
+                </font>
+                <font embed-url="classpath:/fonts/Inter-Italic.ttf" kerning="yes">
+                    <font-triplet name="Inter" style="italic" weight="normal"/>
+                </font>
+                <font embed-url="classpath:/fonts/Inter-BoldItalic.ttf" kerning="yes">
+                    <font-triplet name="Inter" style="italic" weight="bold"/>
+                </font>
+            </fonts>
+        </renderer>
+    </renderers>
+</fop>
