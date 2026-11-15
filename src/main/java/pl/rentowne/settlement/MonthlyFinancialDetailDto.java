@@ -9,6 +9,8 @@ import java.util.List;
 record MonthlyFinancialDetailDto(
         LocalDate month,
         MonthlyFinancialSummaryDto summary,
-        List<ApartmentFinancialDetailDto> apartments
+        List<ApartmentFinancialDetailDto> apartments,
+        pl.rentowne.analytics.AnalyticsDto.Basis basis,
+        java.time.LocalDate asOf
 ) {
 }

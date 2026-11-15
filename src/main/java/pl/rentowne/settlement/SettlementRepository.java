@@ -191,22 +191,6 @@ public interface SettlementRepository extends JpaRepository<Settlement, Long> {
     boolean existsByTenantId(@Param("tenantId") Long tenantId);
 
     /**
-     * Pobiera dane rozliczeń danego użytkownika
-     * @param userId id zalogowanego użytkownika
-     * @return lista rozliczeń
-     */
-    @Query("""
-            SELECT new pl.rentowne.settlement.SettlementDateAmountDto(
-                s.rentedObject.id, s.settlementDate, s.totalAmount
-            )
-            FROM Settlement s
-            JOIN RentedObject ro ON s.rentedObject.id = ro.id
-            JOIN Apartment a ON ro.apartment.id = a.id
-            WHERE a.user.id = :userId
-            """)
-    List<SettlementDateAmountDto> getDataForStatistics(@Param("userId") Long userId);
-
-    /**
      * Pobiera id ostatniego rozliczenia
      * @param tenantId id najemcy
      * @return id ostatniego rozliczenia

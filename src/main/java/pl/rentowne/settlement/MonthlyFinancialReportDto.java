@@ -11,6 +11,14 @@ record MonthlyFinancialReportDto(
         BigDecimal totalRevenue,
         BigDecimal totalCosts,
         BigDecimal netIncome,
-        BigDecimal netIncomeSum
+        BigDecimal netIncomeSum,
+        BigDecimal operatingCosts,
+        BigDecimal operatingResult,
+        BigDecimal cumulativeOperatingResult,
+        BigDecimal estimatedTax,
+        BigDecimal resultAfterTax,
+        boolean hasRecords,
+        boolean inProgress,
+        boolean future
 ) {
 }

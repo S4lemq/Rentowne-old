@@ -4,6 +4,7 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.test.context.jdbc.Sql;
 import pl.rentowne.IntegrationTest;
+import pl.rentowne.WithMockRentowneUser;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
@@ -12,10 +13,25 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 @Sql({"classpath:sql/cleanup.sql", "classpath:sql/init_data-2.sql"})
 @IntegrationTest
+@WithMockRentowneUser
 class FinancialReportServiceTest {
 
     @Autowired
     private FinancialReportService financialReportService;
+
+    @Test
+    void shouldSeparateEstimatedTaxAndIncludeWaterInMonthlyDetails() {
+        var report = financialReportService.getMonthlyFinancialReport(2024);
+        var month = report.months().getFirst();
+        var details = financialReportService.getMonthlyFinancialDetail(LocalDate.of(2024, 12, 1));
+        assertThat(month.operatingCosts()).isEqualByComparingTo("139.83");
+        assertThat(month.estimatedTax()).isEqualByComparingTo("297.50");
+        assertThat(month.operatingResult()).isEqualByComparingTo("6160.17");
+        assertThat(details.summary().operatingCosts()).isEqualByComparingTo(month.operatingCosts());
+        assertThat(details.summary().operatingResult()).isEqualByComparingTo(month.operatingResult());
+        assertThat(report.timeline()).hasSize(12);
+        assertThat(report.timeline().getFirst().hasRecords()).isFalse();
+    }
 
     @Test
     void shouldGenerateMonthlyFinancialReport() {

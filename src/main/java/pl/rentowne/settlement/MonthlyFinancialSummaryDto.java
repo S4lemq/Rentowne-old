@@ -14,6 +14,13 @@ record MonthlyFinancialSummaryDto(
         BigDecimal totalRevenue,
         BigDecimal totalCosts,
         BigDecimal netIncome,
-        BigDecimal cumulativeNetIncome
+        BigDecimal cumulativeNetIncome,
+        BigDecimal totalWater,
+        BigDecimal totalOther,
+        BigDecimal operatingCosts,
+        BigDecimal operatingResult,
+        BigDecimal estimatedTax,
+        BigDecimal resultAfterTax,
+        BigDecimal cumulativeOperatingResult
 ) {
 }

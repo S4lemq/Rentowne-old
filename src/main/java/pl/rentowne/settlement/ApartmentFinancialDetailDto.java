@@ -15,6 +15,12 @@ record ApartmentFinancialDetailDto(
         BigDecimal tax,
         BigDecimal revenue,
         BigDecimal costs,
-        BigDecimal netIncome
+        BigDecimal netIncome,
+        BigDecimal water,
+        BigDecimal other,
+        BigDecimal operatingCosts,
+        BigDecimal operatingResult,
+        BigDecimal estimatedTax,
+        BigDecimal resultAfterTax
 ) {
 }
