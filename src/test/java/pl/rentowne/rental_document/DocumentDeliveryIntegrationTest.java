@@ -11,11 +11,7 @@ import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.params.ParameterizedTest;
-import org.junit.jupiter.params.provider.ValueSource;
-import org.eclipse.angus.mail.smtp.SMTPSendFailedException;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.context.annotation.Import;
@@ -23,7 +19,6 @@ import org.springframework.data.domain.AuditorAware;
 import org.springframework.http.MediaType;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.mail.MailSendException;
-import org.springframework.scheduling.TaskScheduler;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.DynamicPropertyRegistry;
 import org.springframework.test.context.DynamicPropertySource;
@@ -69,8 +64,8 @@ import static org.mockito.Mockito.*;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
-/** Exercises the financial transaction, durable queue and actual SMTP/MIME delivery. No layout assertions. */
-@SpringBootTest(properties = {"application.documents.enabled=true", "application.documents.worker-enabled=false", "spring.jpa.show-sql=false"})
+/** Exercises financial transactions, manual document actions and SMTP/MIME delivery. No layout assertions. */
+@SpringBootTest(properties = {"application.documents.enabled=true", "spring.jpa.show-sql=false"})
 @ActiveProfiles("test")
 @Testcontainers
 @Import(TestSecurityConfig.class)
@@ -96,10 +91,10 @@ class DocumentDeliveryIntegrationTest {
     @Autowired MockMvc mvc;
     @Autowired JdbcTemplate jdbc;
     @Autowired ObjectMapper json;
-    @Autowired DocumentDeliveryWorker worker;
-    @Autowired DocumentStore store;
-    @Autowired @Qualifier("taskScheduler") TaskScheduler applicationScheduler;
-    @Autowired @Qualifier("documentScheduler") TaskScheduler documentScheduler;
+    @Autowired DocumentManagementService management;
+    @Autowired DocumentSendService sending;
+    @Autowired DocumentNumberService numbers;
+    @Autowired RentalDocumentRepository documentRepository;
     @Autowired SettlementService settlements;
     @Autowired PlatformTransactionManager transactionManager;
     @MockitoBean UserService users;
@@ -140,418 +135,336 @@ class DocumentDeliveryIntegrationTest {
     }
 
     @Test
-    void blockedDocumentSchedulerDoesNotBlockApplicationMaintenance() throws Exception {
-        CountDownLatch started = new CountDownLatch(1);
-        CountDownLatch release = new CountDownLatch(1);
-        CountDownLatch maintenance = new CountDownLatch(1);
-        var documentTask = documentScheduler.schedule(() -> {
-            started.countDown();
-            try { release.await(10, TimeUnit.SECONDS); }
-            catch (InterruptedException error) { Thread.currentThread().interrupt(); }
-        }, Instant.now());
-        try {
-            assertThat(started.await(5, TimeUnit.SECONDS)).isTrue();
-            applicationScheduler.schedule(maintenance::countDown, Instant.now());
-            assertThat(maintenance.await(5, TimeUnit.SECONDS)).isTrue();
-        } finally {
-            release.countDown();
-            documentTask.get(5, TimeUnit.SECONDS);
-        }
-    }
-
-    @Test
-    void queuesThenSendsPdfToTenantAndCcWithAllManualCharges() throws Exception {
-        var request = request(false, true);
-        calculate(request);
+    void generatesReceiptWithComponentsButNeverQueuesOrSendsMail() throws Exception {
+        calculate(request(false,true));
+        assertThat(savedPdf()).isNotEmpty();
+        assertThat(count("document_delivery")).isZero();
         assertThat(SMTP.getReceivedMessages()).isEmpty();
-        assertThat(state()).isEqualTo("PENDING");
-        var snapshot = snapshot();
-        assertThat(snapshot.total()).isEqualByComparingTo("3278.79");
-        assertThat(snapshot.lines()).hasSize(9);
-        assertThat(snapshot.payment().dueDate().toString()).isEqualTo("2026-11-10");
-        assertThat(worker.processNext()).isTrue();
-        assertThat(state()).isEqualTo("SENT");
-        assertThat(SMTP.getReceivedMessages()).hasSize(3);
-        var message = SMTP.getReceivedMessages()[0];
-        assertThat(message.getRecipients(Message.RecipientType.TO)[0].toString()).isEqualTo(tenantEmail());
-        assertThat(message.getRecipients(Message.RecipientType.CC)).extracting(Object::toString)
-                .containsExactlyInAnyOrder(ownerEmail(), representativeEmail());
-        assertThat(message.getSubject()).contains("Rachunek 01/2026", "Listopad 2026");
-        Part attachment = attachment(message);
-        assertThat(attachment).isNotNull();
-        assertThat(attachment.isMimeType("application/pdf")).isTrue();
-        assertThat(attachment.getFileName()).isEqualTo("rachunek-01-2026.pdf");
-        byte[] bytes = attachment.getInputStream().readAllBytes();
-        assertThat(new String(bytes, 0, 4, java.nio.charset.StandardCharsets.US_ASCII)).isEqualTo("%PDF");
-        assertThat(bytes).isEqualTo(savedPdf());
-        assertThat(worker.processNext()).isFalse();
+        assertThat(snapshot().lines()).extracting(RentalDocumentData.Line::description).contains("Dodatkowa opłata - Klucze","Dodatkowa opłata - Krzesła");
+        mvc.perform(get("/api/rental-documents")).andExpect(status().isOk()).andExpect(jsonPath("$.totalElements").value(1));
+        mvc.perform(get("/api/rental-documents/apartments")).andExpect(status().isOk())
+                .andExpect(jsonPath("$[0].id").value(apartmentId));
+        mvc.perform(get("/api/rental-documents").param("from","2026-11-01").param("to","2026-11-30")
+                .param("search","Anna").param("apartmentId",String.valueOf(apartmentId)))
+                .andExpect(status().isOk()).andExpect(jsonPath("$.totalElements").value(1));
     }
 
     @Test
-    void requestRetryAndConcurrentWorkersDoNotDuplicateNumberOrDelivery() throws Exception {
-        var request = request(false, false);
-        calculate(request);
-        calculate(request);
-        assertThat(count("rental_document")).isEqualTo(1);
+    void manualSendUsesExactSavedAttachmentAndDeduplicatesRecipients() throws Exception {
+        calculate(request(false,false));
+        var detail=management.detail(documentId());
+        var send=new DocumentSendRequest(UUID.randomUUID(),detail.revision(),detail.checksum(),tenantEmail(),
+                List.of(ownerEmail(),ownerEmail().toUpperCase(),representativeEmail(),tenantEmail()),true,false,false);
+        management.send(detail.id(),send);
+        assertThat(state()).isEqualTo("SENT");
+        assertThat(SMTP.getReceivedMessages()).hasSize(3);
+        assertThat(attachment(SMTP.getReceivedMessages()[0]).getInputStream().readAllBytes()).isEqualTo(savedPdf());
+        assertThat(SMTP.getReceivedMessages()[0].getRecipients(Message.RecipientType.CC)).hasSize(2);
+        management.send(detail.id(),send);
         assertThat(count("document_delivery")).isEqualTo(1);
-        try (var threads = Executors.newFixedThreadPool(2)) {
-            var first = threads.submit(worker::processNext);
-            var second = threads.submit(worker::processNext);
-            assertThat(List.of(first.get(), second.get())).containsExactlyInAnyOrder(true, false);
-        }
         assertThat(SMTP.getReceivedMessages()).hasSize(3);
-        assertThat(count("document_delivery_attempt")).isEqualTo(1);
     }
 
     @Test
-    void partialSettlementAlsoCreatesDocumentAndKeepsExplicitPeriod() throws Exception {
-        calculate(request(true, false));
-        assertThat(snapshot().period()).isEqualTo("15.11.2026 - 30.11.2026");
-        assertThat(snapshot().note()).isNotBlank();
-        worker.processNext();
-        assertThat(state()).isEqualTo("SENT");
+    void deletionAfterSendingCancelsDocumentWithoutSendingAnythingAndPreservesOriginal() throws Exception {
+        calculate(request(false,false));
+        var id=documentId();
+        management.send(id,sendRequest(id));
+        byte[] original=savedPdf();
+        long settlement=jdbc.queryForObject("SELECT settlement_id FROM rental_document",Long.class);
+        mvc.perform(delete("/api/settlements/{id}",settlement)).andExpect(status().isOk());
+        var cancelled=management.detail(id);
+        assertThat(cancelled.status()).isEqualTo("Anulowany — wcześniej wysłany");
+        assertThat(cancelled.history().getFirst().state()).isEqualTo("SENT");
+        assertThat(savedPdf()).isEqualTo(original);
+        assertThat(count("document_delivery")).isEqualTo(1);
+        assertThat(SMTP.getReceivedMessages()).hasSize(3);
+        assertThat(cancelled.canSend()).isFalse();
+        mvc.perform(post("/api/rental-documents/{id}/regenerate",id).contentType(MediaType.APPLICATION_JSON)
+                .content("{\"revision\":"+cancelled.revision()+"}")).andExpect(status().isConflict());
+        calculate(request(false,false));
+        assertThat(jdbc.queryForObject("SELECT max(sequence_number) FROM rental_document",Integer.class)).isEqualTo(2);
+        assertThat(SMTP.getReceivedMessages()).hasSize(3);
+        mvc.perform(get("/api/rental-documents").param("tab","CANCELLED")).andExpect(jsonPath("$.totalElements").value(1));
     }
 
     @Test
-    void ownerSeriesIsSharedAcrossPropertiesAndIndependentAcrossYearsAndTypes() throws Exception {
-        calculate(request(false, false));
-        long firstObject = objectId;
-        createTenancy(ownerId);
-        calculate(request(false, false));
-        assertThat(jdbc.queryForList("SELECT document_number FROM rental_document ORDER BY sequence_number", String.class)).containsExactly("01/2026", "02/2026");
-        terminate("100");
-        assertThat(jdbc.queryForObject("SELECT document_number FROM rental_document WHERE document_type='DEPOSIT_SETTLEMENT'", String.class)).isEqualTo("01/2026");
-        when(clock.instant()).thenReturn(Instant.parse("2027-01-02T12:00:00Z"));
-        objectId = firstObject;
-        tenantId = jdbc.queryForObject("SELECT tenant_id FROM tenant WHERE rented_object_id=?", Long.class, objectId);
-        calculate(request(false, false));
-        assertThat(jdbc.queryForObject("SELECT document_number FROM rental_document WHERE document_year=2027", String.class)).isEqualTo("01/2027");
-        ownerId = createOwner();
-        createTenancy(ownerId);
-        calculate(request(false, false));
-        assertThat(jdbc.queryForObject("SELECT document_number FROM rental_document WHERE owner_id=?", String.class, ownerId)).isEqualTo("01/2027");
+    void deletingUnsentSettlementCancelsWithoutMailAndAllowsDeletingItsFile() throws Exception {
+        calculate(request(false,false));
+        var id=documentId();
+        long settlement=management.detail(id).settlementId();
+        mvc.perform(delete("/api/settlements/{id}",settlement)).andExpect(status().isOk());
+        var d=management.detail(id);
+        assertThat(d.status()).isEqualTo("Anulowany");
+        assertThat(d.canRegenerate()).isFalse();
+        management.deletePdf(id,d.revision());
+        assertThat(management.detail(id).hasPdf()).isFalse();
+        assertThat(count("document_delivery")).isZero();
     }
 
     @Test
-    void concurrentFinancialRequestsAllocateDistinctNumbersForSameOwner() throws Exception {
-        long objectOne = objectId;
-        var requestOne = request(false, false);
-        createTenancy(ownerId);
-        long objectTwo = objectId;
-        var requestTwo = request(false, false);
-        try (var threads = Executors.newFixedThreadPool(2)) {
-            var one = threads.submit(() -> settlements.calculate(objectOne, requestOne));
-            var two = threads.submit(() -> settlements.calculate(objectTwo, requestTwo));
-            one.get(); two.get();
-        }
-        assertThat(jdbc.queryForList("SELECT sequence_number FROM rental_document ORDER BY sequence_number", Integer.class)).containsExactly(1, 2);
+    void regeneratesFromDatabaseAndKeepsNumberWhileStaleSendIsRejected() throws Exception {
+        calculate(request(true,false));
+        var id=documentId();var before=management.detail(id);var stale=sendRequest(id);
+        jdbc.update("UPDATE settlement SET electricity_amount=electricity_amount+17,total_amount=total_amount+17 WHERE settlement_id=?",before.settlementId());
+        jdbc.update("UPDATE tenant SET first_name='Maria',email='new-address@example.com' WHERE tenant_id=?",tenantId);
+        var after=management.regenerate(id,before.revision());
+        assertThat(after.data().number()).isEqualTo(before.data().number());
+        assertThat(after.data().period()).isEqualTo("15.11.2026 - 30.11.2026");
+        assertThat(after.data().tenant().name()).isEqualTo("Maria Nowak");
+        assertThat(after.to()).isEqualTo("new-address@example.com");
+        assertThat(after.data().total()).isEqualByComparingTo(before.data().total().add(new java.math.BigDecimal("17")));
+        assertThat(after.checksum()).isNotEqualTo(before.checksum());
+        mvc.perform(post("/api/rental-documents/{id}/send",id).contentType(MediaType.APPLICATION_JSON).content(json.writeValueAsBytes(stale)))
+                .andExpect(status().isConflict());
+        assertThat(count("document_delivery")).isZero();
     }
 
     @Test
-    void refusesIncompleteDataAndRollsBackFinancialChanges() throws Exception {
-        jdbc.update("UPDATE apartment SET owner_id=NULL WHERE apartment_id=?", apartmentId);
-        mvc.perform(post(calculateUrl()).contentType(MediaType.APPLICATION_JSON).content(json.writeValueAsBytes(request(false, false))))
-                .andExpect(status().isBadRequest()).andExpect(jsonPath("$.message").value(org.hamcrest.Matchers.containsString("właściciela")));
-        assertThat(jdbc.queryForObject("SELECT COUNT(*) FROM settlement WHERE tenant_id=?", Long.class, tenantId)).isZero();
-        assertThat(count("rental_document")).isZero();
-        assertThat(worker.processNext()).isFalse();
+    void deletingFileKeepsFinancialSourceAndCanGenerateAgain() throws Exception {
+        calculate(request(false,false));var id=documentId();var before=management.detail(id);
+        String filename=jdbc.queryForObject("SELECT pdf_file_name FROM rental_document",String.class);
+        var empty=management.deletePdf(id,before.revision());
+        assertThat(Files.exists(PDF_DIRECTORY.resolve(filename))).isFalse();
+        assertThat(empty.hasPdf()).isFalse();
+        assertThat(jdbc.queryForObject("SELECT count(*) FROM settlement WHERE settlement_id=?",Long.class,before.settlementId())).isEqualTo(1);
+        assertThat(management.regenerate(id,empty.revision()).data().number()).isEqualTo(before.data().number());
     }
 
     @Test
-    void rollbackDoesNotLeaveDocumentNumberOrMailTask() {
-        new TransactionTemplate(transactionManager).executeWithoutResult(status -> {
-            settlements.calculate(objectId, request(false, false));
-            assertThat(count("document_delivery")).isEqualTo(1);
+    void failureOfPdfDoesNotRollBackFinancialOperation() throws Exception {
+        doThrow(new IllegalStateException("PDF unavailable")).when(pdf).generate(any(RentalDocumentData.class));
+        calculate(request(false,false));var id=documentId();var d=management.detail(id);
+        assertThat(d.hasPdf()).isFalse();assertThat(d.generationError()).isNotBlank();
+        assertThat(d.settlementId()).isNotNull();assertThat(count("document_delivery")).isZero();
+        doCallRealMethod().when(pdf).generate(any(RentalDocumentData.class));
+        assertThat(management.regenerate(id,d.revision()).hasPdf()).isTrue();
+    }
+
+    @Test
+    void failedRegenerationPreservesOriginalFileAndSnapshot() throws Exception {
+        calculate(request(false,false));var id=documentId();var before=management.detail(id);byte[] original=savedPdf();
+        doThrow(new IllegalStateException("PDF unavailable")).when(pdf).generate(any(RentalDocumentData.class));
+        org.assertj.core.api.Assertions.assertThatThrownBy(()->management.regenerate(id,before.revision())).isInstanceOf(IllegalStateException.class);
+        assertThat(management.detail(id).checksum()).isEqualTo(before.checksum());assertThat(savedPdf()).isEqualTo(original);
+    }
+
+    @Test
+    void smtpFailureNeverRetriesAndUnknownProtectsDocument() throws Exception {
+        calculate(request(false,false));var id=documentId();var request=sendRequest(id);
+        doThrow(new MailSendException("SMTP unavailable",new ConnectException())).when(transport).send(any(DocumentMail.class));
+        assertThat(management.send(id,request).history().getFirst().state()).isEqualTo("FAILED");
+        management.send(id,request);verify(transport,times(1)).send(any(DocumentMail.class));
+        doThrow(new MailSendException("Ambiguous",new SocketTimeoutException())).when(transport).send(any(DocumentMail.class));
+        var unknown=management.send(id,sendRequest(id));
+        assertThat(unknown.history().getFirst().state()).isEqualTo("UNKNOWN");
+        assertThat(unknown.canRegenerate()).isFalse();assertThat(unknown.canDelete()).isFalse();
+        org.assertj.core.api.Assertions.assertThatThrownBy(()->management.send(id,sendRequest(id))).isInstanceOf(pl.rentowne.rental_payment.RentalPaymentException.class);
+        assertThat(count("document_delivery")).isEqualTo(2);
+    }
+
+    @Test
+    void depositIsSingleFinalPdfAndCanBeSentManually() throws Exception {
+        terminate("100");var id=documentId();var d=management.detail(id);
+        assertThat(d.data().result()).isEqualByComparingTo("1900");assertThat(savedPdf()).isNotEmpty();
+        assertThat(count("document_delivery")).isZero();
+        management.regenerate(id,d.revision());assertThat(count("rental_document")).isEqualTo(1);
+        assertThat(jdbc.queryForObject("SELECT count(*) FROM settlement WHERE tenant_id=?",Long.class,tenantId)).isEqualTo(1);
+        management.send(id,sendRequest(id));assertThat(SMTP.getReceivedMessages()).hasSize(3);
+    }
+
+    @Test
+    void crossAccountAccessAndMutationsAreRejected() throws Exception {
+        calculate(request(false,false));var id=documentId();var request=sendRequest(id);
+        when(users.getLoggedUser()).thenReturn(new UserBasicDto(userId+10000,"other@example.com",Role.ADMIN));
+        mvc.perform(get("/api/rental-documents/{id}",id)).andExpect(status().isNotFound());
+        mvc.perform(get("/api/rental-documents/{id}/pdf",id)).andExpect(status().isNotFound());
+        mvc.perform(delete("/api/rental-documents/{id}/pdf",id).param("revision","1")).andExpect(status().isNotFound());
+        mvc.perform(post("/api/rental-documents/{id}/send",id).contentType(MediaType.APPLICATION_JSON).content(json.writeValueAsBytes(request))).andExpect(status().isNotFound());
+        mvc.perform(get("/api/rental-documents")).andExpect(jsonPath("$.totalElements").value(0));
+    }
+
+    @Test
+    void cancellationNotificationRequiresExplicitAction() throws Exception {
+        calculate(request(false,false));var id=documentId();management.send(id,sendRequest(id));
+        mvc.perform(delete("/api/settlements/{id}",management.detail(id).settlementId())).andExpect(status().isOk());
+        assertThat(SMTP.getReceivedMessages()).hasSize(3);var d=management.detail(id);
+        management.send(id,new DocumentSendRequest(UUID.randomUUID(),d.revision(),d.checksum(),tenantEmail(),List.of(ownerEmail(),representativeEmail()),true,false,true));
+        assertThat(SMTP.getReceivedMessages()).hasSize(6);
+        assertThat(attachment(SMTP.getReceivedMessages()[3])).isNull();
+    }
+
+    @Test
+    void restartMarksInterruptedSendingUnknownWithoutSending() throws Exception {
+        calculate(request(false,false));var id=documentId();management.send(id,sendRequest(id));
+        jdbc.update("UPDATE document_delivery SET state='PROCESSING'");
+        sending.recoverInterruptedSends();assertThat(state()).isEqualTo("UNKNOWN");
+        assertThat(SMTP.getReceivedMessages()).hasSize(3);
+    }
+
+    @Test
+    void transactionRollbackAndRequestRetryDoNotCreateDuplicateDocuments() throws Exception {
+        var request=request(false,false);calculate(request);calculate(request);
+        assertThat(count("rental_document")).isEqualTo(1);
+        new TransactionTemplate(transactionManager).executeWithoutResult(status->{settlements.calculate(objectId,request(false,false));status.setRollbackOnly();});
+        assertThat(count("rental_document")).isEqualTo(1);assertThat(count("document_delivery")).isZero();
+    }
+
+    @Test
+    void firstCounterCreationIsSerializedAndRollbackDoesNotConsumeNumber() throws Exception {
+        var tx=new TransactionTemplate(transactionManager);
+        tx.executeWithoutResult(status->{
+            assertThat(numbers.next(ownerId,RentalDocumentType.RENT_RECEIPT,2030)).isEqualTo(1);
             status.setRollbackOnly();
         });
-        assertThat(count("rental_document")).isZero();
         assertThat(count("rental_document_counter")).isZero();
-        assertThat(worker.processNext()).isFalse();
-        assertThat(SMTP.getReceivedMessages()).isEmpty();
-    }
-
-    @Test
-    void failedConnectionRetriesSamePdfAndOriginalRecipientsAfterDataEdits() throws Exception {
-        calculate(request(false, false));
-        doThrow(new MailSendException("SMTP unavailable", new ConnectException("Connection refused"))).when(transport).send(any(DocumentMail.class));
-        worker.processNext();
-        assertThat(state()).isEqualTo("PENDING");
-        byte[] original = savedPdf();
-        jdbc.update("UPDATE property_owner SET first_name='Zmieniony',email='changed@example.com' WHERE owner_id=?", ownerId);
-        jdbc.update("UPDATE tenant SET email='changed-tenant@example.com' WHERE tenant_id=?", tenantId);
-        dueNow();
-        doCallRealMethod().when(transport).send(any(DocumentMail.class));
-        worker.processNext();
-        assertThat(state()).isEqualTo("SENT");
-        assertThat(savedPdf()).isEqualTo(original);
-        assertThat(SMTP.getReceivedMessages()[0].getRecipients(Message.RecipientType.TO)[0].toString()).isEqualTo(tenantEmail());
-        assertThat(SMTP.getReceivedMessages()[0].getRecipients(Message.RecipientType.CC)).extracting(Object::toString).contains(ownerEmail());
-        assertThat(count("rental_document")).isEqualTo(1);
-        assertThat(count("document_delivery_attempt")).isEqualTo(2);
-    }
-
-    @Test
-    void stopsAfterThreeClearlyFailedAttempts() throws Exception {
-        calculate(request(false, false));
-        doThrow(new MailSendException("SMTP unavailable", new ConnectException("Connection refused"))).when(transport).send(any(DocumentMail.class));
-        for (int attempt = 0; attempt < 3; attempt++) { dueNow(); worker.processNext(); }
-        assertThat(state()).isEqualTo("FAILED");
-        assertThat(count("document_delivery_attempt")).isEqualTo(3);
-        assertThat(worker.processNext()).isFalse();
-        assertThat(SMTP.getReceivedMessages()).isEmpty();
-    }
-
-    @Test
-    void ambiguousSmtpResultRequiresVerificationWithoutAutomaticRetry() throws Exception {
-        calculate(request(false, false));
-        doThrow(new MailSendException("No final SMTP response", new SocketTimeoutException("Timed out"))).when(transport).send(any(DocumentMail.class));
-        worker.processNext();
-        assertThat(state()).isEqualTo("UNKNOWN");
-        dueNow();
-        assertThat(worker.processNext()).isFalse();
-        assertThat(count("document_delivery_attempt")).isEqualTo(1);
-    }
-
-    @Test
-    void resumesExpiredPreparationTaskButDoesNotRepeatInterruptedSmtp() throws Exception {
-        calculate(request(false, false));
-        var tx = new TransactionTemplate(transactionManager);
-        tx.execute(status -> store.claim(properties));
-        jdbc.update("UPDATE document_delivery SET lease_until=now()-INTERVAL '1 second'");
-        worker.processNext();
-        assertThat(state()).isEqualTo("SENT");
-        assertThat(count("document_delivery_attempt")).isEqualTo(2);
-        calculate(request(false, false));
-        tx.execute(status -> store.claim(properties));
-        jdbc.update("UPDATE document_delivery SET lease_until=now()-INTERVAL '1 second',smtp_started_at=now() WHERE state='PROCESSING'");
-        assertThat(worker.processNext()).isFalse();
-        assertThat(jdbc.queryForObject("SELECT COUNT(*) FROM document_delivery WHERE state='UNKNOWN'", Long.class)).isEqualTo(1);
-        assertThat(SMTP.getReceivedMessages()).hasSize(3);
-    }
-
-    @Test
-    void terminationGeneratesPdfButHoldsMailUntilDepositVerificationIsEnabled() throws Exception {
-        terminate("100");
-        assertThat(snapshot().result()).isEqualByComparingTo("1900");
-        worker.processNext();
-        assertThat(state()).isEqualTo("HELD");
-        assertThat(savedPdf()).isNotEmpty();
-        assertThat(SMTP.getReceivedMessages()).isEmpty();
-    }
-
-    @Test
-    void enabledDepositDeliverySendsRefundAndPersistsDatesSeparatelyFromTransferDate() throws Exception {
-        doReturn(true).when(properties).depositMailEnabled();
-        terminate("100");
-        assertThat(snapshot().payment().recipient()).isEqualTo("Anna Nowak");
-        assertThat(snapshot().payment().dueDate().toString()).isEqualTo("2026-11-28");
-        worker.processNext();
-        assertThat(state()).isEqualTo("SENT");
-        assertThat(SMTP.getReceivedMessages()[0].getSubject()).contains("Rozliczenie kaucji 01/2026");
-        assertThat(jdbc.queryForObject("SELECT actual_termination_date FROM lease_agreement WHERE lease_agreement_id=?", java.sql.Date.class, leaseId).toString()).isEqualTo("2026-11-14");
-        assertThat(jdbc.queryForObject("SELECT deposit_return_date FROM lease_agreement WHERE lease_agreement_id=?", java.sql.Timestamp.class, leaseId)).isNull();
-        mvc.perform(post("/api/lease-agreements/{id}/terminate", leaseId).contentType(MediaType.APPLICATION_JSON).content("{}"))
-                .andExpect(status().isConflict());
-        assertThat(count("rental_document")).isEqualTo(1);
-    }
-
-    @Test
-    void handlesDepositSurchargeAndZeroWithoutRequiringTenantRefundAccount() throws Exception {
-        jdbc.update("UPDATE tenant SET account_number='' WHERE tenant_id=?", tenantId);
-        terminate("2100");
-        assertThat(snapshot().result()).isEqualByComparingTo("-100");
-        assertThat(snapshot().payment().recipient()).isEqualTo("Jan Kowalski");
-        createTenancy(ownerId);
-        terminate("2000");
-        var zero = json.readValue(jdbc.queryForObject("SELECT snapshot FROM rental_document WHERE source_key=?", String.class, "LEASE:" + leaseId), RentalDocumentData.class);
-        assertThat(zero.result()).isZero();
-        assertThat(zero.payment()).isNull();
-    }
-
-    @Test
-    void positiveRefundRequiresTenantBankAccountAndInvalidDatesAreRejected() throws Exception {
-        jdbc.update("UPDATE tenant SET account_number='' WHERE tenant_id=?", tenantId);
-        mvc.perform(post("/api/lease-agreements/{id}/terminate", leaseId).contentType(MediaType.APPLICATION_JSON).content("{}"))
-                .andExpect(status().isBadRequest()).andExpect(jsonPath("$.message").value(org.hamcrest.Matchers.containsString("konta najemcy")));
-        assertThat(jdbc.queryForObject("SELECT is_contract_active FROM lease_agreement WHERE lease_agreement_id=?", Boolean.class, leaseId)).isTrue();
-        assertThat(count("rental_document")).isZero();
-        mvc.perform(post("/api/lease-agreements/{id}/terminate", leaseId).contentType(MediaType.APPLICATION_JSON)
-                .content("{\"terminationDate\":\"2026-11-14\",\"refundDueDate\":\"2026-11-01\"}"))
-                .andExpect(status().isBadRequest());
-    }
-
-    @Test
-    void cancellationPreservesPdfAndNumberAndNotifiesRecipients() throws Exception {
-        calculate(request(false, false));
-        worker.processNext();
-        byte[] original = savedPdf();
-        long settlement = jdbc.queryForObject("SELECT settlement_id FROM rental_document", Long.class);
-        mvc.perform(delete("/api/settlements/{id}", settlement)).andExpect(status().isOk());
-        assertThat(jdbc.queryForObject("SELECT cancelled FROM rental_document", Boolean.class)).isTrue();
-        assertThat(savedPdf()).isEqualTo(original);
-        worker.processNext();
-        assertThat(jdbc.queryForObject("SELECT state FROM document_delivery WHERE kind='CANCELLATION'", String.class)).isEqualTo("SENT");
-        assertThat(SMTP.getReceivedMessages()).hasSize(6);
-        assertThat(java.util.Arrays.stream(SMTP.getReceivedMessages()).filter(message -> {
-            try { return message.getSubject().startsWith("Anulowanie"); } catch (Exception error) { throw new RuntimeException(error); }
-        })).hasSize(3);
-        calculate(request(false, false));
-        assertThat(jdbc.queryForObject("SELECT MAX(sequence_number) FROM rental_document", Integer.class)).isEqualTo(2);
-    }
-
-    @Test
-    void cancellationAfterInterruptedSmtpNotifiesRecipientsAndPreservesUnknownOutcome() throws Exception {
-        calculate(request(false, false));
-        var tx = new TransactionTemplate(transactionManager);
-        var claimed = tx.execute(status -> store.claim(properties).orElseThrow());
-        tx.execute(status -> store.markSmtp(claimed));
-        long settlement = jdbc.queryForObject("SELECT settlement_id FROM rental_document", Long.class);
-
-        mvc.perform(delete("/api/settlements/{id}", settlement)).andExpect(status().isOk());
-
-        assertThat(jdbc.queryForObject("SELECT state FROM document_delivery WHERE kind='ISSUE'", String.class)).isEqualTo("UNKNOWN");
-        assertThat(jdbc.queryForObject("SELECT outcome FROM document_delivery_attempt", String.class)).isEqualTo("UNKNOWN");
-        // A stale worker must not overwrite the cancellation's outcome.
-        tx.executeWithoutResult(status -> store.finish(claimed, "SENT", null));
-        assertThat(jdbc.queryForObject("SELECT state FROM document_delivery WHERE kind='ISSUE'", String.class)).isEqualTo("UNKNOWN");
-        worker.processNext();
-        assertThat(SMTP.getReceivedMessages()).hasSize(3);
-        assertThat(SMTP.getReceivedMessages()[0].getSubject()).startsWith("Anulowanie");
-        assertThat(worker.processNext()).isFalse();
-    }
-
-    @Test
-    void cancellationDuringPreparationStopsWorkerWithoutSendingNotification() throws Exception {
-        calculate(request(false, false));
-        var tx = new TransactionTemplate(transactionManager);
-        var claimed = tx.execute(status -> store.claim(properties).orElseThrow());
-        long settlement = jdbc.queryForObject("SELECT settlement_id FROM rental_document", Long.class);
-
-        mvc.perform(delete("/api/settlements/{id}", settlement)).andExpect(status().isOk());
-
-        assertThat(state()).isEqualTo("CANCELLED");
-        Boolean smtpMarked = tx.execute(status -> store.markSmtp(claimed));
-        assertThat(smtpMarked).isFalse();
-        assertThat(jdbc.queryForObject("SELECT outcome FROM document_delivery_attempt", String.class)).isEqualTo("CANCELLED");
-        assertThat(worker.processNext()).isFalse();
-        assertThat(SMTP.getReceivedMessages()).isEmpty();
-    }
-
-    @Test
-    void cancellingSimulatedReceiptDoesNotSendRealNotificationAfterTransportSwitch() throws Exception {
-        ReflectionTestUtils.setField(transport, "senderMode", "fakeEmailService");
-        calculate(request(false, false));
-        worker.processNext();
-        ReflectionTestUtils.setField(transport, "senderMode", "emailSimpleService");
-        long settlement = jdbc.queryForObject("SELECT settlement_id FROM rental_document", Long.class);
-
-        mvc.perform(delete("/api/settlements/{id}", settlement)).andExpect(status().isOk());
-
-        assertThat(state()).isEqualTo("SIMULATED");
-        assertThat(jdbc.queryForObject("SELECT cancelled FROM rental_document", Boolean.class)).isTrue();
-        assertThat(count("document_delivery")).isEqualTo(1);
-        assertThat(worker.processNext()).isFalse();
-        assertThat(SMTP.getReceivedMessages()).isEmpty();
-    }
-
-    @Test
-    void preparationFailureKeepsFinancialOperationAndRetriesWithoutAllocatingAnotherNumber() throws Exception {
-        calculate(request(false, false));
-        doThrow(new IllegalStateException("Temporary PDF preparation failure")).when(pdf).generate(any(RentalDocumentData.class));
-        worker.processNext();
-        assertThat(state()).isEqualTo("PENDING");
-        assertThat(jdbc.queryForObject("SELECT COUNT(*) FROM settlement WHERE tenant_id=?", Long.class, tenantId)).isEqualTo(1);
-        assertThat(SMTP.getReceivedMessages()).isEmpty();
-        doCallRealMethod().when(pdf).generate(any(RentalDocumentData.class));
-        dueNow();
-        worker.processNext();
-        assertThat(state()).isEqualTo("SENT");
-        assertThat(count("rental_document")).isEqualTo(1);
-        assertThat(jdbc.queryForObject("SELECT last_number FROM rental_document_counter", Integer.class)).isEqualTo(1);
-    }
-
-    @Test
-    void missingPersistedPdfIsReportedWithoutRegeneratingAnIssuedArtifact() throws Exception {
-        calculate(request(false, false));
-        doThrow(new MailSendException("SMTP unavailable", new ConnectException("Connection refused"))).when(transport).send(any(DocumentMail.class));
-        worker.processNext();
-        String filename = jdbc.queryForObject("SELECT pdf_file_name FROM rental_document", String.class);
-        Files.delete(PDF_DIRECTORY.resolve(filename));
-        dueNow();
-        worker.processNext();
-        verify(pdf, times(1)).generate(any(RentalDocumentData.class));
-        assertThat(state()).isEqualTo("PENDING");
-        assertThat(jdbc.queryForObject("SELECT last_error FROM document_delivery", String.class)).contains("NoSuchFileException");
-    }
-
-    @Test
-    void cancellationBeforeDeliveryPreventsSendingAndRetainsUsedNumber() throws Exception {
-        calculate(request(false, false));
-        long settlement = jdbc.queryForObject("SELECT settlement_id FROM rental_document", Long.class);
-        mvc.perform(delete("/api/settlements/{id}", settlement)).andExpect(status().isOk());
-        assertThat(state()).isEqualTo("CANCELLED");
-        assertThat(worker.processNext()).isFalse();
-        assertThat(SMTP.getReceivedMessages()).isEmpty();
-        calculate(request(false, false));
-        assertThat(jdbc.queryForObject("SELECT MAX(sequence_number) FROM rental_document", Integer.class)).isEqualTo(2);
-    }
-
-    @Test
-    void simulatedTransportIsNeverReportedAsSentAndDuplicateCcIsRemoved() throws Exception {
-        ReflectionTestUtils.setField(transport, "senderMode", "fakeEmailService");
-        jdbc.update("UPDATE property_owner SET representative_email=email WHERE owner_id=?", ownerId);
-        calculate(request(false, false));
-        assertThat(json.readTree(jdbc.queryForObject("SELECT cc_json FROM document_delivery", String.class))).hasSize(1);
-        worker.processNext();
-        assertThat(state()).isEqualTo("SIMULATED");
-        assertThat(SMTP.getReceivedMessages()).isEmpty();
-    }
-
-    @Test
-    void tenantAddressIsExcludedFromCcIgnoringCaseAndWhitespace() throws Exception {
-        jdbc.update("UPDATE property_owner SET email=?,representative_email=? WHERE owner_id=?", "  " + tenantEmail().toUpperCase(java.util.Locale.ROOT) + "  ", tenantEmail(), ownerId);
-        calculate(request(false, false));
-        assertThat(json.readTree(jdbc.queryForObject("SELECT cc_json FROM document_delivery", String.class))).isEmpty();
-        worker.processNext();
-        assertThat(state()).isEqualTo("SENT");
-        assertThat(SMTP.getReceivedMessages()).hasSize(1);
-        assertThat(SMTP.getReceivedMessages()[0].getRecipients(Message.RecipientType.CC)).isNull();
-    }
-
-    @ParameterizedTest
-    @ValueSource(ints = {451, 550})
-    void distinguishesTemporaryAndPermanentExplicitSmtpRejections(int code) throws Exception {
-        calculate(request(false, false));
-        doThrow(new MailSendException("SMTP rejected message", new SMTPSendFailedException("DATA", code, "Rejected", null, null, null, null)))
-                .when(transport).send(any(DocumentMail.class));
-        worker.processNext();
-        assertThat(state()).isEqualTo(code == 451 ? "PENDING" : "FAILED");
-        assertThat(SMTP.getReceivedMessages()).isEmpty();
-    }
-
-    @Test
-    void previewDoesNotCreateDocumentsAndSlowTransportDoesNotBlockAnotherFinancialRequest() throws Exception {
-        mvc.perform(post("/api/lease-agreements/{id}/deposit-return-preview", leaseId).contentType(MediaType.APPLICATION_JSON).content("{}"))
-                .andExpect(status().isOk());
-        assertThat(count("rental_document")).isZero();
-        calculate(request(false, false));
-        CountDownLatch entered = new CountDownLatch(1), release = new CountDownLatch(1);
-        doAnswer(call -> {
-            entered.countDown();
-            if (!release.await(10, TimeUnit.SECONDS)) throw new IllegalStateException("SMTP test timed out");
-            return call.callRealMethod();
-        }).when(transport).send(any(DocumentMail.class));
-        try (var threads = Executors.newSingleThreadExecutor()) {
-            var sending = threads.submit(worker::processNext);
-            try {
-                assertThat(entered.await(10, TimeUnit.SECONDS)).isTrue();
-                createTenancy(ownerId);
-                calculate(request(false, false));
-                assertThat(count("rental_document")).isEqualTo(2);
-            } finally { release.countDown(); }
-            assertThat(sending.get()).isTrue();
+        CountDownLatch start=new CountDownLatch(1);
+        try(var threads=Executors.newFixedThreadPool(2)) {
+            java.util.concurrent.Callable<Integer> issue=()->{
+                start.await();
+                return tx.execute(status->numbers.next(ownerId,RentalDocumentType.RENT_RECEIPT,2030));
+            };
+            var first=threads.submit(issue);var second=threads.submit(issue);start.countDown();
+            assertThat(List.of(first.get(10,TimeUnit.SECONDS),second.get(10,TimeUnit.SECONDS)))
+                    .containsExactlyInAnyOrder(1,2);
         }
+        assertThat(count("rental_document_counter")).isEqualTo(1);
     }
+
+    @Test
+    void optimisticVersionRejectsDetachedStaleEntity() throws Exception {
+        calculate(request(false,false));var id=documentId();
+        var first=documentRepository.findById(id).orElseThrow();
+        var stale=documentRepository.findById(id).orElseThrow();
+        first.generationFailed("First change");documentRepository.saveAndFlush(first);
+        stale.generationFailed("Stale change");
+        org.assertj.core.api.Assertions.assertThatThrownBy(()->documentRepository.saveAndFlush(stale))
+                .isInstanceOf(org.springframework.orm.ObjectOptimisticLockingFailureException.class);
+        assertThat(documentRepository.findById(id).orElseThrow().getError()).isEqualTo("First change");
+    }
+
+    @Test
+    void paginatesBeforeLoadingHistoryAndFiltersLatestDeliveryWithTimestampTies() throws Exception {
+        calculate(request(false,false));var first=documentId();
+        calculate(request(false,false));var second=documentId();
+        jdbc.update("""
+                INSERT INTO document_delivery(delivery_id,document_id,kind,to_address,cc_json,send_enabled,state,created_at,finished_at)
+                VALUES ('00000000-0000-0000-0000-000000000001',?,'ISSUE','test@example.com','[]',true,'FAILED','2026-11-15','2026-11-15'),
+                ('00000000-0000-0000-0000-000000000002',?,'ISSUE','test@example.com','[]',true,'SENT','2026-11-15','2026-11-15')
+                """,first,first);
+        mvc.perform(get("/api/rental-documents").param("size","1")).andExpect(status().isOk())
+                .andExpect(jsonPath("$.totalElements").value(2)).andExpect(jsonPath("$.content.length()").value(1));
+        mvc.perform(get("/api/rental-documents").param("mailState","SENT")).andExpect(status().isOk())
+                .andExpect(jsonPath("$.totalElements").value(1)).andExpect(jsonPath("$.content[0].id").value(first.toString()));
+        mvc.perform(get("/api/rental-documents").param("mailState","FAILED")).andExpect(status().isOk())
+                .andExpect(jsonPath("$.totalElements").value(0));
+        mvc.perform(get("/api/rental-documents").param("mailState","NOT_SENT")).andExpect(status().isOk())
+                .andExpect(jsonPath("$.content[0].id").value(second.toString()));
+        mvc.perform(get("/api/rental-documents").param("type","DEPOSIT_SETTLEMENT")).andExpect(jsonPath("$.totalElements").value(0));
+        mvc.perform(get("/api/rental-documents").param("search","jasna").param("tenantId",String.valueOf(tenantId))
+                .param("leaseId",String.valueOf(leaseId))).andExpect(jsonPath("$.totalElements").value(2));
+    }
+
+    @Test
+    void migrationBackfillsExistingSnapshotsWithoutChangingPdfOrHistory() throws Exception {
+        calculate(request(false,false));var id=documentId();management.send(id,sendRequest(id));
+        var before=management.detail(id);byte[] original=savedPdf();
+        new TransactionTemplate(transactionManager).executeWithoutResult(status->{
+            jdbc.execute("ALTER TABLE rental_document DROP COLUMN issue_date, DROP COLUMN tenant_name, DROP COLUMN property_address");
+            jdbc.execute((org.springframework.jdbc.core.ConnectionCallback<Void>)connection->{
+                org.springframework.jdbc.datasource.init.ScriptUtils.executeSqlScript(connection,
+                        new org.springframework.core.io.ClassPathResource("db/changelog/ddl-scripts/073-document-jpa-search.sql"));
+                return null;
+            });
+        });
+        var after=documentRepository.findById(id).orElseThrow();
+        assertThat(after.getIssueDate()).isEqualTo(before.data().issueDate());
+        assertThat(after.getTenantName()).isEqualTo(before.data().tenant().name());
+        assertThat(after.getPropertyAddress()).isEqualTo(before.data().propertyAddress());
+        assertThat(savedPdf()).isEqualTo(original);
+        assertThat(management.detail(id).history()).isEqualTo(before.history());
+    }
+
+    @Test
+    void cancellationWaitsForSendingAndPreservesCommittedOutcome() throws Exception {
+        calculate(request(false,false));var id=documentId();var request=sendRequest(id);
+        long settlement=management.detail(id).settlementId();byte[] original=savedPdf();
+        CountDownLatch entered=new CountDownLatch(1),release=new CountDownLatch(1),deleting=new CountDownLatch(1);
+        doAnswer(call->{entered.countDown();if(!release.await(10,TimeUnit.SECONDS))throw new IllegalStateException("Test timeout");return call.callRealMethod();})
+                .when(transport).send(any(DocumentMail.class));
+        try(var threads=Executors.newFixedThreadPool(2)) {
+            var send=threads.submit(()->management.send(id,request));
+            try {
+                assertThat(entered.await(5,TimeUnit.SECONDS)).isTrue();
+                var cancel=threads.submit(()->{deleting.countDown();settlements.deleteCalculate(settlement);});
+                assertThat(deleting.await(5,TimeUnit.SECONDS)).isTrue();
+                org.assertj.core.api.Assertions.assertThatThrownBy(()->cancel.get(200,TimeUnit.MILLISECONDS))
+                        .isInstanceOf(java.util.concurrent.TimeoutException.class);
+                release.countDown();send.get(10,TimeUnit.SECONDS);cancel.get(10,TimeUnit.SECONDS);
+            } finally {release.countDown();}
+        }
+        assertThat(management.detail(id).status()).isEqualTo("Anulowany — wcześniej wysłany");
+        assertThat(savedPdf()).isEqualTo(original);assertThat(count("document_delivery")).isEqualTo(1);
+    }
+
+    @Test
+    void settlementRowsContainDocumentStateAndSupportOlderRowsWithoutDocuments() throws Exception {
+        calculate(request(false,false));var document=documentId();
+        long withDocument=management.detail(document).settlementId();
+        management.send(document,sendRequest(document));
+        calculate(request(false,false));var unsent=documentId();
+        long withoutDocument=management.detail(unsent).settlementId();
+        jdbc.update("DELETE FROM rental_document WHERE document_id=?",unsent);
+        var result=mvc.perform(get("/api/settlements").param("rentedObjectId",String.valueOf(objectId))
+                .param("tenantId",String.valueOf(tenantId))).andExpect(status().isOk()).andReturn();
+        var rows=json.readTree(result.getResponse().getContentAsString()).get("content");
+        for(var row:rows) {
+            if(row.get("id").asLong()==withDocument) {
+                assertThat(row.at("/document/id").asText()).isEqualTo(document.toString());
+                assertThat(row.at("/document/status").asText()).isEqualTo("Wysłany");
+                assertThat(row.at("/document/mailState").asText()).isEqualTo("SENT");
+            } else if(row.get("id").asLong()==withoutDocument) assertThat(row.get("document").isNull()).isTrue();
+        }
+        assertThat(rows.size()).isEqualTo(2);
+    }
+
+    private UUID documentId(){return jdbc.queryForObject("SELECT document_id FROM rental_document ORDER BY created_at DESC LIMIT 1",UUID.class);}
+    @Test
+    void concurrentDuplicateClickSendsOnlyOnce() throws Exception {
+        calculate(request(false,false));var id=documentId();var request=sendRequest(id);
+        CountDownLatch entered=new CountDownLatch(1), release=new CountDownLatch(1);
+        doAnswer(call->{entered.countDown();if(!release.await(10,TimeUnit.SECONDS))throw new IllegalStateException("Test timeout");return call.callRealMethod();})
+                .when(transport).send(any(DocumentMail.class));
+        try(var threads=Executors.newFixedThreadPool(2)) {
+            var first=threads.submit(()->management.send(id,request));
+            try {
+                assertThat(entered.await(5,TimeUnit.SECONDS)).isTrue();
+                var second=threads.submit(()->management.send(id,request));
+                release.countDown();first.get(10,TimeUnit.SECONDS);second.get(10,TimeUnit.SECONDS);
+            } finally {release.countDown();}
+        }
+        assertThat(count("document_delivery")).isEqualTo(1);
+        assertThat(SMTP.getReceivedMessages()).hasSize(3);
+    }
+
+    @Test
+    void sentFileCannotBeDeletedOrRegenerated() throws Exception {
+        calculate(request(false,false));var id=documentId();var d=management.send(id,sendRequest(id));
+        mvc.perform(delete("/api/rental-documents/{id}/pdf",id).param("revision",String.valueOf(d.revision()))).andExpect(status().isConflict());
+        mvc.perform(post("/api/rental-documents/{id}/regenerate",id).contentType(MediaType.APPLICATION_JSON).content("{\"revision\":"+d.revision()+"}")).andExpect(status().isConflict());
+        assertThat(savedPdf()).isNotEmpty();
+    }
+
+    @Test
+    void ownerCountersStayIndependentAcrossDocumentTypesAndYears() throws Exception {
+        calculate(request(false,false));assertThat(snapshot().number()).isEqualTo("01/2026");
+        createTenancy(ownerId);calculate(request(false,false));assertThat(snapshot().number()).isEqualTo("02/2026");
+        terminate("100");assertThat(snapshot().number()).isEqualTo("01/2026");
+        when(clock.instant()).thenReturn(Instant.parse("2027-01-02T12:00:00Z"));
+        createTenancy(ownerId);calculate(request(false,false));assertThat(snapshot().number()).isEqualTo("01/2027");
+    }
+
+    private DocumentSendRequest sendRequest(UUID id){var d=management.detail(id);return new DocumentSendRequest(UUID.randomUUID(),d.revision(),d.checksum(),tenantEmail(),List.of(ownerEmail(),representativeEmail()),true,false,false);}
 
     private CalculateRequestDto request(boolean partial, boolean extras) {
         return CalculateRequestDto.builder().settlementDate(LocalDateTime.of(2026, 11, 1, 0, 0))
@@ -576,7 +489,6 @@ class DocumentDeliveryIntegrationTest {
     private String calculateUrl() { return "/api/rented-objects/" + objectId + "/calculate"; }
     private long count(String table) { return jdbc.queryForObject("SELECT COUNT(*) FROM " + table, Long.class); }
     private String state() { return jdbc.queryForObject("SELECT state FROM document_delivery ORDER BY created_at DESC LIMIT 1", String.class); }
-    private void dueNow() { jdbc.update("UPDATE document_delivery SET next_attempt_at=now()-INTERVAL '1 second'"); }
     private RentalDocumentData snapshot() throws Exception { return json.readValue(jdbc.queryForObject("SELECT snapshot FROM rental_document ORDER BY created_at DESC LIMIT 1", String.class), RentalDocumentData.class); }
     private byte[] savedPdf() throws IOException { return Files.readAllBytes(PDF_DIRECTORY.resolve(jdbc.queryForObject("SELECT pdf_file_name FROM rental_document ORDER BY created_at DESC LIMIT 1", String.class))); }
     private String tenantEmail() { return "tenant" + tenantId + "@example.com"; }

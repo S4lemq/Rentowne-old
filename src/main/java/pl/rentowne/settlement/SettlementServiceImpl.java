@@ -22,6 +22,7 @@ import pl.rentowne.provider_field.BillingMethod;
 import pl.rentowne.provider_field.ProviderField;
 import pl.rentowne.rental_payment.DepositAccountingService;
 import pl.rentowne.rental_document.RentalDocumentService;
+import pl.rentowne.rental_document.DocumentManagementService;
 import pl.rentowne.rental_payment.RentalPaymentException;
 import pl.rentowne.rented_object.RentedObject;
 import pl.rentowne.rented_object.RentedObjectRepository;
@@ -59,6 +60,7 @@ public class SettlementServiceImpl implements SettlementService {
     private final SettlementOperations operations;
     private final UserService userService;
     private final RentalDocumentService documents;
+    private final DocumentManagementService documentManagement;
 
     @Transactional
     @Override
@@ -777,7 +779,9 @@ public class SettlementServiceImpl implements SettlementService {
     public Page<SettlementListDto> getSettlements(Pageable pageable, Long rentedObjectId, Long tenantId) {
         requireOwnedObject(rentedObjectId);
         Page<Settlement> settlementsPage = settlementRepository.findAllByRentedObjectIdAndTenantId(pageable, rentedObjectId, tenantId);
-        return settlementsPage.map(settlementMapper::toListDto);
+        var documentStates = documentManagement.settlementSummaries(
+                settlementsPage.getContent().stream().map(Settlement::getId).toList());
+        return settlementsPage.map(settlement -> settlementMapper.toListDto(settlement, documentStates.get(settlement.getId())));
     }
 
     @Override

@@ -74,4 +74,6 @@
     <include file="db/changelog/ddl-scripts/069-manual-settlement-charges.sql"/>
     <include file="db/changelog/ddl-scripts/070-property-owners.sql"/>
     <include file="db/changelog/ddl-scripts/071-rental-documents.sql"/>
+    <include file="db/changelog/ddl-scripts/072-manual-document-delivery.sql"/>
+    <include file="db/changelog/ddl-scripts/073-document-jpa-search.sql"/>
 </databaseChangeLog>

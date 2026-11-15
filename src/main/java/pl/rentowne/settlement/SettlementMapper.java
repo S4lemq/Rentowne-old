@@ -8,6 +8,7 @@ import pl.rentowne.tenant.Tenant;
 import pl.rentowne.util.DateUtils;
 
 import java.math.BigDecimal;
+import pl.rentowne.rental_document.DocumentSummary;
 
 /**
  * Mapper dla Settlement
@@ -36,6 +37,10 @@ class SettlementMapper {
      * @return DTO dla listy
      */
     public SettlementListDto toListDto(Settlement settlement) {
+        return toListDto(settlement, null);
+    }
+
+    SettlementListDto toListDto(Settlement settlement, DocumentSummary document) {
         if (settlement == null) {
             return null;
         }
@@ -66,7 +71,8 @@ class SettlementMapper {
                 settlement.getDepositTopUp(),
                 settlement.getAdditionalCharge(),
                 settlement.getAdditionalChargeDescription(),
-                settlement.getAdditionalCharges()
+                settlement.getAdditionalCharges(),
+                document
         );
     }
 

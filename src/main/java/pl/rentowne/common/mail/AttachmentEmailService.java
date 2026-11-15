@@ -14,7 +14,7 @@ import pl.rentowne.rental_document.DocumentProperties;
 
 import java.nio.charset.StandardCharsets;
 
-/** Synchronous transport: the durable worker owns asynchronous execution and observes the result. */
+/** Synchronous transport invoked only by an explicitly confirmed document send operation. */
 @Service
 @RequiredArgsConstructor
 @Slf4j

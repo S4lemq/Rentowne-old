@@ -2,6 +2,7 @@ package pl.rentowne.settlement;
 
 import java.math.BigDecimal;
 import java.util.List;
+import pl.rentowne.rental_document.DocumentSummary;
 
 /**
  * DTO dla listy rozliczeń
@@ -23,7 +24,8 @@ record SettlementListDto(
         BigDecimal depositTopUp,
         BigDecimal additionalCharge,
         String additionalChargeDescription,
-        List<SettlementChargeDto> additionalCharges
+        List<SettlementChargeDto> additionalCharges,
+        DocumentSummary document
 ) {
 }
 

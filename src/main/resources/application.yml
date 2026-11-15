@@ -48,8 +48,6 @@ spring:
 application:
     documents:
         enabled: ${DOCUMENTS_ENABLED:true}
-        deposit-mail-enabled: ${DEPOSIT_DOCUMENT_MAIL_ENABLED:false}
-        worker-enabled: ${DOCUMENT_WORKER_ENABLED:true}
         directory: ${DOCUMENT_PDF_DIRECTORY:data/rentalDocuments}
         issue-city: ${DOCUMENT_ISSUE_CITY:Poznań}
         from: "${DOCUMENT_MAIL_FROM:Rentowne <rentowneApp@gmail.com>}"

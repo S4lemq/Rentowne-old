@@ -23,8 +23,8 @@
             <fo:layout-master-set>
                 <fo:simple-page-master master-name="a4" page-width="210mm" page-height="297mm"
                                        margin-top="14mm" margin-bottom="12mm" margin-left="15mm" margin-right="15mm">
-                    <fo:region-body margin-top="35mm" margin-bottom="11mm"/>
-                    <fo:region-before extent="33mm"/>
+                    <fo:region-body margin-top="38mm" margin-bottom="11mm"/>
+                    <fo:region-before extent="36mm"/>
                     <fo:region-after extent="8mm"/>
                 </fo:simple-page-master>
             </fo:layout-master-set>
@@ -33,7 +33,7 @@
                     <fo:table table-layout="fixed" width="100%">
                         <fo:table-column column-width="55%"/><fo:table-column column-width="45%"/>
                         <fo:table-body><fo:table-row>
-                            <fo:table-cell><fo:block><fo:external-graphic src="url('classpath:/image/logo_rentowne.png')" content-width="48mm" content-height="scale-to-fit" scaling="uniform"/></fo:block></fo:table-cell>
+                            <fo:table-cell><fo:block><fo:external-graphic src="url('classpath:/image/logo_rentowne.svg')" content-width="56mm" content-height="scale-to-fit" scaling="uniform"/></fo:block></fo:table-cell>
                             <fo:table-cell><fo:block text-align="right" font-size="8pt" color="#667484">
                                 <fo:block>Miejsce wystawienia: <xsl:value-of select="issueCity"/></fo:block>
                                 <fo:block>Data wystawienia: <xsl:value-of select="issueDate"/></fo:block>

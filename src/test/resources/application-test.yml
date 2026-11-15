@@ -5,4 +5,3 @@ spring:
 application:
     documents:
         enabled: false
-        worker-enabled: false

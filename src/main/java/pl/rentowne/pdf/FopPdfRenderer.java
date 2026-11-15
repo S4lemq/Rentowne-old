@@ -85,7 +85,7 @@ public final class FopPdfRenderer {
             URI normalized = uri.normalize();
             String path = normalized.getPath();
             if (!"classpath".equals(normalized.getScheme()) || path == null
-                    || !(path.startsWith("/pdf/") || path.startsWith("/fonts/") || path.equals("/image/logo_rentowne.png"))) {
+                    || !(path.startsWith("/pdf/") || path.startsWith("/fonts/") || path.equals("/image/logo_rentowne.svg"))) {
                 throw new IOException("PDF może korzystać wyłącznie z zasobów aplikacji: " + normalized);
             }
             return new Resource(new ClassPathResource(path.substring(1)).getInputStream());

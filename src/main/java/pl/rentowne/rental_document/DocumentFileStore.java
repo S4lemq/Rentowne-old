@@ -1,6 +1,7 @@
 package pl.rentowne.rental_document;
 
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
 import java.io.IOException;
 import java.nio.file.AtomicMoveNotSupportedException;
@@ -14,6 +15,7 @@ import java.util.UUID;
 
 @Component
 @RequiredArgsConstructor
+@Slf4j
 class DocumentFileStore {
     private final DocumentProperties properties;
 
@@ -40,5 +42,11 @@ class DocumentFileStore {
     static String hash(byte[] content) {
         try { return HexFormat.of().formatHex(MessageDigest.getInstance("SHA-256").digest(content)); }
         catch (NoSuchAlgorithmException e) { throw new IllegalStateException(e); }
+    }
+
+    void deleteQuietly(String filename) {
+        if (filename == null || !filename.matches("[a-f0-9-]{36}\\.pdf")) return;
+        try { Files.deleteIfExists(Path.of(properties.directory()).toAbsolutePath().normalize().resolve(filename)); }
+        catch (IOException error) { log.warn("Nie udało się usunąć nieużywanego pliku PDF {}", filename); }
     }
 }
